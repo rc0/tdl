@@ -1,3 +1,15 @@
+NEW IN VERSION 1.6
+
+- Various compile warnings removed
+- Documentation fixes
+- Fix for spec file
+- Fix readline-less build
+- Fix argument checking for export command
+- Add -u option to unlock a db that's been left locked
+- Hitting ^C 4 times exits a wedged run (with data loss)
+- Allow start of entry text to be used for indexing instead of just entry
+  number.
+
 NEW IN VERSION 1.5.2
 
 - allow more than 5 digits for pid in creating name of lock file

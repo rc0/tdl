@@ -2,7 +2,7 @@
    $Header: /cvs/src/tdl/main.c,v 1.39.2.6 2004/02/03 22:17:22 richard Exp $
   
    tdl - A console program for managing to-do lists
-   Copyright (C) 2001-2004  Richard P. Curnow
+   Copyright (C) 2001,2002,2003,2004,2005  Richard P. Curnow
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -705,7 +705,7 @@ static void setup_signals(void)/*{{{*/
 static void print_copyright(void)/*{{{*/
 {
   fprintf(stderr,
-          "tdl %s, Copyright (C) 2001-2004 Richard P. Curnow\n"
+          "tdl %s, Copyright (C) 2001,2002,2003,2004,2005 Richard P. Curnow\n"
           "tdl comes with ABSOLUTELY NO WARRANTY.\n"
           "This is free software, and you are welcome to redistribute it\n"
           "under certain conditions; see the GNU General Public License for details.\n\n",
