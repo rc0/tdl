@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.5 2002/05/09 23:07:06 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.6 2002/05/10 22:22:41 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -19,6 +19,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
    */
 
+#include <ctype.h>
 #include "tdl.h"
 
 int count_args(char **x)/*{{{*/
@@ -125,23 +126,32 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
 enum Priority parse_priority(char *priority, int *error)/*{{{*/
 {
   enum Priority result;
-  int len = strlen(priority);
-  if (!strncmp(priority, "urgent", len) || (atoi(priority) >= PRI_URGENT)) {
-    result = PRI_URGENT;
-  } else if (!strncmp(priority, "high", len) || (atoi(priority) == PRI_HIGH)) {
-    result = PRI_HIGH;
-  } else if (!strncmp(priority, "normal", len) || (atoi(priority) == PRI_NORMAL)) {
-    result = PRI_NORMAL;
-  } else if (!strncmp(priority, "low", len) || (atoi(priority) == PRI_LOW)) {
-    result = PRI_LOW;
-  } else if (!strncmp(priority, "verylow", len) || (atoi(priority) <= PRI_VERYLOW)) {
-    result = PRI_VERYLOW;
+  int is_digit = isdigit(priority[0]);
+
+  if (is_digit) {
+    int value = atoi(priority);
+    result = (value >= PRI_URGENT) ? PRI_URGENT :
+             (value <= PRI_VERYLOW) ? PRI_VERYLOW :
+             (enum Priority) value;
   } else {
-    fprintf(stderr, "Can't parse priority '%s'\n", priority);
-    *error = -1;
-    return PRI_NORMAL; /* bogus */
+    int len = strlen(priority);
+    if (!strncmp(priority, "urgent", len)) {
+      result = PRI_URGENT;
+    } else if (!strncmp(priority, "high", len)) {
+      result = PRI_HIGH;
+    } else if (!strncmp(priority, "normal", len)) {
+      result = PRI_NORMAL;
+    } else if (!strncmp(priority, "low", len)) {
+      result = PRI_LOW;
+    } else if (!strncmp(priority, "verylow", len)) {
+      result = PRI_VERYLOW;
+    } else {
+      fprintf(stderr, "Can't parse priority '%s'\n", priority);
+      *error = -1;
+      return PRI_UNKNOWN; /* bogus */
+    }
   }
-  
+
   *error = 0;
   return result;
 }
