@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Makefile.in,v 1.2 2003/05/08 22:37:37 richard Exp $
+#  $Header: /cvs/src/tdl/Makefile.in,v 1.3 2003/05/09 22:50:37 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -40,7 +40,7 @@ DESTDIR=
 prefix=$(DESTDIR)@prefix@
 bindir=$(DESTDIR)@bindir@
 mandir=$(DESTDIR)@mandir@
-man1dir=$(DESTDIR)@man1dir@
+man1dir=$(mandir)/man1
 
 #######################################################################
 # YOU SHOULD NOT NEED TO CHANGE ANYTHING BELOW HERE
