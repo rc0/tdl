@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/done.c,v 1.5 2001/10/14 22:08:28 richard Exp $
+   $Header: /cvs/src/tdl/done.c,v 1.6 2001/10/20 22:06:20 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -81,6 +81,45 @@ void process_done(char **x)/*{{{*/
    
   mark_done_from_bottom_up(&top, done_time);
 
+}
+/*}}}*/
+
+static void undo_descendents(struct node *y)/*{{{*/
+{
+  struct node *c;
+  for (c = y->kids.next; c != (struct node *) &y->kids; c = c->chain.next) {
+    c->done = 0;
+    if (has_kids(c)) {
+      undo_descendents(c);
+    }
+  }
+}
+/*}}}*/
+static void undo_ancestors(struct node *y)/*{{{*/
+{
+  struct node *parent;
+  parent = y->parent;
+  while (parent) {
+    parent->done = 0;
+    parent = parent->parent;
+  }
+}
+/*}}}*/
+void process_undo(char **x)/*{{{*/
+{
+  struct node *n;
+  int do_descendents;
+
+  while (*x) {
+    do_descendents = include_descendents(*x); /* May modify *x */
+    n = lookup_node(*x, 0, NULL);
+    n->done = 0;
+    undo_ancestors(n);
+    if (do_descendents) {
+      undo_descendents(n);
+    }
+    x++;
+  }
 }
 /*}}}*/
 

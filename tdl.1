@@ -378,6 +378,20 @@ will list all tasks completed between 2 and 1 weeks ago.
 .ce 1
 --ooOOoo--
 .PP
+.B tdl undo
+.I index_of_entry_to_undo ...
+.PP
+This command cancels the effect of the
+.B done
+command for one or more entries, e.g. after they have been mistakenly marked as
+done.
+.PP
+If the string "..." is appended to an index, it means that entry and all its
+descendents.  This provides a quick way to re-open a whole sub-tree of tasks.
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl usage
 .PP
 Same as

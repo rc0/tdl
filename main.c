@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.11 2001/10/20 21:25:05 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.12 2001/10/20 22:06:20 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -202,6 +202,8 @@ static void usage(void)/*{{{*/
           "tdl [-q] done [@<datespec>] <entry_index>[...] ...\n"
           "tdld [-q]     [@<datespec>] <entry_index>[...] ...\n"
           "   Mark 1 or more entries as done\n\n"
+          "tdl [-q] undo <entry_index>[...] ...\n"
+          "   Mark 1 or more entries as not done (cancel effect of 'done')\n\n"
           "tdl[-q]  remove <entry_index>[...] ...\n"
           "   Remove 1 or more entries from the database\n\n"
           "tdl [-q] above  <index_to_insert_above> <index_to_move> ...\n"
@@ -345,6 +347,9 @@ int main (int argc, char **argv)
       dirty = 1;
     } else if (!strcmp(argv[1], "done")) {
       process_done(argv + 2);
+      dirty = 1;
+    } else if (!strcmp(argv[1], "undo")) {
+      process_undo(argv + 2);
       dirty = 1;
     } else if (is_create_command) {
       process_create(argv + 2);
