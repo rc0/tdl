@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.3 2001/10/07 22:44:46 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.4 2001/10/14 21:37:28 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -174,6 +174,7 @@ int has_kids(struct node *x)/*{{{*/
 struct node *new_node(void)/*{{{*/
 {
   struct node *result = new (struct node);
+  result->parent = NULL;
   result->text = NULL;
   result->priority = PRI_NORMAL;
   result->arrived = result->required_by = result->done = 0U;
