@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Makefile.in,v 1.4 2003/05/14 23:48:46 richard Exp $
+#  $Header: /cvs/src/tdl/Makefile.in,v 1.5 2003/05/14 23:51:52 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -107,5 +107,5 @@ tdl.pdf : tdl.texi
 
 # Using cvs2cl.pl version 2.48
 ChangeLog:
-	cvs2cl -r -b -T
+	cvs2cl -r -b -T --show-dead
 
