@@ -1,8 +1,8 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.15 2001/10/29 22:20:28 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.16 2002/04/29 21:38:46 richard Exp $
   
    tdl - A console program for managing to-do lists
-   Copyright (C) 2001  Richard P. Curnow
+   Copyright (C) 2001,2002  Richard P. Curnow
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@ static char *executable_name(char *argv0)/*{{{*/
 static void usage(void)/*{{{*/
 {
   fprintf(stderr,
-          "tdl, Copyright (C) 2001 Richard P. Curnow\n"
+          "tdl, Copyright (C) 2001,2002 Richard P. Curnow\n"
           "tdl comes with ABSOLUTELY NO WARRANTY.\n"
           "This is free software, and you are welcome to redistribute it\n"
           "under certain conditions; see the GNU General Public License for details.\n\n");
@@ -194,11 +194,13 @@ static void usage(void)/*{{{*/
           "tdl [-q] log [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
           "tdlg [-q]    [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
           "   Add a new entry to the database, mark it done as well\n\n"
-          "tdl [-q] list [-v] [-a] [<parent_index>...]\n"
-          "tdll [-q]     [-v] [-a] [<min-priority>] [<parent_index>...]\n"
+          "tdl [-q] list [-v] [-a] [-m] [-1..9] [<parent_index>...]\n"
+          "tdll [-q]     [-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>...]\n"
           "   List entries in database (default from top node)\n"
           "   -v : verbose (show dates, priorities etc)\n"
-          "   -a : show all entries, including 'done' ones\n\n"
+          "   -a : show all entries, including 'done' ones\n"
+          "   -m : don't use colours (monochrome)\n"
+          "   -1,-2,..,-9 : summarise (and don't show) entries below this depth\n\n"
           "tdl [-q] done [@<datespec>] <entry_index>[...] ...\n"
           "tdld [-q]     [@<datespec>] <entry_index>[...] ...\n"
           "   Mark 1 or more entries as done\n\n"
