@@ -1,8 +1,8 @@
 /*
-   $Header: /cvs/src/tdl/narrow.c,v 1.2 2003/04/04 06:55:48 richard Exp $
+   $Header: /cvs/src/tdl/narrow.c,v 1.2.2.1 2004/01/07 00:09:05 richard Exp $
   
    tdl - A console program for managing to-do lists
-   Copyright (C) 2001-2003  Richard P. Curnow
+   Copyright (C) 2001-2004  Richard P. Curnow
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by

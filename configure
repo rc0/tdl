@@ -1,13 +1,13 @@
 #!/bin/sh
 #########################################################################
 #
-# $Id: configure,v 1.5.2.1 2004/01/07 00:02:26 richard Exp $
+# $Id: configure,v 1.5.2.2 2004/01/07 00:09:05 richard Exp $
 #
 # =======================================================================
 #
 # tdl - A console program for managing to-do lists
 #
-# Copyright (C) Richard P. Curnow  2003
+# Copyright (C) Richard P. Curnow  2003-2004
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of version 2 of the GNU General Public License as

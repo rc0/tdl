@@ -21,7 +21,7 @@
 @author Richard P. Curnow
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2001-2003 Richard P. Curnow
+Copyright @copyright{} 2001-2004 Richard P. Curnow
 @end titlepage
 
 @contents
@@ -781,7 +781,7 @@ interactive readline interface or straight from the shell.
 
 @example
 tdl> help
-tdl, Copyright (C) 2001-2003 Richard P. Curnow
+tdl, Copyright (C) 2001-2004 Richard P. Curnow
 tdl comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
 under certain conditions; see the GNU General Public License for details.
