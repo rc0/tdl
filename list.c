@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.21 2003/07/17 22:35:04 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.22 2003/08/06 23:23:00 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -152,6 +152,11 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   
   if (options->monochrome) printf("%s", index_buffer);
   else                     printf("%s%s%s", GREEN, index_buffer, NORMAL);
+
+  if (y->name) {
+    if (options->monochrome) printf(" [%s]", y->name);
+    else                     printf(" %s[%s]%s", GREEN, y->name, NORMAL);
+  }
 
   if (summarise_kids && (n_kids > 0)) {
     if (options->monochrome) printf(" [%d/%d]", n_open_kids, n_kids);
@@ -501,9 +506,10 @@ int process_list(char **x)/*{{{*/
   nl = make_nodelist();
   
   while ((y = *x) != 0) {
-    /* An argument starting '1' or '+1' or '+-1' (or '-1' after '--') is
+    /* An argument starting '1' or '+1' or '+-1' (or '-1' after '--') or '.' is
      * treated as the path of the top node to show */
     if (isdigit(y[0]) ||
+        (y[0] == '.') ||
         (options_done && (y[0] == '-') && isdigit(y[1])) ||
         ((y[0] == '+') &&
          (isdigit(y[1]) ||

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.9 2003/07/17 22:35:04 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.10 2003/08/06 23:23:00 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -34,7 +34,21 @@ static int is_ancestor(struct node *anc, struct node *dec)/*{{{*/
   return 0;
 }
 /*}}}*/
-
+static int naming_collision(struct node *mover, struct links *insert_point)/*{{{*/
+{
+  struct node *y;
+  if (mover->name) {
+    for (y = insert_point->next; y != (struct node *) insert_point; y = y->chain.next) {
+      if (y->name && !strcmp(y->name, mover->name)) {
+        return 1;
+      }
+    }
+    return 0;
+  } else {
+    return 0;
+  }
+}
+/*}}}*/
 static void move_node(struct node *a, struct links **insert_point, /*{{{*/
                       struct node *insert_parent, int below_not_above,
                       int do_descendents)
@@ -126,6 +140,10 @@ static int process_move_internal(char **x, int below_not_above, int into_parent)
     if (is_ancestor(a->node, insert_parent)) {
       char *ident = get_ident(a->node);
       fprintf(stderr, "Can't re-parent entry %s onto a descendent of itself\n", ident);
+      free(ident);
+    } else if (naming_collision(a->node, insert_point)) {
+      char *ident = get_ident(a->node);
+      fprintf(stderr, "Can't re-parent entry %s : it's name will clash with another child of the new parent\n", ident);
       free(ident);
     } else {
       move_node(a->node, &insert_point, 

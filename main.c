@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.41 2003/07/17 22:35:04 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.42 2003/08/06 23:23:00 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -33,6 +33,9 @@
 /* The name of the database file (in whichever directory it may be) */
 #define DBNAME ".tdldb"
 
+/* Create new databases using v2 format */
+#define DEFAULT_DB_VERSION 2
+
 /* Set if db doesn't exist in this directory */
 static char *current_database_path = NULL;
 
@@ -41,6 +44,9 @@ struct links top;
 
 /* Flag for whether data is actually loaded yet */
 static int is_loaded = 0;
+
+/* Version of working database */
+static int current_db_version = 0;
 
 /* Flag if currently loaded database has been changed and needs writing back to
  * the filesystem */
@@ -178,13 +184,14 @@ static void load_database(char *path) /*{{{*/
   if (in) {
     /* Database may not exist, e.g. if the program has never been run before.
        */
-    read_database(in, &top);
+    read_database(in, &top, &current_db_version);
     fclose(in);
     is_loaded = 1;
   } else {
     if (is_noisy) {
       fprintf(stderr, "warning: no database found above this directory\n");
     }
+    current_db_version = DEFAULT_DB_VERSION;
   }
 }
 /*}}}*/
@@ -243,7 +250,7 @@ static void save_database(char *path)/*{{{*/
       fprintf(stderr, "Cannot open database %s for writing\n", path);
       exit(1);
     }
-    write_database(out, &top);
+    write_database(out, &top, current_db_version);
     fclose(out);
   }
   currently_dirty = 0;
@@ -295,6 +302,7 @@ static char *get_version(void)/*{{{*/
 static char desc_above[] = "Move entries above (before) another entry";
 static char desc_add[] = "Add a new entry to the database";
 static char desc_after[] = "Move entries after (below) another entry";
+static char desc_anon[] = "Remove the name from an entry";
 static char desc_before[] = "Move entries before (above) another entry";
 static char desc_below[] = "Move entries below (after) another entry";
 static char desc_clone[] = "Make deep copy of one or more entries";
@@ -312,6 +320,7 @@ static char desc_ignore[] = "Postpone or partially remove 1 or more entries";
 static char desc_into[] = "Move entries to end of new parent";
 static char desc_list[] = "List entries in database (default from top node)";
 static char desc_log[] = "Add a new entry to the database, mark it done as well";
+static char desc_name[] = "Give a symbolic name to an entry";
 static char desc_narrow[] = "Restrict actions to part of the database";
 static char desc_open[] = "Move one or more entries out of postponed/deferred state";
 static char desc_postpone[] = "Make one or more entries postponed indefinitely";
@@ -333,6 +342,7 @@ static char desc_widen[] = "Widen the part of the database to which actions appl
 static char synop_above[] = "<index_to_insert_above> <index_to_move> ...";
 static char synop_add[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_text>";
 static char synop_after[] = "<index_to_insert_below> <index_to_move> ...";
+static char synop_anon[] = "<index_to_anonymise>";
 static char synop_before[] = "<index_to_insert_above> <index_to_move> ...";
 static char synop_below[] = "<index_to_insert_below> <index_to_move> ...";
 static char synop_clone[] = "<index_to_clone> ...";
@@ -356,6 +366,7 @@ static char synop_list[] = "[-v] [-a] [-p] [-m] [-1..9] [<min-priority>] [<paren
                            "-1,-2,..,-9        : summarise (and don't show) entries below this depth\n"
                            "<search_condition> : word to match on";
 static char synop_log[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_text>";
+static char synop_name[] = "<index_to_name> <name>";
 static char synop_narrow[] = "<entry_index>";
 static char synop_open[] = "<entry_index>[...] ...";
 static char synop_postpone[] = "<entry_index>[...] ...";
@@ -490,6 +501,7 @@ struct command cmds[] = {/*{{{*/
   {"above",    NULL,   process_above,    desc_above,   synop_above,   NULL,              1, 1, 2, 1, 1},
   {"add",      "tdla", process_add,      desc_add,     synop_add,     NULL,              1, 1, 2, 1, 1},
   {"after",    NULL,   process_below,    desc_after,   synop_after,   NULL,              1, 1, 2, 1, 1},
+  {"anon",     NULL,   process_anon,     desc_anon,    synop_anon,    NULL,              1, 1, 2, 1, 1},
   {"before",   NULL,   process_above,    desc_before,  synop_before,  NULL,              1, 1, 3, 1, 1},
   {"below",    NULL,   process_below,    desc_below,   synop_below,   NULL,              1, 1, 3, 1, 1},
   {"clone",    NULL,   process_clone,    desc_clone,   synop_clone,   NULL,              1, 1, 2, 1, 1}, 
@@ -508,7 +520,8 @@ struct command cmds[] = {/*{{{*/
   {"list",     "tdll", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
   {"ls",       NULL,   process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
   {"log",      "tdlg", process_log,      desc_log,     synop_log,     NULL,              1, 1, 2, 1, 1},
-  {"narrow",   NULL,   process_narrow,   desc_narrow,  synop_narrow,  NULL,              0, 1, 1, 1, 0},
+  {"name",     NULL,   process_name,     desc_name,    synop_name,    NULL,              1, 1, 3, 1, 1},
+  {"narrow",   NULL,   process_narrow,   desc_narrow,  synop_narrow,  NULL,              0, 1, 3, 1, 0},
   {"open",     NULL,   process_open,     desc_open,    synop_open,    complete_open,     1, 1, 1, 1, 1},
   {"postpone", NULL,   process_postpone, desc_postpone,synop_postpone,complete_postpone, 1, 1, 2, 1, 1},
   {"priority", NULL,   process_priority, desc_priority,synop_priority,complete_priority, 1, 1, 2, 1, 1},

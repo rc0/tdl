@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/impexp.c,v 1.7 2003/07/17 22:35:04 richard Exp $
+   $Header: /cvs/src/tdl/impexp.c,v 1.8 2003/08/06 23:23:00 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -93,7 +93,8 @@ int process_export(char **x)/*{{{*/
     return -2;
   }
 
-  write_database(out, &data);
+  /* TODO : export v2 for now, eventually need a way to export v1 as well. */
+  write_database(out, &data, 2);
     
   fclose(out);
   free_database(&data);
@@ -109,6 +110,7 @@ int process_import(char **x)/*{{{*/
   struct node *n, *nn;
   int argc;
   int result;
+  int loaded_db_version;
 
   argc = count_args(x);
   if (argc < 1) {
@@ -123,7 +125,8 @@ int process_import(char **x)/*{{{*/
     return -2;
   }
 
-  result = read_database(in, &data);
+  /* Don't care what version the loaded db is using. */
+  result = read_database(in, &data, &loaded_db_version);
   fclose(in);
 
   if (!result) {

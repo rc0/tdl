@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.13 2003/05/14 23:31:51 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.14 2003/08/06 23:23:00 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -502,10 +502,21 @@ static char *make_prompt(void)/*{{{*/
   char *result;
   if (narrow_prefix) {
     int length;
-    length = strlen(narrow_prefix) + 8;
+    int top_len;
+    struct node *narrow_top = get_narrow_top();
+    if (narrow_top->name) {
+      top_len = strlen(narrow_top->name);
+    } else {
+      top_len = 0;
+    }
+    length = strlen(narrow_prefix) + top_len + 10;
     result = new_array(char, length);
     strcpy(result, "tdl[");
     strcat(result, narrow_prefix);
+    if (top_len) {
+      strcat(result, "/");
+      strcat(result, narrow_top->name);
+    }
     strcat(result, "]> ");
   } else {
     result = new_string("tdl> ");

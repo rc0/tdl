@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.9 2003/07/17 22:35:04 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.10 2003/08/06 23:23:00 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -72,57 +72,89 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
   ncomp = 1;
   if (parent) *parent = NULL;
 
+  /* If path is not ".", but it starts with a ".", ignore that character.  This
+     allows named nodes to be accessed in contexts where a test is made on the
+     first character of an argument to decide whether it's a path or something
+     else. */
+  if (p[0] == '.') p++;
+
   while (*p) {
-    n = sscanf(p, "%d%n", &idx, &nc);
-    if (n != 1) {
-      fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
-      return NULL;
-    }
-    p += nc;
-    
-    if (idx > 0) {
-      direction = 1;
-      aidx = idx;
-    } else if (idx < 0) {
-      direction = 0;
-      aidx = -idx;
-    } else {
-      if (allow_zero_index) {
-        if (*p) {
-          fprintf(stderr, "Zero index only allowed as last component\n");
-          return NULL;
-        } else {
-          /* This is a special cheat to allow inserting entries at
-             the start or end of a chain for the 'above' and
-             'below' commands */
-          return (struct node *) x;
-        }
+    if (isdigit(p[0])) {
+      n = sscanf(p, "%d%n", &idx, &nc);
+      if (n != 1) {
+        fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
+        return NULL;
+      }
+      p += nc;
+
+      if (idx > 0) {
+        direction = 1;
+        aidx = idx;
+      } else if (idx < 0) {
+        direction = 0;
+        aidx = -idx;
       } else {
-        fprintf(stderr, "Zero in index not allowed\n");
+        if (allow_zero_index) {
+          if (*p) {
+            fprintf(stderr, "Zero index only allowed as last component\n");
+            return NULL;
+          } else {
+            /* This is a special cheat to allow inserting entries at
+               the start or end of a chain for the 'above' and
+               'below' commands */
+            return (struct node *) x;
+          }
+        } else {
+          fprintf(stderr, "Zero in index not allowed\n");
+          return NULL;
+        }
+      }
+
+      if (x->next == (struct node *) x) {
+        fprintf(stderr, "Path [%s] doesn't exist - tree not that deep\n", path);
         return NULL;
       }
-    }
-      
-    if (x->next == (struct node *) x) {
-      fprintf(stderr, "Path [%s] doesn't exist - tree not that deep\n", path);
-      return NULL;
-    }
 
-    comp10 = ncomp % 10;
+      comp10 = ncomp % 10;
 
-    for (y = direction ? x->next : x->prev, tidx = aidx; --tidx;) {
-      
-      y = direction ? y->chain.next : y->chain.prev;
+      for (y = direction ? x->next : x->prev, tidx = aidx; --tidx;) {
 
-      if (y == (struct node *) x) {
-        fprintf(stderr, "Can't find entry %d for %d%s component of path %s\n",
-                idx, ncomp,
-                (comp10 == 1) ? "st" :
-                (comp10 == 2) ? "nd" : 
-                (comp10 == 3) ? "rd" : "th",
-                path);
-        return NULL;
+        y = direction ? y->chain.next : y->chain.prev;
+
+        if (y == (struct node *) x) {
+          fprintf(stderr, "Can't find entry %d for %d%s component of path %s\n",
+              idx, ncomp,
+              (comp10 == 1) ? "st" :
+              (comp10 == 2) ? "nd" : 
+              (comp10 == 3) ? "rd" : "th",
+              path);
+          return NULL;
+        }
       }
+    } else {
+      /* Name lookup. */
+      char *q;
+      struct node *result = NULL;
+      q = strchr(p, '.');
+      if (q) *q = '\0';
+      for (y = x->next; y != (struct node *) x; y = y->chain.next) {
+        if (y->name && !strcmp(y->name, p)) {
+          result = y;
+          break;
+        }
+      }
+      if (!result) {
+        fprintf(stderr, "No node named [%s] found at %d%s component of path\n",
+                q, ncomp, "th");
+      }
+
+      if (q) *q = '.'; /* restore */
+      if (!result) return result;
+      if (q) p = q;
+      else {
+        while (*p) p++;
+      }
+
     }
 
     if (*p == '.') {
@@ -162,56 +194,74 @@ static struct node *lookup_one_node(struct links *x, const char *s, const char *
   int len = e - s;
   int index;
   struct node *result;
+  char *p;
   
   temp = new_array(char, len + 1);
   strncpy(temp, s, len);
   temp[len] = 0;
+  p = temp;
+  if (*p == '.') p++;
   /* Eventually this could be more sophisticated */
-  if (sscanf(temp, "%d", &index) != 1) {
-    fprintf(stderr, "Could not extract index from <%s>\n", temp);
-    result = NULL;
-  } else {
-    int aindex, direction, tindex;
-    struct node *y;
-
-    if (x->next == (struct node *)x) {
-      fprintf(stderr, "Tree not that deep\n");
+  if (isdigit(*p)) {
+    if (sscanf(p, "%d", &index) != 1) {
+      fprintf(stderr, "Could not extract index from <%s>\n", p);
       result = NULL;
-      goto out;
-    }
-
-    if (index > 0) {
-      direction = 1;
-      aindex = index;
-    } else if (index < 0) {
-      direction = 0;
-      aindex = -index;
     } else {
-      switch (wl) {
-        case WL_BOTH:
-          fprintf(stderr, "Zero index not allowed\n");
-          result = NULL;
-          goto out;
-        case WL_START:
-          result = x->next;
-          goto out;
-        case WL_END:
-          result = x->prev;
-          goto out;
-      }
-    }
+      int aindex, direction, tindex;
+      struct node *y;
 
-    for (y = direction ? x->next : x->prev, tindex = aindex; --tindex; ) {
-      y = direction ? y->chain.next : y->chain.prev;
-      if (y == (struct node *) x) {
-        fprintf(stderr, "Can't find entry %d for XXth component of path ...\n",
-            index);
+      if (x->next == (struct node *)x) {
+        fprintf(stderr, "Tree not that deep\n");
         result = NULL;
         goto out;
       }
-    }
 
-    result = y;
+      if (index > 0) {
+        direction = 1;
+        aindex = index;
+      } else if (index < 0) {
+        direction = 0;
+        aindex = -index;
+      } else {
+        switch (wl) {
+          case WL_BOTH:
+            fprintf(stderr, "Zero index not allowed\n");
+            result = NULL;
+            goto out;
+          case WL_START:
+            result = x->next;
+            goto out;
+          case WL_END:
+            result = x->prev;
+            goto out;
+        }
+      }
+
+      for (y = direction ? x->next : x->prev, tindex = aindex; --tindex; ) {
+        y = direction ? y->chain.next : y->chain.prev;
+        if (y == (struct node *) x) {
+          fprintf(stderr, "Can't find entry %d for XXth component of path ...\n",
+              index);
+          result = NULL;
+          goto out;
+        }
+      }
+
+      result = y;
+    }
+  } else {
+    /* Name lookup */
+    struct node *y;
+    for (y = x->next; y != (struct node *) x; y = y->chain.next) {
+      if (y->name && !strcmp(y->name, p)) {
+        result = y;
+        break;
+      }
+    }
+    if (!result) {
+      fprintf(stderr, "foobar No node named [%s] found at XX%s component of path\n",
+              p, "th");
+    }
   }
 
 out: 
@@ -284,36 +334,62 @@ static struct links *lookup_non_final(struct links *x, const char *p, const char
      starting at 'p'. */
   int idx, aidx, tidx, direction;
   struct node *y;
+
+  if (*p == '.') p++;
   
-  if (sscanf(p, "%d", &idx) != 1) {
-    fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
-    return NULL;
-  }
-  if (idx > 0) {
-    direction = 1;
-    aidx = idx;
-  } else if (idx < 0) {
-    direction = 0;
-    aidx = -idx;
-  } else {
-    fprintf(stderr, "Zero index not allowed\n");
-    return NULL;
-  }
-
-  if (x->next == (struct node *)x) {
-    fprintf(stderr, "Tree not that deep\n");
-    return NULL;
-  }
-
-  for (y = direction ? x->next : x->prev, tidx = aidx; --tidx; ) {
-    y = direction ? y->chain.next : y->chain.prev;
-    if (y == (struct node *) x) {
-      fprintf(stderr, "Can't find entry %d for XXth component of path ...\n",
-          idx);
+  if (isdigit(*p)) {
+    if (sscanf(p, "%d", &idx) != 1) {
+      fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
       return NULL;
     }
+    if (idx > 0) {
+      direction = 1;
+      aidx = idx;
+    } else if (idx < 0) {
+      direction = 0;
+      aidx = -idx;
+    } else {
+      fprintf(stderr, "Zero index not allowed\n");
+      return NULL;
+    }
+
+    if (x->next == (struct node *)x) {
+      fprintf(stderr, "Tree not that deep\n");
+      return NULL;
+    }
+
+    for (y = direction ? x->next : x->prev, tidx = aidx; --tidx; ) {
+      y = direction ? y->chain.next : y->chain.prev;
+      if (y == (struct node *) x) {
+        fprintf(stderr, "Can't find entry %d for XXth component of path ...\n",
+            idx);
+        return NULL;
+      }
+    }
+    return &(y->kids);
+  } else {
+    struct node *result = NULL;
+    const char *q;
+    if (dotpos) {
+      q = dotpos;
+    } else {
+      q = p;
+      while (*q) q++;
+    }
+    
+    for (y = x->next; y != (struct node *) x; y = y->chain.next) {
+      if (y->name && !strncmp(y->name, p, q-p)) {
+        result = y;
+        break;
+      }
+    }
+    if (!result) {
+      fprintf(stderr, "No node named [%s] found at XX%s component of path\n",
+              p, "th");
+    }
+
+    return &(result->kids);
   }
-  return &(y->kids);
 
 }
 /*}}}*/
@@ -344,7 +420,14 @@ void lookup_nodes(const char *path, struct nodelist *list, int flag)/*{{{*/
   p = path;
   do {
     const char *dotpos;
-    dotpos = strchr(p, '.');
+    /* Initial dot is OK (to allow a named node to be used in a context where a
+     * command looks for a digit or a letter to discriminate argument types).
+     * */
+    if ((p == path) && (*p == '.')) {
+      dotpos = strchr(p+1, '.');
+    } else {
+      dotpos = strchr(p, '.');
+    }
     if (!dotpos) {
       /* Final component */
       lookup_final(x, p, list, flag);
@@ -451,10 +534,12 @@ struct node *new_node(void)/*{{{*/
   struct node *result = new (struct node);
   result->parent = NULL;
   result->text = NULL;
+  result->name = NULL;
   result->priority = PRI_NORMAL;
   result->arrived = result->required_by = result->done = 0U;
   result->kids.next = result->kids.prev = (struct node *) &result->kids;
   result->chain.next = result->chain.prev = (struct node *) &result->chain;
+  result->notes.next = result->notes.prev = &result->notes;
   return result;
 }
 /*}}}*/

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.23 2003/07/17 22:35:04 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.24 2003/08/06 23:23:00 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2002  Richard P. Curnow
@@ -49,13 +49,22 @@ struct links {
   struct node *prev;
 };
 
+struct note {
+  struct note *next;
+  struct note *prev;
+  char *text;
+};
+
 struct node {
   struct links chain;
   struct links kids;
   char *text;
+  char *name;
   struct node *parent;
+  struct note notes;
   enum Priority priority;
-  long arrived;
+  long entered;  /* Time node was originally entered (immutable after creation) */
+  long arrived;  /* TODO : rename - time node became open */
   long required_by;
   long done;
   char *scratch; /* For functions to attach stuff to nodes */
@@ -105,8 +114,8 @@ extern int n_cmds;
 /* Function prototypes. */
 
 /* In io.c */
-int read_database(FILE *in, struct links *to);
-void write_database(FILE *out, struct links *from);
+int read_database(FILE *in, struct links *to, int *read_version);
+void write_database(FILE *out, struct links *from, int version);
 struct node *new_node(void);
 void append_node(struct node *n, struct links *l);
 void append_child(struct node *child, struct node *parent);
@@ -195,6 +204,10 @@ char *get_narrow_prefix(void);
 int process_narrow(char **x);
 int process_widen(char **x);
 char *get_ident(struct node *);
+
+/* In name.c */
+int process_anon(char **x);
+int process_name(char **x);
 
 #endif /* TDL_H */
           
