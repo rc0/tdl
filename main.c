@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.2 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.3 2001/08/20 22:41:29 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -22,6 +22,7 @@
 #include "tdl.h"
 #include <string.h>
 #include <errno.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -201,7 +202,12 @@ static char *get_version(void)/*{{{*/
   if (!*p) {
     strcpy(buffer, "development version");
   } else {
-    for (q=buffer; *p && *p != '$';) *q++ = *p++;
+    for (q=buffer; *p && *p != '$'; p++) {
+      if (!isspace(*p)) {
+        if (*p == '_') *q++ = '.';
+        else *q++ = *p;
+      }
+    }
     *q = 0;
   }
 
