@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/report.c,v 1.3 2002/04/29 21:38:16 richard Exp $
+   $Header: /cvs/src/tdl/report.c,v 1.4 2002/05/09 23:07:05 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -68,7 +68,7 @@ static void print_report(struct links *x, int indent)/*{{{*/
   }
 }
 /*}}}*/
-void process_report(char **x)/*{{{*/
+int process_report(char **x)/*{{{*/
 {
   time_t now, start, end;
   int argc;
@@ -99,5 +99,6 @@ void process_report(char **x)/*{{{*/
   clear_flags(&top);
   mark_nodes_done_since(&top, start, end);
   print_report(&top, 0);
+  return 0;
 }
 /*}}}*/

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.5 2001/10/29 22:03:42 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.6 2002/05/09 23:07:06 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include "tdl.h"
 
-void process_add(char **x, int set_done)/*{{{*/
+int process_add(char **x, int set_done)/*{{{*/
 {
   /* Expect 1 argument, the string to add.  Need other options at some point. */
   time_t insert_time;
@@ -34,6 +34,7 @@ void process_add(char **x, int set_done)/*{{{*/
   enum Priority priority = PRI_NORMAL;
   int set_priority = 0;
   char *x0;
+  int error;
 
   insert_time = time(NULL);
 
@@ -53,25 +54,28 @@ void process_add(char **x, int set_done)/*{{{*/
       if (isdigit(x0[0]) || (x0[0] == '-') || (x0[0] == '+')) {
         parent_path = x[0];
       } else {
-        priority = parse_priority(x0);
+        priority = parse_priority(x0, &error);
+        if (error < 0) return error;
         set_priority = 1;
       }
       break;
     case 3:
       text = x[2];
-      priority = parse_priority(x[1]);
+      priority = parse_priority(x[1], &error);
+      if (error < 0) return error;
       set_priority = 1;
       parent_path = x[0];
       break;
 
     default:
       fprintf(stderr, "Usage : add [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n");
-      exit(1);
+      return -1;
       break;
   }
 
   if (parent_path) {
     parent = lookup_node(parent_path, 0, NULL);
+    if (!parent) return -1;
   } else {
     parent = NULL;
   }
@@ -96,6 +100,7 @@ void process_add(char **x, int set_done)/*{{{*/
     }
   }
   
+  return 0;
 }
 /*}}}*/
 static void modify_tree_arrival_time(struct node *y, time_t new_time)/*{{{*/
@@ -109,7 +114,7 @@ static void modify_tree_arrival_time(struct node *y, time_t new_time)/*{{{*/
   }
 }
 /*}}}*/
-void process_edit(char **x) /*{{{*/
+int process_edit(char **x) /*{{{*/
 {
   int argc;
   struct node *n;
@@ -131,15 +136,16 @@ void process_edit(char **x) /*{{{*/
   
   if ((argc < 1) || (argc > 2)) {
     fprintf(stderr, "Usage: edit [@<datespec>] <path> [<new_text>]\n");
-    exit(1);
+    return -1;
   }
 
   do_descendents = include_descendents(*x); /* May modify *x */
   if (do_descendents && (argc == 2)) {
     fprintf(stderr, "You can't use '...' to modify the text for >1 entry at once\n");
-    exit(1);
+    return -1;
   }
   n = lookup_node(x[0], 0, NULL);
+  if (!n) return -1;
   if (argc == 2) {
     free(n->text);
     n->text = new_string(x[1]);
@@ -148,6 +154,6 @@ void process_edit(char **x) /*{{{*/
     n->arrived = new_insert_time;
     if (do_descendents) modify_tree_arrival_time(n, new_insert_time);
   }
-  return;
+  return 0;
 }
 /*}}}*/

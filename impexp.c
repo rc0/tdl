@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/impexp.c,v 1.1 2001/10/08 20:31:26 richard Exp $
+   $Header: /cvs/src/tdl/impexp.c,v 1.2 2002/05/09 23:07:05 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -43,7 +43,7 @@ static struct node *clone_node(struct node *x, struct node *parent)/*{{{*/
   return r;
 }
 /*}}}*/
-void process_export(char **x)/*{{{*/
+int process_export(char **x)/*{{{*/
 {
   FILE *out;
   char *filename;
@@ -54,7 +54,7 @@ void process_export(char **x)/*{{{*/
 
   if (argc < 3) {
     fprintf(stderr, "Need a filename and at least one index to write\n");
-    exit(2);
+    return -2;
   }
   
   filename = x[0];
@@ -65,6 +65,7 @@ void process_export(char **x)/*{{{*/
   for (i=1; i<argc; i++) {
     struct node *n, *nn;
     n = lookup_node(x[i], 0, NULL);
+    if (!n) return -1;
     nn = clone_node(n, NULL);
     prepend_node(nn, &data);
   }
@@ -72,43 +73,50 @@ void process_export(char **x)/*{{{*/
   out = fopen(filename, "wb");
   if (!out) {
     fprintf(stderr, "Could not open file %s for writing\n", filename);
-    exit(2);
+    return -2;
   }
 
   write_database(out, &data);
     
   fclose(out);
+  return 0;
 
 }
 /*}}}*/
-void process_import(char **x)/*{{{*/
+int process_import(char **x)/*{{{*/
 {
   char *filename;
   FILE *in;
   struct links data;
   struct node *n, *nn;
   int argc;
+  int result;
 
   argc = count_args(x);
   if (argc < 1) {
     fprintf(stderr, "Import requires a filename\n");
-    exit(2);
+    return -2;
   }
 
   filename = x[0];
   in = fopen(filename, "rb");
   if (!in) {
     fprintf(stderr, "Could not open file %s for input\n", filename);
-    exit(2);
+    return -2;
   }
 
-  read_database(in, &data);
+  result = read_database(in, &data);
   fclose(in);
 
-  for (n = data.next; n != (struct node *) &data; n = nn) {
-    nn = n->chain.next;
-    prepend_node(n, &top);
+  if (!result) {
+    /* read was OK */
+    for (n = data.next; n != (struct node *) &data; n = nn) {
+      nn = n->chain.next;
+      prepend_node(n, &top);
+    }
   }
+
+  return result;
 
 }
 /*}}}*/

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.4 2001/08/29 05:50:23 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.5 2002/05/09 23:07:05 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -35,7 +35,7 @@ static int is_ancestor(struct node *anc, struct node *dec)/*{{{*/
 }
 /*}}}*/
 
-void process_move(char **x, int below_not_above, int into_parent)/*{{{*/
+int process_move(char **x, int below_not_above, int into_parent)/*{{{*/
 {
   /* x is the argument list
    * below_not_above is true to insert below x[0], false to insert above
@@ -55,15 +55,17 @@ void process_move(char **x, int below_not_above, int into_parent)/*{{{*/
   if (argc < 2) {
     fprintf(stderr, "Usage: %s <index_to_insert_%s> <index_to_move> ...\n",
             option, option);
-    exit(1);
+    return -1;
   }
 
   n = argc - 1;
   if (into_parent) {
     insert_parent = lookup_node(x[0], 0, NULL);
+    if (!insert_parent) return -1;
     insert_point = &insert_parent->kids;
   } else {
     insert_point = (struct links *) lookup_node(x[0], 1, &insert_parent); /* Allow final component to be zero */
+    if (!insert_point) return -1;
   }
   table = new_array(struct node *, n);
   x++;
@@ -72,11 +74,12 @@ void process_move(char **x, int below_not_above, int into_parent)/*{{{*/
      could change in mid-lookup. */
   for (i=0; i<n; i++) {
     table[i] = lookup_node(x[i], 0, NULL); /* Don't allow zero for this */
+    if (!table[i]) return -1; /* memory leak */
 
     /* Check for an attempt to move a node onto one of its own descendents */
     if (is_ancestor(table[i], insert_parent)) {
       fprintf(stderr, "Can't re-parent entry %s onto a descendent of itself\n", x[i]);
-      exit(1);
+      return -1;
     }
   }
 
@@ -103,5 +106,6 @@ void process_move(char **x, int below_not_above, int into_parent)/*{{{*/
     }
   }
 
+  return 0;
 }
 /*}}}*/

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/io.c,v 1.4 2001/10/07 22:44:46 richard Exp $
+   $Header: /cvs/src/tdl/io.c,v 1.5 2002/05/09 23:07:05 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -132,7 +132,7 @@ static struct node *read_node(FILE *in)
 
 /*}}}*/
 /*{{{  void read_database(FILE *in)*/
-void read_database(FILE *in, struct links *to)
+int read_database(FILE *in, struct links *to)
 {
   int n_kids, i;
   unsigned int magic;
@@ -144,16 +144,15 @@ void read_database(FILE *in, struct links *to)
   to->prev = (struct node *) to;
   to->next = (struct node *) to;
   
-
   if (feof(in)) {
     fprintf(stderr, "Can't read anything from database\n");
-    exit(1);
+    return -1;
   }
 
   magic = read_int(in);
   if (magic != MAGIC1) {
     fprintf(stderr, "Cannot parse database, wrong magic number\n");
-    exit(1);
+    return -1;
   }
   n_kids = read_int(in);
   for (i=0; i<n_kids; i++) {
@@ -161,6 +160,8 @@ void read_database(FILE *in, struct links *to)
     nn = read_node(in);
     prepend_node(nn, to);
   }
+
+  return 0;
 }
 
 /*}}}*/

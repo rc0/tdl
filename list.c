@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.10 2002/05/06 23:14:27 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.11 2002/05/09 23:07:05 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -211,7 +211,7 @@ static void list_chain(struct links *x, int indent, int depth, const struct list
   return;
 }
 /*}}}*/
-void process_list(char **x)/*{{{*/
+int process_list(char **x)/*{{{*/
 {
   struct list_options options;
   int options_done = 0;
@@ -242,6 +242,9 @@ void process_list(char **x)/*{{{*/
       
       struct node *n = lookup_node(y, 0, NULL);
       int summarise_kids;
+
+      if (!n) return -1;
+      
       any_paths = 1;
       index_buffer[0] = '\0';
       strcpy(index_buffer, y);
@@ -282,7 +285,9 @@ void process_list(char **x)/*{{{*/
         }
       }
     } else {
-      prio = parse_priority(y);
+      int error;
+      prio = parse_priority(y, &error);
+      if (error < 0) return error;
       prio_set = 1;
     }
 
@@ -293,5 +298,7 @@ void process_list(char **x)/*{{{*/
     index_buffer[0] = 0;
     list_chain(&top, 0, 0, &options, index_buffer, prio, now);
   }
+
+  return 0;
 }
 /*}}}*/

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.4 2001/10/14 21:37:28 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.5 2002/05/09 23:07:06 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -61,7 +61,7 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
     n = sscanf(p, "%d%n", &idx, &nc);
     if (n != 1) {
       fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
-      exit(1);
+      return NULL;
     }
     p += nc;
     
@@ -75,7 +75,7 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
       if (allow_zero_index) {
         if (*p) {
           fprintf(stderr, "Zero index only allowed as last component\n");
-          exit(1);
+          return NULL;
         } else {
           /* This is a special cheat to allow inserting entries at
              the start or end of a chain for the 'above' and
@@ -84,13 +84,13 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
         }
       } else {
         fprintf(stderr, "Zero in index not allowed\n");
-        exit(1);
+        return NULL;
       }
     }
       
     if (x->next == (struct node *) x) {
       fprintf(stderr, "Path [%s] doesn't exist - tree not that deep\n", path);
-      exit(1);
+      return NULL;
     }
 
     comp10 = ncomp % 10;
@@ -106,7 +106,7 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
                 (comp10 == 2) ? "nd" : 
                 (comp10 == 3) ? "rd" : "th",
                 path);
-        exit(1);
+        return NULL;
       }
     }
 
@@ -122,7 +122,7 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
   return y;
 }
 /*}}}*/
-enum Priority parse_priority(char *priority)/*{{{*/
+enum Priority parse_priority(char *priority, int *error)/*{{{*/
 {
   enum Priority result;
   int len = strlen(priority);
@@ -138,9 +138,11 @@ enum Priority parse_priority(char *priority)/*{{{*/
     result = PRI_VERYLOW;
   } else {
     fprintf(stderr, "Can't parse priority '%s'\n", priority);
-    exit(1);
+    *error = -1;
+    return PRI_NORMAL; /* bogus */
   }
   
+  *error = 0;
   return result;
 }
 /*}}}*/
