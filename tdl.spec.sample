@@ -3,7 +3,7 @@ Name: tdl
 Version: 1.1
 Release: 1
 Copyright: GPL
-Group: Applications/Text
+Group: Applications/Utilities
 Packager: A.N.Other
 BuildRoot: /home/a.n.other/rpm/root
 
@@ -18,11 +18,18 @@ tar xzvf $RPM_SOURCE_DIR/tdl-1.1.tar.gz
 %build
 cd tdl-1.1
 make CC=gcc CFLAGS=-O2 prefix=/usr
+make tdl.txt prefix=/usr
+make tdl.info prefix=/usr
+make tdl.html prefix=/usr
+make tdl.pdf prefix=/usr
 
 %install
 rm -rf $RPM_BUILD_ROOT
 cd $RPM_BUILD_DIR/tdl-1.1
 make install DESTDIR=$RPM_BUILD_ROOT prefix=/usr
+mkdir -p $RPM_BUILD_ROOT/usr/share/info
+cp tdl.info* $RPM_BUILD_ROOT/usr/share/info
+cp README tdl.txt tdl.html tdl.pdf ..
 
 %files
 /usr/bin/tdl
@@ -31,5 +38,8 @@ make install DESTDIR=$RPM_BUILD_ROOT prefix=/usr
 /usr/bin/tdld
 /usr/bin/tdll
 /usr/man/man1/tdl.1.gz
-
+%doc README
+%doc tdl.txt
+%doc tdl.html
+%doc tdl.pdf
 
