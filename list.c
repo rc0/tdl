@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.6 2001/10/14 22:08:28 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.7 2001/10/20 22:06:01 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -174,7 +174,8 @@ void process_list(char **x)/*{{{*/
   int monochrome = 0;
   char index_buffer[64];
   char *y;
-  enum Priority prio = PRI_NORMAL;
+  enum Priority prio = PRI_NORMAL, prio_to_use;
+  int prio_set = 0;
   time_t now = time(NULL);
 
   if (getenv("TDL_LIST_MONOCHROME") != 0) {
@@ -194,9 +195,11 @@ void process_list(char **x)/*{{{*/
       index_buffer[0] = '\0';
       strcpy(index_buffer, y);
       print_details(n, 0, verbose, all, monochrome, index_buffer, now);
-      list_chain(&n->kids, INDENT_TAB, verbose, all, monochrome, index_buffer, prio, now);
+      prio_to_use = (prio_set) ? prio : n->priority;
+      list_chain(&n->kids, INDENT_TAB, verbose, all, monochrome, index_buffer, prio_to_use, now);
     } else {
       prio = parse_priority(y);
+      prio_set = 1;
     }
 
     x++;
