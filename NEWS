@@ -1,5 +1,8 @@
 NEW IN VERSION 1.4
 
+- Add more intelligent configure script
+- Support rl_completion_matches (replaces completion_matches in newer readline
+  libraries)
 - Add "defer" command
 - Remove start-time editing from "edit" command
 - Bug fix : bad path expression with postpone used to segfault
@@ -96,4 +99,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.18 2003/04/18 22:38:46 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.19 2003/05/05 22:05:41 richard Exp $

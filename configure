@@ -1,8 +1,426 @@
 #!/bin/sh
+#########################################################################
+#
+# $Id: configure,v 1.2 2003/05/05 22:05:41 richard Exp $
+#
+# =======================================================================
+#
+# spill - segregated package install logical linker
+#
+# Copyright (C) Richard P. Curnow  2003
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+#
+# =======================================================================
 
-echo 'This program is not set up to use autoconf-style configure yet.'
-echo 'Please manually edit the Makefile and change $(prefix), $(CC)'
-echo 'and $(CFLAGS) to suit your personal requirements.  Then type'
-echo ''
-echo '    make'
-echo '    make install'
+if [ -f config.log ]; then rm -f config.log ; fi
+exec 5>config.log
+
+if [ "x${CC}" = "x" ]; then
+  MYCC="gcc"
+else
+  MYCC="${CC}"
+fi
+
+if [ "x${CFLAGS}" = "x" ]; then
+  MYCFLAGS="-O2 -Wall -g"
+else
+  MYCFLAGS="${CFLAGS}"
+fi
+
+# =======================================================================
+# Functions
+
+#{{{ cleanup
+cleanup () {
+  if [ -f docheck.c ]; then rm -f docheck.c ; fi
+  if [ -f docheck.o ]; then rm -f docheck.o ; fi
+  if [ -f docheck   ]; then rm -f docheck   ; fi
+  rm -rf docheck.c docheck.o docheck
+}
+#}}}
+
+#{{{ test_cc : basic compiler sanity check
+test_cc () {
+  printf "Testing whether your compiler \"$MYCC $MYCFLAGS\" works : "
+  cat >docheck.c <<EOF;
+#include <stdio.h>
+int main (int argc, char **argv)
+{
+  return 0;
+}
+EOF
+  ${MYCC} ${MYCFLAGS} -o docheck docheck.c 1>&5 2>&5
+  if [ $? -eq 0 ]
+  then
+    printf "it works\n"
+  else
+    printf "it doesn't work\n"
+    printf "Failed program was\n" 1>&5
+    cat docheck.c 1>&5
+    rm -f docheck.c docheck
+    exit 1
+  fi
+  cleanup
+}
+#}}}
+#{{{ test_readline_include
+test_readline_include () {
+  # Objective : test whether we can compile and link a program using
+  # readline, and if so how.
+
+  # As for includes, is it <readline.h> or <readline/readline.h>
+
+  # As for linking, do we need -ltermcap, -lncurses etc
+
+  printf "Testing what to include for readline : "
+  cat >docheck.c <<EOF;
+#include <stdio.h>
+#include <readline.h>
+int main (int argc, char **argv) {
+  printf("%s\n", rl_library_version);
+  return 0;
+}
+EOF
+  ${MYCC} ${MYCFLAGS} ${readline_inc_arg} -c -o docheck.o docheck.c 1>&5 2>&5
+  if [ $? -eq 0 ]; then
+    printf "<readline.h>\n"
+    READLINE_DEFINE="-DBARE_READLINE_H=1"
+  else
+    rm -f docheck.c
+    cat >docheck.c <<EOF;
+#include <stdio.h>
+#include <readline/readline.h>
+int main (int argc, char **argv) {
+  printf("%s\n", rl_library_version);
+  return 0;
+}
+EOF
+    ${MYCC} ${MYCFLAGS} ${readline_inc_arg} -c -o docheck.o docheck.c 1>&5 2>&5
+    if [ $? -eq 0 ]; then
+      printf "<readline/readline.h>\n"
+      READLINE_DEFINE="-DBARE_READLINE_H=0"
+    else
+      printf "FAILED\n"
+      printf "Can't include readline.h, giving up"
+      cleanup
+      exit 1
+    fi
+  fi
+
+  cleanup
+  return
+}
+
+#}}}
+#{{{ test_readline_lib
+test_readline_lib () {
+
+  printf "Testing extra libraries to link with readline : "
+  cat >docheck.c <<EOF;
+#include <stdio.h>
+#if BARE_READLINE_H
+#include <readline.h>
+#else
+#include <readline/readline.h>
+#endif
+
+int main (int argc, char **argv) {
+  printf("%s\n", rl_library_version);
+  return 0;
+}
+EOF
+  ${MYCC} ${MYCFLAGS} ${readline_inc_arg} ${READLINE_DEFINE} -c -o docheck.o docheck.c 1>&5 2>&5
+  if [ $? -ne 0 ]; then
+    printf "unexpected compile failure\n"
+    cleanup
+    exit 1
+  fi
+
+  # Now try to link it
+  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline 1>&5 2>&5
+  if [ $? -eq 0 ]; then
+    extra_readline_libs=""
+    printf "(none)\n"
+    cleanup
+    return
+  fi
+
+  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline -ltermcap 1>&5 2>&5
+  if [ $? -eq 0 ]; then
+    extra_readline_libs="-ltermcap"
+    printf -- "-ltermcap\n"
+    cleanup
+    return
+  fi
+
+  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline -lncurses 1>&5 2>&5
+  if [ $? -eq 0 ]; then
+    extra_readline_libs="-lncurses"
+    printf -- "-lncurses\n"
+    cleanup
+    return
+  fi
+
+  printf "can't link a readline program\n"
+  exit 1
+
+  cleanup
+}
+#}}}
+#{{{ test_completion_matches
+test_completion_matches () {
+  # See if the readline library has completion_matches()
+ 
+  printf "Testing for completion_matches in readline : "
+  cat >docheck.c <<EOF;
+#include <stdio.h>
+#if BARE_READLINE_H
+#include <readline.h>
+#else
+#include <readline/readline.h>
+#endif
+
+int main (int argc, char **argv) {
+  void *x = &completion_matches;
+  printf("%p\n", x);
+  return 0;
+}
+EOF
+  ${MYCC} ${MYCFLAGS} ${readline_inc_arg} ${READLINE_DEFINE} -c -o docheck.o docheck.c 1>&5 2>&5
+  if [ $? -ne 0 ]; then
+    printf "no\n";
+    has_completion_matches=no
+    cleanup
+    return
+  fi
+
+  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline ${extra_readline_libs} 1>&5 2>&5
+  if [ $? -eq 0 ]; then
+    printf "yes\n"
+    has_completion_matches=yes
+  else
+    printf "no\n"
+    has_completion_matches=no
+  fi
+  cleanup
+}
+#}}}
+#{{{ test_rl_completion_matches
+test_rl_completion_matches () {
+  # See if the readline library has completion_matches()
+ 
+  printf "Testing for rl_completion_matches in readline : "
+  cat >docheck.c <<EOF;
+#include <stdio.h>
+#if BARE_READLINE_H
+#include <readline.h>
+#else
+#include <readline/readline.h>
+#endif
+
+int main (int argc, char **argv) {
+  void *x = &rl_completion_matches;
+  printf("%p\n", x);
+  return 0;
+}
+EOF
+  ${MYCC} ${MYCFLAGS} ${readline_inc_arg} ${READLINE_DEFINE} -c -o docheck.o docheck.c 1>&5 2>&5
+  if [ $? -ne 0 ]; then
+    printf "no\n"
+    has_rl_completion_matches=no
+    cleanup
+    return
+  fi
+
+  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline ${extra_readline_libs} 1>&5 2>&5
+  if [ $? -eq 0 ]; then
+    printf "yes\n"
+    has_rl_completion_matches=yes
+  else
+    printf "no\n"
+    has_rl_completion_matches=no
+  fi
+  cleanup
+}
+#}}}
+
+#{{{ usage
+usage () {
+  cat <<EOF;
+\`configure' configures tdl to adapt to many kinds of systems.
+
+Usage: ./configure [OPTION]...
+
+Defaults for the options are specified in brackets.
+
+Configuration:
+  -h, --help              display this help and exit
+
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]
+
+By default, \`make install' will install all the files in
+\`/usr/local/bin', \`/usr/local/lib' etc.  You can specify
+an installation prefix other than \`/usr/local' using \`--prefix',
+for instance \`--prefix=$HOME'.
+
+For better control, use the options below.
+  --without-readline     Don't try to use GNU readline
+  --readline-dir=DIR     Specify parent of readline include and lib directories
+  --readline-inc-dir=DIR Specify where readline include directory is
+  --readline-lib-dir=DIR Specify where readline lib directory is
+
+Fine tuning of the installation directories:
+  --bindir=DIR           user executables [EPREFIX/bin]
+  --infodir=DIR          info documentation [PREFIX/info]
+  --mandir=DIR           man documentation [PREFIX/man]
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+
+Use these variables to override the choices made by \`configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+Report bugs to <rc@rc0.org.uk>.
+EOF
+}
+#}}}
+# =======================================================================
+
+# Defaults for variables
+PREFIX=/usr/local
+
+use_readline=yes
+bad_options=no
+
+# Parse options to configure
+for option
+do
+	case "$option" in
+
+  --prefix=* | --install-prefix=* )
+    PREFIX=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+  --bindir=* )
+    BINDIR=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+  --mandir=* )
+    MANDIR=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+  --infodir=* )
+    INFODIR=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+  --without-readline )
+    use_readline=no
+    ;;
+  --readline-dir=* )
+    readline_dir=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+  --readline-inc-dir=* )
+    readline_inc_dir=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+  --readline-lib-dir=* )
+    readline_lib_dir=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+  -h | --help )
+    usage
+    exit 1
+    ;;
+  * )
+    printf "Unrecognized option : $option\n"
+    bad_options=yes
+    ;;
+  esac
+done
+
+if [ ${bad_options} = yes ]; then
+  exit 1
+fi
+
+#{{{ process readline-related arguments
+if [ "$use_readline" = "yes" ]; then
+  if [ "x$readline_dir" != "x" ]; then
+    if [ "x$readline_inc_dir" = "x" ]; then
+      readline_inc_dir="${readline_dir}/include"
+    fi
+    if [ "x$readline_lib_dir" = "x" ]; then
+      readline_lib_dir="${readline_dir}/lib"
+    fi
+  fi
+
+  if [ "x$readline_inc_dir" != "x" ]; then
+    readline_inc_arg="-I${readline_inc_dir}"
+  else
+    readline_inc_arg=""
+  fi
+
+  if [ "x$readline_lib_dir" != "x" ]; then
+    readline_lib_arg="-L${readline_lib_dir} -R${readline_lib_dir}"
+  else
+    readline_lib_arg=""
+  fi
+fi
+#}}}
+
+test_cc
+if [ "${use_readline}" = "yes" ]; then test_readline_include      ; fi
+if [ "${use_readline}" = "yes" ]; then test_readline_lib          ; fi
+if [ "${use_readline}" = "yes" ]; then test_completion_matches    ; fi
+if [ "${use_readline}" = "yes" ]; then test_rl_completion_matches ; fi
+
+case "${use_readline}-${has_rl_completion_matches}-${has_completion_matches}" in
+  yes-yes-* )
+    READLINE_DEFINE="-DUSE_READLINE=1 ${READLINE_DEFINE} -DUSE_RL_COMPLETION_MATCHES=1" 
+    ;;
+  yes-*-yes )
+    READLINE_DEFINE="-DUSE_READLINE=1 ${READLINE_DEFINE} -DUSE_RL_COMPLETION_MATCHES=0" 
+    ;;
+  yes-* )
+    printf "Can't find a completion function in readline\n"
+    exit 1
+    ;;
+  no-* )
+    READLINE_DEFINE="-DUSE_READLINE=0"
+    printf "Not using readline\n";
+esac
+
+
+if [ "x" = "x${BINDIR}" ]; then BINDIR=${PREFIX}/bin ; fi
+if [ "x" = "x${MANDIR}" ]; then MANDIR=${PREFIX}/man ; fi
+if [ "x" = "x${INFODIR}" ]; then INFODIR=${PREFIX}/info ; fi
+
+lib_readline="${readline_lib_arg} -lreadline ${extra_readline_libs}"
+
+echo "Generating Makefile"
+
+rm -f Makefile
+sed -e "s%@cc@%${MYCC}%; \
+        s%@cflags@%${MYCFLAGS}%; \
+        s%@prefix@%${PREFIX}%; \
+        s%@bindir@%${BINDIR}%; \
+        s%@mandir@%${MANDIR}%; \
+        s%@infodir@%${INFODIR}%; \
+        s%@readline_define@%${READLINE_DEFINE}%; \
+        s%@inc_readline@%${readline_inc_arg}%; \
+        s%@lib_readline@%${lib_readline}%; \
+       " < Makefile.in > Makefile
+
+# =======================================================================
+# vim:et:sw=2:ht=2:sts=2:fdm=marker:cms=#%s
+

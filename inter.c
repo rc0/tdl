@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.11 2003/04/18 22:38:46 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.12 2003/05/05 22:05:41 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -28,8 +28,20 @@
 #include <unistd.h>
 
 #ifdef USE_READLINE
+#if BARE_READLINE_H 
+#include <readline.h>
+#include <history.h>
+#else
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
+
+#if USE_RL_COMPLETION_MATCHES
+#define COMPLETION_MATCHES rl_completion_matches
+#else
+#define COMPLETION_MATCHES completion_matches
+#endif
+
 #endif
 
 
@@ -39,7 +51,7 @@ static int completion_entry_function(void)/*{{{*/
   return 0;
 }
 /*}}}*/
-static char *generate_a_command_completion(char *text, int state)/*{{{*/
+static char *generate_a_command_completion(const char *text, int state)/*{{{*/
 {
   static int list_index, len;
   char *name;
@@ -61,7 +73,7 @@ static char *generate_a_command_completion(char *text, int state)/*{{{*/
   return NULL; /* For no matches */
 }
 /*}}}*/
-static char *generate_a_priority_completion(char *text, int state)/*{{{*/
+static char *generate_a_priority_completion(const char *text, int state)/*{{{*/
 {
   static char *priorities[] = {"urgent", "high", "normal", "low", "verylow", NULL};
   static int list_index, len;
@@ -187,7 +199,7 @@ static struct node *advance_chain(struct node_chain **pchain, char **index_strin
   return result;
 }
 /*}}}*/
-static char *generate_a_done_completion(char *text, int state)/*{{{*/
+static char *generate_a_done_completion(const char *text, int state)/*{{{*/
 {
   static struct node_chain *chain = NULL;
   struct node *node;
@@ -221,7 +233,7 @@ static char *generate_a_done_completion(char *text, int state)/*{{{*/
 /* Can't pass extra args thru to completers :-( */
 static int want_postponed_entries = 0;
 
-static char *generate_a_postpone_completion(char *text, int state)/*{{{*/
+static char *generate_a_postpone_completion(const char *text, int state)/*{{{*/
 {
   static struct node_chain *chain = NULL;
   struct node *node;
@@ -256,7 +268,7 @@ static char *generate_a_postpone_completion(char *text, int state)/*{{{*/
 char **complete_help(char *text, int index)/*{{{*/
 {
   char **matches;
-  matches = completion_matches(text, generate_a_command_completion);
+  matches = COMPLETION_MATCHES(text, generate_a_command_completion);
   return matches;
 }
 /*}}}*/
@@ -274,7 +286,7 @@ char **complete_list(char *text, int index)/*{{{*/
   char **matches;
   if (text[0] && isalpha(text[0])) {
     /* Try to complete priority */
-    matches = completion_matches(text, generate_a_priority_completion);
+    matches = COMPLETION_MATCHES(text, generate_a_priority_completion);
     return matches;
   } else {
     return default_completer(text, index);
@@ -290,7 +302,7 @@ char **complete_postpone(char *text, int index)/*{{{*/
 {
   char **matches;
   want_postponed_entries = 0;
-  matches = completion_matches(text, generate_a_postpone_completion);
+  matches = COMPLETION_MATCHES(text, generate_a_postpone_completion);
   return matches;
 }
 /*}}}*/
@@ -298,14 +310,14 @@ char **complete_open(char *text, int index)/*{{{*/
 {
   char **matches;
   want_postponed_entries = 1;
-  matches = completion_matches(text, generate_a_postpone_completion);
+  matches = COMPLETION_MATCHES(text, generate_a_postpone_completion);
   return matches;
 }
 /*}}}*/
 char **complete_done(char *text, int index)/*{{{*/
 {
   char **matches;
-  matches = completion_matches(text, generate_a_done_completion);
+  matches = COMPLETION_MATCHES(text, generate_a_done_completion);
   return matches;
 }
 /*}}}*/
@@ -314,7 +326,7 @@ static char **tdl_completion(char *text, int start, int end)/*{{{*/
 {
   char **matches = NULL;
   if (start == 0) {
-    matches = completion_matches(text, generate_a_command_completion);
+    matches = COMPLETION_MATCHES(text, generate_a_command_completion);
   } else {
     int i;
   
@@ -645,7 +657,7 @@ void interactive(void)/*{{{*/
   /* Main interactive function */
 #ifdef USE_READLINE
   if (isatty(0)) {
-    rl_completion_entry_function = completion_entry_function;
+    rl_completion_entry_function = NULL;
     rl_attempted_completion_function = (CPPFunction *) tdl_completion;
     interactive_readline();
   } else {

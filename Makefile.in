@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.14 2003/04/01 21:33:27 richard Exp $
+#  $Header: /cvs/src/tdl/Makefile.in,v 1.1 2003/05/05 22:05:41 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -19,30 +19,11 @@
 
 #######################################################################
 # Select C compiler and compile options
-CC=gcc
-CFLAGS=-g -Wall
-#CFLAGS=-O2 -Wall
-
-#######################################################################
-# Readline support (including completion) for interactive mode.
-# 
-# Comment out the following 2 lines if you don't want to or can't use the
-# readline library.
-# If your readline library is in a non-standard location, you may need to use
-# the 2nd pair of lines and edit accordingly.
-INC_READLINE=-DUSE_READLINE
-LIB_READLINE=-lreadline -ltermcap
-#INC_READLINE=-DUSE_READLINE -I/usr/include
-#LIB_READLINE=-lreadline -ltermcap -L/usr/lib
-
-# or you can use ncurses if you like, instead of termcap.  Uncomment + edit one
-# of these instead of those above if you want.
-#LIB_READLINE=-lreadline -lncurses
-#LIB_READLINE=-lreadline -lncurses -L/usr/lib
-
-#######################################################################
-# Edit this to change the directory to which the software is installed.
-prefix=/usr/local
+CC=@cc@
+CFLAGS=@cflags@
+READLINE_DEFINE=@readline_define@
+INC_READLINE=@inc_readline@
+LIB_READLINE=@lib_readline@
 
 #######################################################################
 # If you're generating a package, you may want to use
@@ -50,6 +31,13 @@ prefix=/usr/local
 # to get the software installed to a directory where you can create
 # a tdl.tar.gz from it
 DESTDIR=
+
+#######################################################################
+# Edit this to change the directory to which the software is installed.
+prefix=DESTDIR@prefix@
+bindir=DESTDIR@bindir@
+mandir=DESTDIR@mandir@
+man1dir=DESTDIR@man1dir@
 
 #######################################################################
 # YOU SHOULD NOT NEED TO CHANGE ANYTHING BELOW HERE
@@ -68,12 +56,11 @@ all : tdl
 tdl : $(OBJ)
 	$(CC) $(CFLAGS) -o tdl $(OBJ) $(LIB_READLINE)
 
-
 %.o : %.c
 	$(CC) $(CFLAGS) -c $<
 
 inter.o : inter.c
-	$(CC) $(CFLAGS) $(INC_READLINE) -c $<
+	$(CC) $(CFLAGS) $(READLINE_DEFINE) $(INC_READLINE) -c $<
 
 %.s : %.c
 	$(CC) $(CFLAGS) -S $<
