@@ -344,6 +344,8 @@ This section describes each of the tdl subcommands.
 * after command::   Move entries after (below) another entry
 * before command::  Move entries before (above) another entry
 * below command::   Move entries below (after) another entry
+* clone command::   Make a deep copy of one or more entries
+* copyto command::  Insert a deep copy of one or more entries into an existing entry
 * create command::  Create a new database in the current directory
 * done command::    Mark 1 or more entries as done
 * edit command::    Change the text and/or start time of an entry
@@ -486,7 +488,7 @@ The @command{below} command is one of the commands used for re-ordering the
 entries in the database.  The @command{below} and @command{after} commands are
 synonymous.
 
-The arguments of the @command{below} comamnd are:
+The arguments of the @command{below} command are:
 
 @example
 tdl> below <index_to_insert_below> <index_to_move> ...
@@ -517,6 +519,66 @@ you cannot move a node so that its new parent would be a descendent of itself.
 This is similar to the description for the @command{above} command
 (@pxref{above command}).
 
+@c }}}
+@c {{{ clone command
+@node clone command
+@subsection clone command
+The @command{clone} command can be used to make a deep copy of one or more
+entries and add them as new top-level entries in the database.  You might use
+this if you have a task with a set of subtasks, and find that the same subtasks
+apply to some new task.  You could copy the first task, and edit the new
+top-level task to change its text.
+
+The arguments of the @command{clone} command are:
+
+@example
+tdl> clone <index_to_clone> ...
+@end example
+
+An example is:
+@example
+tdl> list
+1 Wash things
+  1.1 Car
+  1.2 Dog
+tdl> clone 1
+tdl> edit 2 "Polish things"
+tdl> list
+1 Wash things
+  1.1 Car
+  1.2 Dog
+2 Polish things
+  2.1 Car
+  2.2 Dog
+@end example
+
+If you want the cloned entries to be children of an existing entry, use the
+@command{copyto} command (@pxref{copyto command}).
+@c }}}
+@c {{{ copyto command
+@node copyto command
+@subsection copyto command
+The @command{copyto} command is very similar to the @command{clone} command
+(@pxref{clone command}).  The difference is that @command{copyto} inserts the
+newly created entries as children of an existing entry, rather than making them
+new top level entries.
+
+The arguments of the @command{copyto} command are:
+
+@example
+tdl> copyto <new_parent_index> <index_to_clone> ...
+@end example
+
+An example is:
+@example
+tdl> list
+1 Household jobs
+  1.1 Wash things
+    1.1.1 Car
+    1.1.2 Dog
+tdl> copyto 1 1.1
+tdl> edit 1.2 "Polish things"
+@end example
 @c }}}
 @c {{{ create command
 @node create command

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.16 2002/07/15 22:50:34 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.17 2002/07/17 23:35:29 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -146,12 +146,15 @@ int process_into(char **x);
 /* In impexp.c */
 int process_export(char **x);
 int process_import(char **x);
+int process_clone(char **x);
+int process_copyto(char **x);
 
 /* In dates.c */
 time_t parse_date(char *d, time_t ref, int default_positive, int *error);
 
 /* In main.c */
 void dispatch(char **argv);
+void free_database(struct links *x);
 void load_database_if_not_loaded(void);
 
 /* In inter.c */
