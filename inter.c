@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.6 2002/05/20 23:00:35 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.7 2002/05/21 22:47:40 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -280,6 +280,11 @@ static char **tdl_completion(char *text, int start, int end)/*{{{*/
   return matches;
 }
 /*}}}*/
+static char **null_tdl_completion(char *text, int start, int end)/*{{{*/
+{
+  return NULL;
+}
+/*}}}*/
 #else
 char **complete_help(char *text, int index)/*{{{*/
 {
@@ -446,14 +451,33 @@ static void interactive_readline(void)/*{{{*/
       
 }
 /*}}}*/
-static char *interactive_add_readline(int *is_blank, int *error)/*{{{*/
+
+static char *readline_initval = NULL;
+static int setup_initval_hook(void)/*{{{*/
+{
+  if (readline_initval) {
+    rl_insert_text(readline_initval);
+    rl_redisplay();
+  }
+  return 0;
+}
+/*}}}*/
+static char *interactive_text_readline(char *prompt, char *initval, int *is_blank, int *error)/*{{{*/
 {
   char *line;
+  Function *old_rl_pre_input_hook = NULL;
   
   *error = 0;
-  line = readline("add> ");
-  *is_blank = is_line_blank(line);
-  if (!*is_blank) add_history(line);
+  old_rl_pre_input_hook = rl_pre_input_hook;
+  if (initval) {
+    readline_initval = initval;
+    rl_pre_input_hook = setup_initval_hook;
+  }
+  line = readline(prompt);
+  rl_pre_input_hook = old_rl_pre_input_hook;
+  readline_initval = NULL;
+  *is_blank = line ? is_line_blank(line) : 1;
+  if (line && !*is_blank) add_history(line);
   return line;
 }
 /*}}}*/
@@ -465,7 +489,7 @@ static char *get_line_stdio(char *prompt, int *at_eof)/*{{{*/
   int c;
   
   *at_eof = 0;
-  puts(prompt);
+  printf("%s",prompt);
   fflush(stdout);
   n = 0;
   do {
@@ -503,27 +527,31 @@ static void interactive_stdio(void)/*{{{*/
   } while (!at_eof);
 }
 /*}}}*/
-static char *interactive_add_stdio(int *is_blank, int *error)/*{{{*/
+static char *interactive_text_stdio(char *prompt, char *initval, int *is_blank, int *error)/*{{{*/
 {
   char *line;
   int at_eof;
   *error = 0;
-  line = get_line_stdio("add> ", &at_eof);
+  line = get_line_stdio(prompt, &at_eof);
   *is_blank = line ? is_line_blank(line) : 0;
   return line;
 }
 /*}}}*/
-char *interactive_add(int *is_blank, int *error)/*{{{*/
+char *interactive_text (char *prompt, char *initval, int *is_blank, int *error)/*{{{*/
 {
 #ifdef USE_READLINE
   if (isatty(0)) {
-    return interactive_add_readline(is_blank, error);
+    char *result;
+    rl_attempted_completion_function = (CPPFunction *) null_tdl_completion;
+    result = interactive_text_readline(prompt, initval, is_blank, error);
+    rl_attempted_completion_function = (CPPFunction *) tdl_completion;
+    return result;
   } else {
     /* In case someone wants to drive tdl from a script, by redirecting stdin to it. */
-    return interactive_add_stdio(is_blank, error);
+    return interactive_text_stdio(prompt, initval, is_blank, error);
   }
 #else
-  return interactive_add_stdio(is_blank, error);
+  return interactive_text_stdio(prompt, initval, is_blank, error);
 #endif
 }
 /*}}}*/
