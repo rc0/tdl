@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.10 2003/03/10 00:35:14 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.11 2003/04/18 22:38:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -319,7 +319,7 @@ static char **tdl_completion(char *text, int start, int end)/*{{{*/
     int i;
   
     for (i=0; i<n_cmds; i++) {
-      if (!strncmp(rl_line_buffer, cmds[i].name, 3)) {
+      if (!strncmp(rl_line_buffer, cmds[i].name, cmds[i].matchlen)) {
         if (cmds[i].completer) {
           matches = (cmds[i].completer)(text, i);
         } else {
