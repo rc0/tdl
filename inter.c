@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.5 2002/05/20 22:55:37 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.6 2002/05/20 23:00:35 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -453,7 +453,7 @@ static char *interactive_add_readline(int *is_blank, int *error)/*{{{*/
   *error = 0;
   line = readline("add> ");
   *is_blank = is_line_blank(line);
-  if (!is_blank) add_history(line);
+  if (!*is_blank) add_history(line);
   return line;
 }
 /*}}}*/
