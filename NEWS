@@ -2,6 +2,11 @@ NEW IN VERSION 1.95.2
 
 - Nodes can be given symbolic names (new commands 'name' and 'anon').
 
+NEW IN VERSION 1.95.1
+
+- Allow ranges of indices and multiple discrete indices to be given as the
+  final path component in contexts where multiple nodes can be specified.
+
 NEW IN VERSION 1.4.1
 
 - Fix TDL_LIST_MONOCHROME
@@ -112,4 +117,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.23 2003/08/06 23:23:00 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.24 2003/08/06 23:25:17 richard Exp $
