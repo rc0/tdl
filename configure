@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo 'This program is not set up to use autoconf-style configure yet.'
+echo 'Please manually edit the Makefile and change $(prefix), $(CC)'
+echo 'and $(CFLAGS) to suit your personal requirements.  Then type'
+echo ''
+echo '    make'
+echo '    make install'
