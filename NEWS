@@ -1,3 +1,8 @@
+NEW IN VERSION 1.5
+
+- bug fix : trying to move a node above/below/before/after itself corrupted the
+  internal state
+
 NEW IN VERSION 1.4.2
 
 - moveto command (alias for into command)
@@ -113,4 +118,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.22.2.1 2003/10/14 22:03:01 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.22.2.2 2004/01/06 23:42:59 richard Exp $

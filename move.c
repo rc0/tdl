@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.8 2003/03/11 22:30:23 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.8.2.1 2004/01/06 23:42:59 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -87,6 +87,12 @@ static int process_move_internal(char **x, int below_not_above, int into_parent)
   for (i=0; i<n; i++) { 
     /* Unlink from its current location */
     struct node *prev, *next;
+
+    if (table[i] == insert_peer) {
+      fprintf(stderr, "Can't move %s relative to itself\n", x[0]);
+      continue;
+    }
+    
     next = table[i]->chain.next;
     prev = table[i]->chain.prev;
     prev->chain.next = next;
