@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.3 2001/08/21 22:43:25 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.4 2001/08/22 22:29:43 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -111,7 +111,7 @@ void process_remove(char **x);
 void process_purge(char **x);
 
 /* In move.c */
-void process_move(char **x, int below_not_above);
+void process_move(char **x, int below_not_above, int into_parent);
 
 #endif /* TDL_H */
           

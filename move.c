@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.1 2001/08/21 22:43:24 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.2 2001/08/22 22:29:43 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -22,7 +22,7 @@
 #include "tdl.h"
 
 
-static int is_ancestor(struct node *anc, struct node *dec)
+static int is_ancestor(struct node *anc, struct node *dec)/*{{{*/
 {
   /* Check includes whether the two nodes are the same */
   struct node *parent;
@@ -33,10 +33,15 @@ static int is_ancestor(struct node *anc, struct node *dec)
   }
   return 0;
 }
+/*}}}*/
 
-
-void process_move(char **x, int below_not_above)
+void process_move(char **x, int below_not_above, int into_parent)/*{{{*/
 {
+  /* x is the argument list
+   * below_not_above is true to insert below x[0], false to insert above
+   * into_parent means an implicit .0 is appended to x[0] to get the path
+   */
+  
   int argc, i, n;
   struct links *insert_point;
   struct node **table;
@@ -54,7 +59,12 @@ void process_move(char **x, int below_not_above)
   }
 
   n = argc - 1;
-  insert_point = (struct links *) lookup_node(x[0], 1, &insert_parent); /* Allow final component to be zero */
+  if (into_parent) {
+    insert_parent = lookup_node(x[0], 0, NULL);
+    insert_point = &insert_parent->kids;
+  } else {
+    insert_point = (struct links *) lookup_node(x[0], 1, &insert_parent); /* Allow final component to be zero */
+  }
   table = new_array(struct node *, n);
   x++;
 
@@ -93,4 +103,4 @@ void process_move(char **x, int below_not_above)
   }
 
 }
-
+/*}}}*/

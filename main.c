@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.4 2001/08/21 22:43:24 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.5 2001/08/22 22:29:42 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -69,15 +69,29 @@ static char *get_database_path(int traverse_up)/*{{{*/
   if (env_var) {
     return env_var;
   } else {
-    int at_root, size, dbname_len, found, stat_result;
-    char *cwd, *result, *filename;
+    int at_root, orig_size, size, dbname_len, found, stat_result;
+    char *orig_cwd, *cwd, *result, *filename;
     struct stat statbuf;
     
     dbname_len = strlen(DBNAME);
-    size = 1024;
+    size = 16;
+    orig_size = 16;
     found = 0;
     at_root = 0;
     cwd = new_array(char, size);
+    orig_cwd = new_array(char, orig_size);
+    do {
+      result = getcwd(orig_cwd, orig_size);
+      if (!result) {
+        if (errno == ERANGE) {
+          orig_size <<= 1;
+          orig_cwd = grow_array(char, orig_size, orig_cwd);
+        } else {
+          fprintf(stderr, "Unexpected error reading current directory\n");
+          exit(1);
+        }
+      }
+    } while (!result);
     filename = new_array(char, size + dbname_len + 2);
     filename[0] = 0;
     do {
@@ -108,8 +122,11 @@ static char *get_database_path(int traverse_up)/*{{{*/
 
     free(cwd);
     if (found) {
+      free(orig_cwd);
       return filename;
     } else {
+      chdir(orig_cwd);
+      free(orig_cwd);
       return default_database_path;
     }
   }
@@ -166,10 +183,12 @@ static void usage(void)/*{{{*/
           "   Mark 1 or more entries as done\n\n"
           "tdl remove <entry_index> ...\n"
           "   Remove 1 or more entries from the database\n\n"
-          "tdl above <index_to_insert_above> <index_to_move>\n"
+          "tdl above <index_to_insert_above> <index_to_move> ...\n"
           "   Move entries above another entry\n\n"
-          "tdl below <index_to_insert_below> <index_to_move>\n"
+          "tdl below <index_to_insert_below> <index_to_move> ...\n"
           "   Move entries below another entry\n\n"
+          "tdl into <new_parent_index> <index_to_move> ...\n"
+          "   Move entries to end of new parent\n\n"
           "tdl purge <interval_ago> [<ancestor_index> ...]\n"
           "   Remove old done entries in subtrees\n\n"
           "tdl edit <entry_index> <new_text>\n"
@@ -278,10 +297,13 @@ int main (int argc, char **argv)
       process_remove(argv + 2);
       dirty = 1;
     } else if (!strcmp(argv[1], "below")) {
-      process_move(argv + 2, 1);
+      process_move(argv + 2, 1, 0);
       dirty = 1;
     } else if (!strcmp(argv[1], "above")) {
-      process_move(argv + 2, 0);
+      process_move(argv + 2, 0, 0);
+      dirty = 1;
+    } else if (!strcmp(argv[1], "into")) {
+      process_move(argv + 2, 0, 1);
       dirty = 1;
     } else if (!strcmp(argv[1], "done")) {
       process_done(argv + 2);
