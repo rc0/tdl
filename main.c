@@ -61,6 +61,10 @@ static int read_only = 0;
 /* Whether to complain about problems with file operations */
 static int is_noisy = 1;
 
+/* Whether to forcibly unlock the database before the next lock attempt (e.g.
+ * if the program crashed for some reason before.) */
+static int forced_unlock = 0;
+
 static int is_interactive = 0;
 
 static void set_descendent_priority(struct node *x, enum Priority priority)/*{{{*/
@@ -112,6 +116,12 @@ static void lock_database(char *path)/*{{{*/
   len = 1 + strlen(path) + 5;
   lock_file_name = new_array(char, len);
   sprintf(lock_file_name, "%s.lock", path);
+
+  if (forced_unlock) {
+    unlock_database();
+    forced_unlock = 0;
+  }
+  
   len += strlen(uu.nodename);
   /* add on max width of pid field (allow up to 32 bit pid_t) + 2 '.' chars */
   len += (10 + 2);
@@ -881,7 +891,7 @@ int main (int argc, char **argv)
 
   if (argc > 1) {
     for (i=1; i<argc && argv[i][0] == '-'; i++) {
-      if (strspn(argv[i]+1, "qR")+1 != strlen(argv[i])) {
+      if (strspn(argv[i]+1, "qRu")+1 != strlen(argv[i])) {
         fprintf(stderr, "Unknown flag <%s>\n", argv[i]);
         return 1;
       }
@@ -891,6 +901,9 @@ int main (int argc, char **argv)
       }
       if (strchr(argv[i], 'R')) {
         read_only = 1;
+      }
+      if (strchr(argv[i], 'u')) {
+        forced_unlock = 1;
       }
     }
   }

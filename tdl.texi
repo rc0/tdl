@@ -347,6 +347,7 @@ to discard all changes made in this tdl run.
 @menu
 * -q::              Be quiet
 * -R::              Open the database read-only
+* -u::              Forced unlock
 @end menu
 
 @c {{{ Quiet mode
@@ -371,6 +372,19 @@ This flag can be used together with the @command{-q} flag if required.
 @example
 % tdl -R list
 % tdl -qR list
+@end example
+@c }}}
+@c {{{ Forced unlock
+@node -u
+@subsection Forced unlock
+If the @command{-u} flag is specified, the database's lockfile will be removed
+if it is found.  This is mainly intended for use when an earlier run has left
+the database locked after a crash.
+
+Care shoule be taken that the database is not currently being accessed by a
+live process, otherwise updates could be lost by one or other of the processes.
+@example
+% tdl -u list
 @end example
 @c }}}
 @c }}}
