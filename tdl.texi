@@ -115,7 +115,27 @@ cd tdl-1.0
 @item @strong{Configure the makefile}
 
 tdl does not use a @code{./configure} mechanism (yet!) to configure options.
-You have to manually edit @file{Makefile}.  The variables you may want to edit
+You have to manually edit @file{Makefile}.  The variables you may want to edit are
+
+@table @samp
+@item CC
+The choice of C compiler
+@item CFLAGS
+The choice of flags to pass to the C compiler
+@item prefix
+The parent directory where the binaries and documentation will be installed.
+You'd normally set this to @file{/usr/local} or @file{/usr}, unless you use a
+stow or stow-like approach, or are building a distribution package.
+@item INC_READLINE
+If you want readline support in the interactive mode (highly recommended),
+uncomment the appropriate line in the Makefile, and if necessary edit the path
+for the include directory where @file{readline.h} and @file{history.h} can be
+found.  Note that a @file{readline} subdirectory is assumed to be suffixed onto
+whatever path you define.
+@item LIB_READLINE
+Likewise, edit the path for the directory where @file{libreadline} and
+@file{libhistory} can be found.
+@end table
 
 @item @strong{Compile the sources}
 @example
@@ -160,6 +180,10 @@ makepkg tdl.tgz
 Packagers for other distributions may be able to adapt this.  (The point the
 example is making is that @file{Makefile} contains support for using a variable
 @var{DESTDIR} in this way.)
+
+An example spec file for RedHat packaging is in the file
+@file{tdl.spec.sample}.
+
 @c }}}
 
 @c }}}
@@ -256,6 +280,7 @@ the database, assigning them priorities, and so on.
 @menu
 * Start and Exit::      Starting and exiting tdl
 * Command list::        Alphabetical list of all commands
+* Location::            How tdl finds the database file to use
 * Completion::          Completion facilities
 * Datespec::            How dates are specified
 * Backup file::         How tdl saves a backup copy of the database
@@ -420,6 +445,27 @@ with the new entry coming live at 11a.m. next Friday, this would be
 @example
 tdl> add @@+fri-11 1 hi "Wash the dog"
 @end example
+
+If you have several entries to add at once, you can go into an @emph{add} mode.
+Enter a blank line to get back to the @t{tdl>} prompt.
+
+@example
+tdl> add
+add> Wash the dog
+add> Wash the car
+add>
+tdl>
+@end example
+
+To add an entry direct from your shell, there is an additional shortcut
+(assuming the appropriate symbolic link was created during the installation
+process):
+
+@example
+% tdla "Wash the dog"
+%
+@end example
+
 @c }}}
 @c {{{ after command
 @node after command
@@ -572,6 +618,22 @@ To change the text for the entry with index 1 and change its start time to next 
 @example
 tdl> edit @@+sun 1 "New description"
 @end example
+
+A very useful form of the @command{edit} command is when no replacement text is
+specified.  In this case, the replacement text is typed in interactively by
+editing the existing entry.  Example:
+
+@example
+tdl> list
+1 Wash the dog
+tdl> edit 1
+edit (1)> Wash the dog   (edit 'dog' to 'cat')
+tdl> list
+1 Wash the cat
+tdl>
+@end example
+
+
 @c }}}
 @c {{{ exit command
 @node exit command
@@ -769,6 +831,10 @@ open tasks.
 This stands for @emph{monochrome}.  Normally, ANSI escape sequences are
 inserted to show the list with colour coding.  This flag stops these sequences
 being generated.
+
+If you always want this option, set the @var{TDL_LIST_MONOCHROME} environment
+variable to any value.  If this variable exists, a monochrome listing will be
+generated.
 @item -1, -2, ..., -9
 These options restrict the depth of the tree which is generated.  For example,
 with the @samp{-1} argument, only the first-level entries in the database are
@@ -866,6 +932,30 @@ log [@@<datespec>] [<parent_index>] [<priority>] <entry_text>
 You might use the @command{log} command if complete a new task immediately but
 want to make sure you log it for use in producing your weekly report (using
 the @command{report} command, @xref{report command}.)
+
+If you have several entries to add at once, you can go into an @emph{log} mode.
+Enter a blank line to get back to the @t{tdl>} prompt.
+
+@example
+tdl> log
+log> Wash the dog
+log> Wash the car
+log>
+tdl>
+@end example
+
+To add an entry direct from your shell, there is an additional shortcut
+(assuming the appropriate symbolic link was created during the installation
+process):
+
+@example
+% tdlg "Wash the dog"
+%
+@end example
+
+(the ending @samp{g} on the shortcut was chosen as the final letter of the word
+@samp{log}.  The shortcut @samp{tdll} was already allocated for the
+@command{list} subcommand.)
 
 @c }}}
 @c {{{ priority command
@@ -1063,6 +1153,35 @@ tdl> which
 tdl>
 @end example
 @c }}}
+@c }}}
+
+@c {{{ Location
+@node Location
+@section How tdl finds the databse file to use
+If the @var{TDL_DATABASE} environment variable is set, its value is taken to be
+the name of the database to use.  This allows for two distinct modes of use:
+@itemize @bullet
+@item If you set @var{TDL_DATABASE} to a fixed filename (with a full path), you
+can use a single database regardless of your current working directory.
+@item If you set @var{TDL_DATABASE} to a relative path (e.g. @file{./.tdldb}),
+you will always use a database in the current working directory.
+@end itemize
+
+If this environment variable is not set, tdl finds the database by searching up
+through the directory tree until it finds a file called @file{.tdldb}.  The
+idea is to allow for one database per project, by placing the database in the
+parent directory of the project.  Then as long as your current working
+directory is anywhere within the project tree, the database will be found
+during the search.
+
+The only exception to this is the @command{create} command, which always
+operates in the current directory (unless @var{TDL_DATABASE} is set, in which
+case this variable's value defines the path to use.)
+
+If you wish to share databases between directory trees in some other way, the
+recommended method is to use symbolic (or hard) links to make a single database
+appear to be in more than one directory.
+
 @c }}}
 
 @c {{{ Completion
