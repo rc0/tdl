@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.5 2001/10/14 21:24:24 richard Exp $
+#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.6 2001/10/14 22:08:28 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -28,7 +28,7 @@ mandir=$(prefix)/man
 man1dir=$(prefix)/man/man1
 
 OBJ = main.o io.o add.o done.o remove.o move.o list.o \
-      report.o purge.o util.o impexp.o
+      report.o purge.o util.o dates.o impexp.o
 
 all : tdl
 

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.3 2001/08/29 05:50:06 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.4 2001/10/14 22:08:28 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -25,7 +25,7 @@
 void process_add(char **x, int set_done)/*{{{*/
 {
   /* Expect 1 argument, the string to add.  Need other options at some point. */
-  time_t now;
+  time_t insert_time;
   struct node *nn;
   int argc = count_args(x);
   char *text = NULL;
@@ -35,6 +35,14 @@ void process_add(char **x, int set_done)/*{{{*/
   int set_priority = 0;
   char *x0;
 
+  insert_time = time(NULL);
+
+  if ((argc > 1) && (x[0][0] == '@')) {
+    insert_time = parse_date(x[0]+1, insert_time, 1);
+    argc--;
+    x++;
+  }
+  
   switch (argc) {
     case 1:
       text = x[0];
@@ -68,12 +76,11 @@ void process_add(char **x, int set_done)/*{{{*/
     parent = NULL;
   }
   
-  now = time(NULL);
   nn = new_node();
   nn->text = new_string(text);
-  nn->arrived = (long) now;
+  nn->arrived = (long) insert_time;
   if (set_done) {
-    nn->done = (long) now;
+    nn->done = (long) insert_time;
   }
   
   nn->priority = (parent && !set_priority) ? parent->priority

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/done.c,v 1.4 2001/10/07 22:44:46 richard Exp $
+   $Header: /cvs/src/tdl/done.c,v 1.5 2001/10/14 22:08:28 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -35,23 +35,21 @@ int has_open_child(struct node *y)/*{{{*/
   return result;
 }
 /*}}}*/
-static void mark_done_from_bottom_up(struct links *x)/*{{{*/
+static void mark_done_from_bottom_up(struct links *x, time_t done_time)/*{{{*/
 {
   struct node *y; 
 
   for (y = x->next; y != (struct node *) x; y = y->chain.next) {
 
     if (has_kids(y)) {
-      mark_done_from_bottom_up(&y->kids);
+      mark_done_from_bottom_up(&y->kids, done_time);
     }
     
     if (y->flag) {
       if (has_open_child(y)) {
         fprintf(stderr, "Cannot mark %s done, it has open sub-tasks\n", y->scratch);
       } else {
-        time_t now;
-        now = time(NULL);
-        y->done = now;
+        y->done = done_time;
       }
     }
   }
@@ -61,8 +59,14 @@ void process_done(char **x)/*{{{*/
 {
   struct node *n;
   int do_descendents;
+  time_t done_time = time(NULL);
 
   clear_flags(&top);
+
+  if (x[0][0] == '@') {
+    done_time = parse_date(x[0]+1, done_time, 0);
+    x++;
+  }
 
   while (*x) {
     do_descendents = include_descendents(*x); /* May modify *x */
@@ -75,7 +79,7 @@ void process_done(char **x)/*{{{*/
     x++;
   }
    
-  mark_done_from_bottom_up(&top);
+  mark_done_from_bottom_up(&top, done_time);
 
 }
 /*}}}*/
