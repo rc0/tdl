@@ -138,6 +138,7 @@ make docs
 
 Currently, there are no Makefile targets for this.  Pick the documentation
 formats you want to keep and install them manually to the appropriate places.
+@end enumerate
 @c }}}
 @c {{{ Packaging
 @node Packaging
@@ -422,6 +423,8 @@ tdl> add @@+fri-11 1 hi "Wash the dog"
 @c {{{ after command
 @node after command
 @subsection after command
+The @command{after} and @command{below} commands are synonymous.  See the
+description of @command{below} (@pxref{below command}).
 @c }}}
 @c {{{ before command
 @node before command
@@ -432,6 +435,41 @@ description of @command{above} (@pxref{above command}).
 @c {{{ below command
 @node below command
 @subsection below command
+The @command{below} command is one of the commands used for re-ordering the
+entries in the database.  The @command{below} and @command{after} commands are
+synonymous.
+
+The arguments of the @command{below} comamnd are:
+
+@example
+tdl> below <index_to_insert_below> <index_to_move> ...
+@end example
+
+The first argument is the index of the entry below which the other entries are
+to be moved.  The entries corresponding the 2nd index onwards will be placed in
+argument order above the first entry.
+
+An example:
+@example
+tdl> list
+1 Task A
+2 Task B
+3 Task C
+4 Task D
+tdl> below 4 2 1 3
+tdl> list
+1 Task D
+2 Task B
+3 Task A
+4 Task C
+tdl>
+@end example
+
+You can move entries between levels in the hierarchy, with the restriction that
+you cannot move a node so that its new parent would be a descendent of itself.
+This is similar to the description for the @command{above} command
+(@pxref{above command}).
+
 @c }}}
 @c {{{ create command
 @node create command
@@ -457,6 +495,32 @@ attempted.
 @c {{{ done command
 @node done command
 @subsection done command
+The @command{done} command is run as follows
+
+@example
+done [@@<datespec>] <entry_index>[...] ...
+@end example
+
+The @command{done} command is used to mark one or more tasks as completed.  Any
+number of task indices may be specified.
+
+The effects are as follows:
+
+@itemize @bullet
+@item
+The entries no longer appear on the default listing (produced by the
+@command{list} command without the @samp{-a} option).
+@item
+The entries are eligible to appear on the report list (@pxref{report command})
+@item
+The entries are eligible for removal by the purge command (@pxref{purge
+command})
+@end itemize
+
+If the string "..." is appended to an index, it means that entry and all its
+descendents.  This provides a quick way to mark a whole sub-tree of tasks as
+being completed.
+
 @c }}}
 @c {{{ edit command
 @node edit command
@@ -523,6 +587,30 @@ exiting.  (Compare the @command{quit} command (@pxref{quit command}), which
 @c {{{ export command
 @node export command
 @subsection export command
+The @command{export} command is run as follows
+
+@example
+export <filename> <entry_index> ...
+@end example
+
+It is used to export one or more tasks (and their subtasks) to another tdl
+database file.  Perhaps you were keeping all your projects' to-do lists in one
+combined file, and decide you want to separate the list for a particular
+project.
+
+An example would be
+
+@example
+tdl> list
+1 Tasks for project X
+2 Tasks for project Y
+   2.1 Write manual
+   2.2 Write release notes
+tdl> export /home/foobar/project_y/.tdldb 2.1 2.2
+tdl> remove 2...
+tdl> exit
+@end example
+
 @c }}}
 @c {{{ help command
 @node help command
@@ -594,10 +682,55 @@ The @command{help} command is synonymous with the @command{usage} command.
 @c {{{ import command
 @node import command
 @subsection import command
+The @command{import} command is used as follows:
+
+@example
+import <filename>
+@end example
+
+This command is used to merge entries from the TDL database @file{filename}
+into the default database (i.e. the one that most of the other commands would
+be accessing).
+
+You might use this command if you had a number of separate TDL databases, and
+wanted to merge their entries to form one combo database.
 @c }}}
 @c {{{ into command
 @node into command
 @subsection into command
+The @command{into} command is used to make one or more entries into sub-entries
+of another entry.  Its usage is
+
+@example
+into <new_parent_index> <index_to_move> ...
+@end example
+
+The following example shows it use
+@example
+tdl> list
+1 Task A
+2 Task B
+3 Task C
+4 Task D
+tdl> into 1 3 2
+tdl> list
+1 Task A
+   1.1 Task C
+   1.2 Task B
+2 Task D
+tdl>
+@end example
+
+The @command{into} command is closely related to @command{above}, @command{after}, @command{before} and @command{below}.  In fact the following two commands are equivalent
+
+@example
+tdl> into N <indices> ...
+and
+tdl> above N.0 <indices> ...
+and
+tdl> before N.0 <indices> ...
+@end example
+
 @c }}}
 @c {{{ list command
 @node list command
@@ -606,6 +739,18 @@ The @command{help} command is synonymous with the @command{usage} command.
 @c {{{ log command
 @node log command
 @subsection log command
+The @command{log} command is very similar to the @command{add} command, except
+that it immediately marks the new entry as done.It is the equivalent of using
+@command{add} followed by @command{done} on the new entry.  It is run as follows:
+
+@example
+log [@@<datespec>] [<parent_index>] [<priority>] <entry_text>
+@end example
+
+You might use the @command{log} command if complete a new task immediately but
+want to make sure you log it for use in producing your weekly report (using,
+the @command{report} command, @xref{report command}).
+
 @c }}}
 @c {{{ priority command
 @node priority command
