@@ -1,6 +1,6 @@
 Summary: A to-do list manager
 Name: tdl
-Version: 1.1
+Version: 1.2
 Release: 1
 Copyright: GPL
 Group: Applications/Utilities
@@ -12,11 +12,11 @@ tdl is a console to-do list manager.  You can run its subcommands direct from
 the command line, or enter an interactive mode which uses the readline library.
 
 %prep
-rm -rf $RPM_BUILD_DIR/tdl-1.1
-tar xzvf $RPM_SOURCE_DIR/tdl-1.1.tar.gz
+rm -rf $RPM_BUILD_DIR/tdl-1.2
+tar xzvf $RPM_SOURCE_DIR/tdl-1.2.tar.gz
 
 %build
-cd tdl-1.1
+cd tdl-1.2
 make CC=gcc CFLAGS=-O2 prefix=/usr
 make tdl.txt prefix=/usr
 make tdl.info prefix=/usr
@@ -25,7 +25,7 @@ make tdl.pdf prefix=/usr
 
 %install
 rm -rf $RPM_BUILD_ROOT
-cd $RPM_BUILD_DIR/tdl-1.1
+cd $RPM_BUILD_DIR/tdl-1.2
 make install DESTDIR=$RPM_BUILD_ROOT prefix=/usr
 mkdir -p $RPM_BUILD_ROOT/usr/share/info
 cp tdl.info* $RPM_BUILD_ROOT/usr/share/info

@@ -1,3 +1,11 @@
+NEW IN VERSION 1.2
+
+- Fix bug : priority with no args core dumped.
+
+- Bring tdl.1 manpage up to date with texinfo.
+
+- Give option to use ncurses instead of termcap in Makefile.
+
 NEW IN VERSION 1.1
 
 - Add 'interactive' mode to complement command line mode of v1.0.  If built
@@ -67,4 +75,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.6 2002/07/21 22:45:56 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.7 2002/07/22 21:14:00 richard Exp $
