@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.6 2001/08/23 21:23:05 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.7 2001/08/27 22:09:23 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -257,7 +257,7 @@ int main (int argc, char **argv)
 
   /* Parse command line */
   if (is_tdl && (argc < 2)) {
-    fprintf(stderr, "Need some stuff on command line\n");
+    fprintf(stderr, "Need a subcommand.  Try\n\n    tdl help\n\nfor further information.\n");
     exit(1);
   }
 
