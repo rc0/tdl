@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.7 2001/10/28 22:59:45 richard Exp $
+#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.8 2002/05/06 23:14:44 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -18,8 +18,13 @@
 #  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
 
 CC=gcc
-#CFLAGS=-g -Wall
-CFLAGS=-O2 -Wall
+CFLAGS=-g -Wall
+#CFLAGS=-O2 -Wall
+
+# Comment out the following 2 lines if you don't want to or can't use the
+# readline library.
+INC_READLINE=-DUSE_READLINE
+LIB_READLINE=-lreadline -lhistory -ltermcap
 
 prefix=/usr/local
 
@@ -28,16 +33,19 @@ mandir=$(prefix)/man
 man1dir=$(prefix)/man/man1
 
 OBJ = main.o io.o add.o done.o remove.o move.o list.o \
-      report.o purge.o util.o dates.o impexp.o
+      report.o purge.o util.o dates.o impexp.o inter.o
 
 all : tdl
 
 tdl : $(OBJ)
-	$(CC) $(CFLAGS) -o tdl $(OBJ)
+	$(CC) $(CFLAGS) -o tdl $(OBJ) $(LIB_READLINE)
 
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c $<
+
+inter.o : inter.c
+	$(CC) $(CFLAGS) $(INC_READLINE) -c $<
 
 %.s : %.c
 	$(CC) $(CFLAGS) -S $<

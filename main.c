@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.16 2002/04/29 21:38:46 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.17 2002/05/06 23:14:44 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -20,34 +20,34 @@
    */
 
 #include "tdl.h"
+#include <assert.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <signal.h>
 
 /* The name of the database file (in whichever directory it may be) */
 #define DBNAME ".tdldb"
 
-/* The database */
+/* Set if db doesn't exist in this directory */
+static char *current_database_path = NULL;
+
+/* The currently loaded database */
 struct links top;
 
-/* Set if db doesn't exist in this directory */
-static int no_database_here = 0;
+/* Flag for whether data is actually loaded yet */
+static int is_loaded = 0;
 
-static void process_create(char **x)/*{{{*/
-{
-  if (no_database_here) {
-    /* OK */
-  } else {
-    fprintf(stderr, "Can't create database, it already exists!\n");
-    exit(1);
-  }
-  return;
+/* Flag if currently loaded database has been changed and needs writing back to
+ * the filesystem */
+static int currently_dirty = 0;
 
-}
-/*}}}*/
+/* Whether to complain about problems with file operations */
+static int is_noisy = 1;
+
 static void set_descendent_priority(struct node *x, enum Priority priority)/*{{{*/
 {
   struct node *y;
@@ -55,27 +55,6 @@ static void set_descendent_priority(struct node *x, enum Priority priority)/*{{{
     y->priority = priority;
     set_descendent_priority(y, priority);
   }
-}
-/*}}}*/
-static void process_priority(char **x)/*{{{*/
-{
-  enum Priority priority = parse_priority(*x);
-  struct node *n;
-  int do_descendents;
- 
-  while (*++x) {
-    do_descendents = include_descendents(*x); /* May modify *x */
-    n = lookup_node(*x, 0, NULL);
-    n->priority = priority;
-    if (do_descendents) {
-      set_descendent_priority(n, priority);
-    }
-  }
-}/*}}}*/
-static void process_which(char *database_path)/*{{{*/
-{
-  printf("%s\n", database_path);
-  return;
 }
 /*}}}*/
 
@@ -141,12 +120,18 @@ static char *get_database_path(int traverse_up)/*{{{*/
     } while (!at_root);
 
     free(cwd);
+    
+    /* Reason for this : if using create in a subdirectory of a directory
+     * already containing a .tdldb, the cwd after the call here from main would
+     * get left pointing at the directory containing the .tdldb that already
+     * exists, making the call here from process_create() fail.  So go back to
+     * the directory where we started.  */
+    chdir(orig_cwd);
+    free(orig_cwd);
+
     if (found) {
-      free(orig_cwd);
       return filename;
     } else {
-      chdir(orig_cwd);
-      free(orig_cwd);
       return default_database_path;
     }
   }
@@ -163,7 +148,9 @@ static void rename_database(char *path)/*{{{*/
   strcpy(pathbak, path);
   strcat(pathbak, ".bak");
   if (rename(path, pathbak) < 0) {
-    perror("warning, couldn't save backup database:");
+    if (is_noisy) {
+      perror("warning, couldn't save backup database:");
+    }
   }
   free(pathbak);
   return;
@@ -179,6 +166,46 @@ static char *executable_name(char *argv0)/*{{{*/
   return argv0;
 }
 /*}}}*/
+static void load_database(char *path) /*{{{*/
+  /* Return 1 if successful, 0 if no database was found */
+{
+  FILE *in;
+  currently_dirty = 0;
+  in = fopen(path, "rb");
+  if (in) {
+    /* Database may not exist, e.g. if the program has never been run before.
+       */
+    read_database(in, &top);
+    fclose(in);
+    is_loaded = 1;
+  } else {
+    if (is_noisy) {
+      fprintf(stderr, "warning: no database found above this directory\n");
+    }
+  }
+}
+/*}}}*/
+static void save_database(char *path)/*{{{*/
+{
+  FILE *out;
+  if (is_loaded && currently_dirty) {
+    /* The next line only used to happen if the command wasn't 'create'.
+     * However, it should quietly fail for create, where the existing database
+     * doesn't exist */
+    rename_database(path);
+    out = fopen(path, "wb");
+    if (!out) {
+      fprintf(stderr, "Cannot open database %s for writing\n", path);
+      exit(1);
+    }
+    write_database(out, &top);
+    fclose(out);
+  }
+  currently_dirty = 0;
+  return;
+}
+/*}}}*/
+  
 static void usage(void)/*{{{*/
 {
   fprintf(stderr,
@@ -274,150 +301,261 @@ static char *get_version(void)/*{{{*/
 }
 /*}}}*/
 
+static void process_create(char **x)/*{{{*/
+{
+  char *dbpath = get_database_path(0);
+  struct stat sb;
+  int result;
+
+  result = stat(dbpath, &sb);
+  if (result >= 0) {
+    fprintf(stderr, "Can't create database <%s>, it already exists!\n", dbpath);
+    exit(1);
+  } else {
+    /* Should have an empty database, and the dirty flag will be set */
+    current_database_path = dbpath;
+    /* don't emit complaint about not being able to move database to its backup */
+    is_noisy = 0;
+    /* Force empty database to be written out */
+    is_loaded = currently_dirty = 1;
+    return;
+  }
+}
+/*}}}*/
+static void process_priority(char **x)/*{{{*/
+{
+  enum Priority priority = parse_priority(*x);
+  struct node *n;
+  int do_descendents;
+ 
+  while (*++x) {
+    do_descendents = include_descendents(*x); /* May modify *x */
+    n = lookup_node(*x, 0, NULL);
+    n->priority = priority;
+    if (do_descendents) {
+      set_descendent_priority(n, priority);
+    }
+  }
+}/*}}}*/
+static void process_which(char **argv)/*{{{*/
+{
+  printf("%s\n", current_database_path);
+  return;
+}
+/*}}}*/
+static void process_version(char **x)/*{{{*/
+{
+  fprintf(stderr, "tdl %s\n", get_version());
+  return;
+}
+/*}}}*/
+static void process_exit(char **x)/*{{{*/
+{
+  save_database(current_database_path);
+  exit(0);
+}
+/*}}}*/
+static void process_quit(char **x)/*{{{*/
+{
+  /* Just get out quick, don't write the database back */
+  exit(0);
+}
+/*}}}*/
+
+/* All the main processing functions take an argv array and 0,1 or 2 integer
+ * args */ 
+typedef void (*fun2)(char **, int, int);
+typedef void (*fun1)(char **, int);
+typedef void (*fun0)(char **);
+
+struct command {/*{{{*/
+  char *name; /* add, remove etc */
+  char *shortcut; /* tdla etc */
+  void *func; /* function pointer */
+  unsigned char  dirty; /* 1 if operation can dirty the database, 0 if read-only */
+  unsigned char  nextra; /* how many integer args */
+  unsigned char  i1;
+  unsigned char  i2;    /* the integer args */
+  unsigned char  load_db; /* 1 if cmd requires current database to be loaded first */
+  unsigned char  interactive_ok; /* 1 if OK to use interactively. */
+  unsigned char  non_interactive_ok; /* 1 if OK to use from command line */
+};
+/*}}}*/
+struct command cmds[] = {/*{{{*/
+  {"--help",   NULL,   (void *) usage,            0, 0, 0, 0, 0, 0, 1},
+  {"-h",       NULL,   (void *) usage,            0, 0, 0, 0, 0, 0, 1},
+  {"-V",       NULL,   (void *) process_version,  0, 0, 0, 0, 0, 0, 1},
+  {"above",    NULL,   (void *) process_move,     1, 2, 0, 0, 1, 1, 1},
+  {"add",      "tdla", (void *) process_add,      1, 1, 0, 0, 1, 1, 1},
+  {"after",    NULL,   (void *) process_move,     1, 2, 1, 0, 1, 1, 1},
+  {"below",    NULL,   (void *) process_move,     1, 2, 1, 0, 1, 1, 1},
+  {"before",   NULL,   (void *) process_move,     1, 2, 0, 0, 1, 1, 1},
+  {"create",   NULL,   (void *) process_create,   1, 0, 0, 0, 0, 0, 1},
+  {"done",     "tdld", (void *) process_done,     1, 0, 0, 0, 1, 1, 1},
+  {"edit",     NULL,   (void *) process_edit,     1, 0, 0, 0, 1, 1, 1},
+  {"exit",     NULL,   (void *) process_exit,     0, 0, 0, 0, 0, 1, 0},
+  {"export",   NULL,   (void *) process_export,   0, 0, 0, 0, 1, 1, 1},
+  {"help",     NULL,   (void *) usage,            0, 0, 0, 0, 0, 1, 1},
+  {"import",   NULL,   (void *) process_import,   1, 0, 0, 0, 1, 1, 1},
+  {"into",     NULL,   (void *) process_move,     1, 2, 0, 1, 1, 1, 1},
+  {"list",     "tdll", (void *) process_list,     0, 0, 0, 0, 1, 1, 1},
+  {"log",      "tdlg", (void *) process_add,      1, 1, 1, 0, 1, 1, 1},
+  {"priority", NULL,   (void *) process_priority, 1, 0, 0, 0, 1, 1, 1},
+  {"purge",    NULL,   (void *) process_purge,    1, 0, 0, 0, 1, 1, 1},
+  {"quit",     NULL,   (void *) process_quit,     0, 0, 0, 0, 0, 1, 0},
+  {"remove",   NULL,   (void *) process_remove,   1, 0, 0, 0, 1, 1, 1},
+  {"report",   NULL,   (void *) process_report,   0, 0, 0, 0, 1, 1, 1},
+  {"undo",     NULL,   (void *) process_undo,     1, 0, 0, 0, 1, 1, 1},
+  {"usage",    NULL,   (void *) usage,            0, 0, 0, 0, 0, 1, 1},
+  {"version",  NULL,   (void *) process_version,  0, 0, 0, 0, 0, 1, 1},
+  {"which",    NULL,   (void *) process_which,    0, 0, 0, 0, 0, 1, 1} /* FIXME */
+};/*}}}*/
+
+#define N(x) (sizeof(x) / sizeof(x[0]))
+
+static int is_processing = 0;
+static int was_signalled = 0;
+
+static void handle_signal(int a)/*{{{*/
+{
+  was_signalled = 1;
+  /* And close stdin, which should cause readline() in inter.c to return
+   * immediately if it was active when the signal arrived. */
+  close(0);
+}
+/*}}}*/
+static void guarded_sigaction(int signum, struct sigaction *sa)/*{{{*/
+{
+  if (sigaction(signum, sa, NULL) < 0) {
+    perror("sigaction");
+    exit(1);
+  }
+}
+/*}}}*/
+static void setup_signals(void)/*{{{*/
+{
+  struct sigaction sa;
+  if (sigemptyset(&sa.sa_mask) < 0) {
+    perror("sigemptyset");
+    exit(1);
+  }
+  sa.sa_handler = handle_signal;
+  sa.sa_flags = 0;
+  guarded_sigaction(SIGHUP, &sa);
+  guarded_sigaction(SIGINT, &sa);
+  guarded_sigaction(SIGQUIT, &sa);
+  guarded_sigaction(SIGTERM, &sa);
+
+  return;
+}
+/*}}}*/
+void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
+{
+  int i, n, index=-1;
+  fun0 f0;
+  fun1 f1;
+  fun2 f2;
+  char *executable;
+  int is_tdl;
+  char **p;
+
+  if (was_signalled) {
+    save_database(current_database_path);
+    exit(0);
+  }
+
+  executable = executable_name(argv[0]);
+  is_tdl = (!strcmp(executable, "tdl"));
+  
+  p = argv + 1;
+  if (*p && !strcmp(*p, "-q")) p++;
+  
+  /* Parse command line */
+  if (is_tdl && !*p) {
+    /* If no arguments, go into interactive mode, but only if we didn't come from there (!) */
+    if (!is_interactive) {
+      setup_signals();
+      interactive();
+    }
+    return;
+  }
+  
+  n = N(cmds);
+  if (is_tdl) {
+    for (i=0; i<n; i++) {
+      /* This is a crock - eventually, replace by a search that can hit at the shortest unambiguous substring */
+      if ((is_interactive ? cmds[i].interactive_ok : cmds[i].non_interactive_ok) &&
+          !strncmp(cmds[i].name, *p, 3)) {
+        index = i;
+        break;
+      }
+    }
+  } else {
+    for (i=0; i<n; i++) {
+      /* This is a crock - eventually, replace by a search that can hit at the shortest unambiguous substring */
+      if (cmds[i].shortcut && !strcmp(cmds[i].shortcut, executable)) {
+        index = i;
+        break;
+      }
+    }
+  }
+
+  if (index >= 0) {
+    is_processing = 1;
+
+    if (!is_loaded && cmds[index].load_db) {
+      load_database(current_database_path);
+    }
+
+    switch (cmds[index].nextra) {
+      case 0:
+        f0 = (fun0) cmds[index].func;
+        (*f0) (p + 1);
+        break;
+      case 1:
+        f1 = (fun1) cmds[index].func;
+        (*f1) (p + 1, cmds[index].i1);
+        break;
+      case 2:
+        f2 = (fun2) cmds[index].func;
+        (*f2) (p + 1, cmds[index].i1, cmds[index].i2);
+        break;
+    }
+    if (cmds[index].dirty) {
+      currently_dirty = 1;
+    }
+
+    is_processing = 0;
+    if (was_signalled) {
+      save_database(current_database_path);
+      exit(0);
+    }
+    
+  } else {
+    fprintf(stderr, "Unknown command <%s>\n", argv[1]);
+    if (!is_interactive) exit(1);
+  }
+  
+}
+/*}}}*/
+
 /*{{{  int main (int argc, char **argv)*/
 int main (int argc, char **argv)
 {
-  FILE *in, *out;
-  char *database_path;
-  int dirty = 0;
-  int is_create_command;
-  char *executable;
-  int is_tdl;
-  int is_noisy = 1;
-
   /* Initialise database */
   top.prev = (struct node *) &top;
   top.next = (struct node *) &top;
 
-  executable = executable_name(argv[0]);
-  is_tdl = (!strcmp(executable, "tdl"));
-
   if ((argc > 1) && (!strcmp(argv[1], "-q"))) {
     is_noisy = 0;
-    ++argv;
-    --argc;
   }
 
-  /* Parse command line */
-  if (is_tdl && (argc < 2)) {
-    fprintf(stderr, "Need a subcommand.  Try\n\n    tdl help\n\nfor further information.\n");
-    exit(1);
-  }
+  current_database_path = get_database_path(1);
 
-  /*{{{  Get path to database */
-  is_create_command = (is_tdl && !strcmp(argv[1], "create"));
-  database_path = get_database_path(!is_create_command);
-  /*}}}*/
-  
-  /*{{{  Load database*/
-  in = fopen(database_path, "rb");
-  if (in) {
-    /* Database may not exist, e.g. if the program has never been run before.
-       */
-    read_database(in, &top);
-    fclose(in);
-  } else {
-    no_database_here = 1;
-    if (!is_create_command && is_noisy) {
-      fprintf(stderr, "warning: no database found above this directory\n");
-    }
-  }
-  /*}}}*/
+  dispatch(argv, 0);
 
-  if (is_tdl) {
-    if (!strcmp(argv[1], "add")) {
-      process_add(argv + 2, 0);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "log")) {
-      process_add(argv + 2, 1);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "list")) {
-      process_list(argv + 2);
-    } else if (!strcmp(argv[1], "purge")) {
-      process_purge(argv + 2);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "remove")) {
-      process_remove(argv + 2);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "below") || !strcmp(argv[1], "after")) {
-      process_move(argv + 2, 1, 0);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "above") || !strcmp(argv[1], "before")) {
-      process_move(argv + 2, 0, 0);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "into")) {
-      process_move(argv + 2, 0, 1);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "done")) {
-      process_done(argv + 2);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "undo")) {
-      process_undo(argv + 2);
-      dirty = 1;
-    } else if (is_create_command) {
-      process_create(argv + 2);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "edit")) {
-      process_edit(argv + 2);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "report")) {
-      process_report(argv + 2);
-    } else if (!strncmp(argv[1], "pri", 3)) {
-      process_priority(argv + 2);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "export")) {
-      process_export(argv + 2);
-    } else if (!strcmp(argv[1], "import")) {
-      process_import(argv + 2);
-      dirty = 1;
-    } else if (!strcmp(argv[1], "which")) {
-      process_which(database_path);
-    } else if (!strcmp(argv[1], "help") ||
-               !strcmp(argv[1], "usage") ||
-               !strcmp(argv[1], "-h") ||
-               !strcmp(argv[1], "--help")) {
-      usage();
-      exit(0);
-    } else if (!strcmp(argv[1], "version") ||
-               !strcmp(argv[1], "-V") ||
-               !strcmp(argv[1], "--version")) {
-      fprintf(stderr, "tdl %s\n", get_version());
-    } else {
-      fprintf(stderr, "Did not understand command line option\n");
-      exit(1);
-    }
-  } else {
-    if (!strcmp(executable, "tdla")) {
-      process_add(argv + 1, 0);
-      dirty = 1;
-    } else if (!strcmp(executable, "tdll")) {
-      process_list(argv + 1);
-    } else if (!strcmp(executable, "tdld")) {
-      process_done(argv + 1);
-      dirty = 1;
-    } else if (!strcmp(executable, "tdlg")) {
-      process_add(argv + 1, 1);
-      dirty = 1;
-    }
-  }
-
-
-  /*{{{  Save database */
-  if (dirty) {
-    if (!is_create_command) rename_database(database_path);
-    out = fopen(database_path, "wb");
-    if (!out) {
-      fprintf(stderr, "Cannot open database %s for writing\n", database_path);
-      exit(1);
-    }
-
-    write_database(out, &top);
-    fclose(out);
-  }
-  /*}}}*/
-  
+  save_database(current_database_path);
   return 0;
-
 }
 /*}}}*/
 

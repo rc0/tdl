@@ -1,8 +1,8 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.8 2001/10/20 22:06:20 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.9 2002/05/06 23:14:44 richard Exp $
   
    tdl - A console program for managing to-do lists
-   Copyright (C) 2001  Richard P. Curnow
+   Copyright (C) 2001,2002  Richard P. Curnow
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -124,6 +124,12 @@ void process_import(char **x);
 
 /* In dates.c */
 time_t parse_date(char *d, time_t ref, int default_positive);
+
+/* In main.c */
+void dispatch(char **argv, int is_interactive);
+
+/* In inter.c */
+void interactive(void);
 
 #endif /* TDL_H */
           
