@@ -21,7 +21,7 @@
 @author Richard P. Curnow
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2001, 2002 Richard P. Curnow
+Copyright @copyright{} 2001-2003 Richard P. Curnow
 @end titlepage
 
 @contents
@@ -368,6 +368,7 @@ This section describes each of the tdl subcommands.
 * quit command::    Exit program, NOT saving database
 * remove command::  Remove 1 or more entries from the database
 * report command::  Report completed tasks in interval
+* save command::    Save the database to disc and continue working
 * undo command::    Mark 1 or more entries as not done (cancel effect of 'done')
 * usage command::   Display help information
 * version command:: Display program version
@@ -758,7 +759,7 @@ interactive readline interface or straight from the shell.
 
 @example
 tdl> help
-tdl, Copyright (C) 2001,2002 Richard P. Curnow
+tdl, Copyright (C) 2001-2003 Richard P. Curnow
 tdl comes with ABSOLUTELY NO WARRANTY.
 This is free software, and you are welcome to redistribute it
 under certain conditions; see the GNU General Public License for details.
@@ -1292,6 +1293,21 @@ from the shell prompt line, you can redirect the output to a file,
 %
 @end example
 
+@c }}}
+@c {{{ save command
+@node save command
+@subsection save command
+
+The @command{save} command can be used to write the current in-memory database
+out to the disc database file.  The behaviour is currently equivalent to the
+command @command{exit} followed by re-running @samp{tdl} from the shell.
+
+This command is useful if you tend to do long interactive tdl sessions.  It guards against the risks of
+@enumerate
+@item accidentally typing @samp{quit} when you meant @samp{exit}
+@item machine crashes
+@item running @samp{tdl} in another window and seeing a stale copy of the database file.
+@end enumerate
 @c }}}
 @c {{{ undo command
 @node undo command

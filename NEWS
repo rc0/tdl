@@ -1,3 +1,7 @@
+NEW IN VERSION 1.3
+
+- Added "save" command
+
 NEW IN VERSION 1.2
 
 - Fix bug : priority with no args core dumped.
@@ -75,4 +79,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.7 2002/07/22 21:14:00 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.8 2003/03/04 20:47:12 richard Exp $

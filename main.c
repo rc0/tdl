@@ -1,8 +1,8 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.29 2002/07/22 20:38:11 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.30 2003/03/04 20:47:12 richard Exp $
   
    tdl - A console program for managing to-do lists
-   Copyright (C) 2001,2002  Richard P. Curnow
+   Copyright (C) 2001-2003  Richard P. Curnow
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -282,6 +282,7 @@ static char desc_purge[] = "Remove old done entries in subtrees";
 static char desc_quit[] = "Exit program, NOT saving database";
 static char desc_remove[] = "Remove 1 or more entries from the database";
 static char desc_report[] = "Report completed tasks in interval";
+static char desc_save[] = "Save the database back to disc and keep working";
 static char desc_undo[] = "Mark 1 or more entries as not done (cancel effect of 'done')";
 static char desc_usage[] = "Display help information";
 static char desc_version[] = "Display program version";
@@ -321,6 +322,7 @@ static char synop_quit[] = "";
 static char synop_remove[] = "<entry_index>[...] ...";
 static char synop_report[] = "<start_datespec> [<end_datespec>]\n"
                              "(end defaults to now)";
+static char synop_save[] = "";
 static char synop_undo[] = "<entry_index>[...] ...";
 static char synop_usage[] = "[<command-name>]";
 static char synop_version[] = "";
@@ -399,7 +401,16 @@ static int process_quit(char **x)/*{{{*/
   exit(0);
 }
 /*}}}*/
-
+static int process_save(char **x)/*{{{*/
+{
+  /* FIXME: I'm not sure whether the behaviour here should include renaming the
+   * existing disc database to become the backup file.  I think the precedent
+   * would be how vi or emacs handle backup files when multiple saves are done
+   * within a session. */
+  save_database(current_database_path);
+  return 0;
+}
+/*}}}*/
 /* Forward prototype */
 static int usage(char **x);
 
@@ -432,6 +443,7 @@ struct command cmds[] = {/*{{{*/
   {"quit",     NULL,   process_quit,     desc_quit,    synop_quit,    NULL,              0, 0, 1, 1, 0},
   {"remove",   NULL,   process_remove,   desc_remove,  synop_remove,  NULL,              1, 1, 3, 1, 1},
   {"report",   NULL,   process_report,   desc_report,  synop_report,  NULL,              0, 1, 3, 1, 1},
+  {"save",     NULL,   process_save,     desc_save,    synop_save,    NULL,              0, 1, 1, 1, 0},
   {"undo",     NULL,   process_undo,     desc_undo,    synop_undo,    NULL,              1, 1, 2, 1, 1},
   {"usage",    NULL,   usage,            desc_usage,   synop_usage,   complete_help,     0, 0, 2, 1, 1},
   {"version",  NULL,   process_version,  desc_version, synop_version, NULL,              0, 0, 1, 1, 1},
@@ -480,7 +492,7 @@ static void setup_signals(void)/*{{{*/
 static void print_copyright(void)/*{{{*/
 {
   fprintf(stderr,
-          "tdl %s, Copyright (C) 2001,2002 Richard P. Curnow\n"
+          "tdl %s, Copyright (C) 2001-2003 Richard P. Curnow\n"
           "tdl comes with ABSOLUTELY NO WARRANTY.\n"
           "This is free software, and you are welcome to redistribute it\n"
           "under certain conditions; see the GNU General Public License for details.\n\n",
