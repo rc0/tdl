@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.37 2003/05/13 21:00:46 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.38 2003/05/13 21:06:13 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -442,6 +442,17 @@ static int process_exit(char **x)/*{{{*/
 static int process_quit(char **x)/*{{{*/
 {
   /* Just get out quick, don't write the database back */
+  char ans[4];
+  if (currently_dirty) {
+    printf(" WARNING: if you quit, all changes to database will be lost!\n"
+        " Use command 'exit' instead of 'quit' if you wish to save data.\n"
+        " Really quit [y/N]? ");
+    fgets (ans, 4, stdin);
+    if (strcasecmp(ans,"y\n") != 0) {
+      printf(" Quit canceled.\n");
+      return 0;
+    }
+  }
   free_database(&top);
   exit(0);
 }

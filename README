@@ -58,9 +58,10 @@ Laurent Papier
 
 Pedro Zorzenon Neto
     Handling of database permissions
+    Confirmation of quit command
 
 taviso
     Bug fixes
    
-$Header: /cvs/src/tdl/README,v 1.7 2003/05/13 21:00:46 richard Exp $
+$Header: /cvs/src/tdl/README,v 1.8 2003/05/13 21:06:13 richard Exp $
 
