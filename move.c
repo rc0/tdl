@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.6 2002/05/19 22:46:50 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.7 2003/03/10 00:35:14 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -45,7 +45,7 @@ static int process_move_internal(char **x, int below_not_above, int into_parent)
   int argc, i, n;
   struct links *insert_point;
   struct node **table;
-  struct node *insert_parent, *parent;
+  struct node *insert_parent, *insert_peer, *parent;
   
   char *option;
 
@@ -64,7 +64,8 @@ static int process_move_internal(char **x, int below_not_above, int into_parent)
     if (!insert_parent) return -1;
     insert_point = &insert_parent->kids;
   } else {
-    insert_point = (struct links *) lookup_node(x[0], 1, &insert_parent); /* Allow final component to be zero */
+    insert_peer = lookup_node(x[0], 1, &insert_parent); /* Allow final component to be zero */
+    insert_point = (struct links *) &insert_peer->chain;
     if (!insert_point) return -1;
   }
   table = new_array(struct node *, n);
@@ -92,6 +93,15 @@ static int process_move_internal(char **x, int below_not_above, int into_parent)
     next->chain.prev = prev;
 
     (below_not_above ? append_node : prepend_node) (table[i], insert_point);
+    if (into_parent) {
+      table[i]->parent = insert_parent;
+    } else {
+      /* in this case 'insert_peer' is just the one we're putting things above
+       * or below, i.e. the entries being moved will be siblings of it and will
+       * share its parent. */
+      table[i]->parent = insert_peer->parent;
+    }
+      
     /* To insert the nodes in the command line order */
     if (below_not_above) insert_point = &table[i]->chain;
     /* if inserting above something, the insertion point stays fixed */

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.16 2002/07/19 23:29:38 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.17 2003/03/10 00:35:14 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -126,6 +126,8 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   char *p;
   int n_kids, n_open_kids;
   int show_state;
+  char *narrow_prefix;
+  int index_buffer_len;
 
   is_done = (y->done > 0);
   is_ignored = (y->done == IGNORED_TIME);
@@ -135,6 +137,48 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   do_indent(indent);
   count_kids(&y->kids, &n_kids, NULL, &n_open_kids);
   show_state = options->show_all || options->show_postponed;
+  index_buffer_len = strlen(index_buffer);
+  narrow_prefix = get_narrow_prefix();
+
+  if (narrow_prefix) {
+    if (options->monochrome) printf("%s%s", narrow_prefix, index_buffer_len ? "." : "");
+    else                     printf("%s%s%s%s", BLUE, narrow_prefix, index_buffer_len ? "." : "", NORMAL);
+  }
+  
+  if (options->monochrome) printf("%s", index_buffer);
+  else                     printf("%s%s%s", GREEN, index_buffer, NORMAL);
+
+  if (summarise_kids && (n_kids > 0)) {
+    if (options->monochrome) printf(" [%d/%d]", n_open_kids, n_kids);
+    else                     printf(" %s[%d/%d]%s", CYAN, n_open_kids, n_kids, NORMAL);
+  }
+
+  if (show_state && !options->verbose) {
+    if (is_ignored) {
+      if (options->monochrome) printf(" (IGNORED)");
+      else                     printf(" %s(IGNORED)%s", BLUE, NORMAL);
+    }
+    if (is_done) {
+      if (options->monochrome) printf(" (DONE)");
+      else                     printf(" %s(DONE)%s", CYAN, NORMAL);
+    }
+    if (is_postponed) {
+      if (options->monochrome) printf(" (POSTPONED)");
+      else                     printf(" %s(POSTPONED)%s", MAGENTA, NORMAL);
+    }
+    if (y->arrived > now) {
+      if (options->monochrome) printf(" (DEFERRED)");
+      else                     printf(" %s(DEFERRED)%s", MAGENTA, NORMAL);
+    }
+    printf(" : ");
+  } else {
+    printf(" ");
+  }
+
+  if (options->monochrome) printf("%s", is_done ? CYAN : is_postponed ? MAGENTA : colour_table[y->priority]);
+
+#if 0
+  
   if (summarise_kids && (n_kids > 0)) {
     if (options->monochrome) {
       printf("%s [%d/%d] %s", index_buffer, n_open_kids, n_kids,
@@ -166,6 +210,7 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
              is_done ? CYAN : is_postponed ? MAGENTA : colour_table[y->priority]);
     }
   }
+#endif
   for (p = y->text; *p; p++) {
     putchar(*p);
     if (*p == '\n') {
@@ -174,6 +219,7 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   }
   if (!options->monochrome) printf("%s", NORMAL);
   printf("\n");
+
   if (options->verbose) {
     print_timestamp(y->arrived, "Arrived", indent, options->monochrome);
     do_indent(indent + 2);
@@ -420,7 +466,7 @@ int process_list(char **x)/*{{{*/
   struct list_options options;
   int options_done = 0;
   int any_paths = 0;
-  char index_buffer[64];
+  char index_buffer[256];
   char *y;
   enum Priority prio = PRI_NORMAL, prio_to_use, node_prio;
   int prio_set = 0;
@@ -465,7 +511,7 @@ int process_list(char **x)/*{{{*/
       
       any_paths = 1;
       index_buffer[0] = '\0';
-      strcpy(index_buffer, y);
+      strcat(index_buffer, y);
       summarise_kids = (options.set_depth && (options.depth==0));
       if (hits[n->iscratch]) {
         print_details(n, 0, summarise_kids, &options, index_buffer, now);
@@ -522,8 +568,20 @@ int process_list(char **x)/*{{{*/
   }
   
   if (!any_paths) {
-    index_buffer[0] = 0;
-    list_chain(&top, 0, 0, &options, index_buffer, prio, now, hits);
+    struct node *narrow_top = get_narrow_top();
+    if (narrow_top) {
+      index_buffer[0] = 0;
+      if (hits[narrow_top->iscratch]) {
+        int summarise_kids = (options.set_depth && (options.depth==0));
+        print_details(narrow_top, 0, summarise_kids, &options, index_buffer, now);
+      }
+      if (!options.set_depth || (options.depth > 0)) {
+        list_chain(&narrow_top->kids, 0, 1, &options, index_buffer, prio, now, hits);
+      }
+    } else {
+      index_buffer[0] = 0;
+      list_chain(&top, 0, 0, &options, index_buffer, prio, now, hits);
+    }
   }
 
   if (hits) free(hits);

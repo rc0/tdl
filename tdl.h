@@ -1,8 +1,8 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.20 2003/03/06 22:53:24 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.21 2003/03/10 00:35:14 richard Exp $
   
    tdl - A console program for managing to-do lists
-   Copyright (C) 2001,2002  Richard P. Curnow
+   Copyright (C) 2001-2002  Richard P. Curnow
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -175,6 +175,12 @@ char **complete_priority(char *, int);
 char **complete_postpone(char *, int);
 char **complete_open(char *, int);
 char **complete_done(char *, int);
+
+/* In narrow.c */
+struct node *get_narrow_top(void);
+char *get_narrow_prefix(void);
+int process_narrow(char **x);
+int process_widen(char **x);
 
 #endif /* TDL_H */
           

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.31 2003/03/06 22:53:24 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.32 2003/03/10 00:35:14 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -276,6 +276,7 @@ static char desc_ignore[] = "Postpone or partially remove 1 or more entries";
 static char desc_into[] = "Move entries to end of new parent";
 static char desc_list[] = "List entries in database (default from top node)";
 static char desc_log[] = "Add a new entry to the database, mark it done as well";
+static char desc_narrow[] = "Restrict actions to part of the database";
 static char desc_open[] = "Move one or more entries out of postponed state";
 static char desc_postpone[] = "Make one or more entries postponed";
 static char desc_priority[] = "Change the priority of 1 or more entries";
@@ -289,6 +290,7 @@ static char desc_undo[] = "Mark 1 or more entries as not done (cancel effect of 
 static char desc_usage[] = "Display help information";
 static char desc_version[] = "Display program version";
 static char desc_which[] = "Display filename of database being used";
+static char desc_widen[] = "Widen the part of the database to which actions apply";
 
 /* }}} */
 /* {{{ Synopsis of each subcommand */
@@ -317,6 +319,7 @@ static char synop_list[] = "[-v] [-a] [-p] [-m] [-1..9] [<min-priority>] [<paren
                            "-1,-2,..,-9        : summarise (and don't show) entries below this depth\n"
                            "<search_condition> : word to match on";
 static char synop_log[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_text>";
+static char synop_narrow[] = "<entry_index>";
 static char synop_open[] = "<entry_index>[...] ...";
 static char synop_postpone[] = "<entry_index>[...] ...";
 static char synop_priority[] = "<new_priority> <entry_index>[...] ...";
@@ -331,6 +334,7 @@ static char synop_undo[] = "<entry_index>[...] ...";
 static char synop_usage[] = "[<command-name>]";
 static char synop_version[] = "";
 static char synop_which[] = "";
+static char synop_widen[] = "[<levels>]";
 /* }}} */
 
 static int process_create(char **x)/*{{{*/
@@ -451,6 +455,7 @@ struct command cmds[] = {/*{{{*/
   {"list",     "tdll", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
   {"ls",       NULL,   process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
   {"log",      "tdlg", process_log,      desc_log,     synop_log,     NULL,              1, 1, 2, 1, 1},
+  {"narrow",   NULL,   process_narrow,   desc_narrow,  synop_narrow,  NULL,              0, 1, 1, 1, 0},
   {"open",     NULL,   process_open,     desc_open,    synop_open,    complete_open,     1, 1, 1, 1, 1},
   {"postpone", NULL,   process_postpone, desc_postpone,synop_postpone,complete_postpone, 1, 1, 2, 1, 1},
   {"priority", NULL,   process_priority, desc_priority,synop_priority,complete_priority, 1, 1, 2, 1, 1},
@@ -463,7 +468,8 @@ struct command cmds[] = {/*{{{*/
   {"undo",     NULL,   process_undo,     desc_undo,    synop_undo,    NULL,              1, 1, 2, 1, 1},
   {"usage",    NULL,   usage,            desc_usage,   synop_usage,   complete_help,     0, 0, 2, 1, 1},
   {"version",  NULL,   process_version,  desc_version, synop_version, NULL,              0, 0, 1, 1, 1},
-  {"which",    NULL,   process_which,    desc_which,   synop_which,   NULL,              0, 0, 1, 1, 1}
+  {"which",    NULL,   process_which,    desc_which,   synop_which,   NULL,              0, 0, 2, 1, 1},
+  {"widen",    NULL,   process_widen,    desc_widen,   synop_widen,   NULL,              0, 1, 2, 1, 0}
 };/*}}}*/
 int n_cmds = 0;
 

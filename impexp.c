@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/impexp.c,v 1.4 2002/07/18 21:06:31 richard Exp $
+   $Header: /cvs/src/tdl/impexp.c,v 1.5 2003/03/10 00:35:14 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -123,6 +123,7 @@ int process_import(char **x)/*{{{*/
     for (n = data.next; n != (struct node *) &data; n = nn) {
       nn = n->chain.next;
       prepend_node(n, &top);
+      n->parent = NULL;
     }
   }
 

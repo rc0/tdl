@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.11 2002/07/18 23:32:57 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.12 2003/03/10 00:35:14 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -31,7 +31,14 @@ static int add_new_node(char *parent_path, int set_done, int set_priority, enum 
     parent = lookup_node(parent_path, 0, NULL);
     if (!parent) return -1;
   } else {
-    parent = NULL;
+    struct node *narrow_top;
+    narrow_top = get_narrow_top();
+    if (narrow_top) {
+      parent = narrow_top;
+    } else {
+      /* If all else fails, i.e. new node is a top-level one. */
+      parent = NULL;
+    }
   }
   
   nn = new_node();
@@ -57,6 +64,27 @@ static int add_new_node(char *parent_path, int set_done, int set_priority, enum 
   return 0;
 }
 /*}}}*/
+static char *make_composite(char *prefix, char *suffix)/*{{{*/
+{
+  int plen, slen;
+  int tlen;
+  char *result;
+  
+  plen = prefix ? strlen(prefix) : 0;
+  slen = suffix ? strlen(suffix) : 0;
+  tlen = plen + slen;
+  if (plen && slen) ++tlen; /* for internal '.' */
+  if (!plen && !slen) return NULL;
+  result = new_array(char, 1+tlen);
+  result[0] = '\0';
+  if (plen) {
+    strcat(result, prefix);
+    if (slen) strcat(result, ".");
+  }
+  if (slen) strcat(result, suffix);
+  return result;
+}
+/*}}}*/
 static int try_add_interactive(char *parent_path, int set_done)/*{{{*/
 {
   char *text;
@@ -66,13 +94,17 @@ static int try_add_interactive(char *parent_path, int set_done)/*{{{*/
   int status;
   char prompt[128];
   char *prompt_base;
+  char *composite_index;
+
+  composite_index = make_composite(get_narrow_prefix(), parent_path);
 
   prompt_base = set_done ? "log" : "add";
-  if (parent_path) {
-    sprintf(prompt, "%s (%s)> ", prompt_base, parent_path);
+  if (composite_index) {
+    sprintf(prompt, "%s (%s)> ", prompt_base, composite_index);
   } else {
     sprintf(prompt, "%s> ", prompt_base);
   }
+  if (composite_index) free(composite_index);
   
   do {
     text = interactive_text(prompt, NULL, &blank, &error);

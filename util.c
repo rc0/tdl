@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.7 2002/07/22 20:38:11 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.8 2003/03/10 00:35:14 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -52,9 +52,23 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
   char *p = path;
   int n, nc, idx, tidx, aidx, ncomp, comp10;
   int direction;
-  struct links *x = &top;
+  struct links *x;
   struct node *y = NULL;
+  struct node *narrow_top;
 
+  narrow_top = get_narrow_top();
+  if (narrow_top) {
+    /* Special case to allow user to do operations on the node to which the
+     * view is currently narrowed. (This doesn't apply to 'top' which is just a
+     * skeleton entry.) */
+    if (!strcmp(path, ".")) {
+      return narrow_top;
+    }
+    x = &(narrow_top->kids);
+  } else {
+    x = &top;
+  }
+  
   ncomp = 1;
   if (parent) *parent = NULL;
 
@@ -231,7 +245,9 @@ void prepend_child(struct node *child, struct node *parent)/*{{{*/
   if (parent) {
     prepend_node(child, &parent->kids);
   } else {
-    prepend_node(child, &top);
+    struct node *narrow_top;
+    narrow_top = get_narrow_top();
+    prepend_node(child, narrow_top ? &narrow_top->kids : &top);
   }
 }
 /*}}}*/

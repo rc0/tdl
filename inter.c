@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.9 2002/07/18 23:32:57 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.10 2003/03/10 00:35:14 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -191,6 +191,7 @@ static char *generate_a_done_completion(char *text, int state)/*{{{*/
 {
   static struct node_chain *chain = NULL;
   struct node *node;
+  struct node *narrow_top;
   char *buf;
   int len;
 
@@ -199,7 +200,8 @@ static char *generate_a_done_completion(char *text, int state)/*{{{*/
   if (!state) {
     /* Re-initialise the node chain */
     if (chain) cleanup_chain(chain);
-    chain = start_chain(&top, NULL);
+    narrow_top = get_narrow_top();
+    chain = start_chain((narrow_top ? &narrow_top->kids : &top), NULL);
   }
 
   len = strlen(text);
@@ -223,6 +225,7 @@ static char *generate_a_postpone_completion(char *text, int state)/*{{{*/
 {
   static struct node_chain *chain = NULL;
   struct node *node;
+  struct node *narrow_top;
   char *buf;
   int len;
 
@@ -231,7 +234,8 @@ static char *generate_a_postpone_completion(char *text, int state)/*{{{*/
   if (!state) {
     /* Re-initialise the node chain */
     if (chain) cleanup_chain(chain);
-    chain = start_chain(&top, NULL);
+    narrow_top = get_narrow_top();
+    chain = start_chain((narrow_top ? &narrow_top->kids : &top), NULL);
   }
 
   len = strlen(text);
@@ -485,6 +489,23 @@ static int is_line_blank(char *line)/*{{{*/
   return 1;
 }
 /*}}}*/
+static char *make_prompt(void)/*{{{*/
+{
+  char *narrow_prefix = get_narrow_prefix();
+  char *result;
+  if (narrow_prefix) {
+    int length;
+    length = strlen(narrow_prefix) + 8;
+    result = new_array(char, length);
+    strcpy(result, "tdl[");
+    strcat(result, narrow_prefix);
+    strcat(result, "]> ");
+  } else {
+    result = new_string("tdl> ");
+  }
+  return result;
+}
+/*}}}*/
 #ifdef USE_READLINE
 static void interactive_readline(void)/*{{{*/
 {
@@ -492,7 +513,9 @@ static void interactive_readline(void)/*{{{*/
   int had_char;
   
   do {
-    cmd = readline("tdl> ");
+    char *prompt = make_prompt();
+    cmd = readline(prompt);
+    free(prompt);
 
     /* At end of file (e.g. input is a script, or user hits ^D, or stdin (file 
        #0) is closed by the signal handler) */
