@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.2 2001/08/21 22:43:24 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.3 2001/08/23 21:22:51 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -21,7 +21,10 @@
 
 #include <time.h>
 #include <string.h>
+#include <ctype.h>
 #include "tdl.h"
+
+#define INDENT_TAB 3
 
 /*{{{ Colour definitions */
 #define RED     "[31m[1m"
@@ -73,13 +76,43 @@ static void print_timestamp(int timestamp, char *leader, int indent)/*{{{*/
   printf("%s%s:%s %s (%ld day%s ago)\n", GREEN, leader, NORMAL, buffer, days_ago, (days_ago == 1) ? "" : "s");
 }
 /*}}}*/
+static void print_details(struct node *y, int indent, int verbose, int all, char *index_buffer)/*{{{*/
+{
+  int is_done;
+  char *p;
+
+  is_done = (y->done > 0);
+  if (!all && is_done) return;
+
+  do_indent(indent);
+  printf("%s%s%s %s%s", GREEN, index_buffer, NORMAL,
+         (all && !verbose && is_done) ? CYAN "(DONE) " NORMAL : "",
+         is_done ? DIMCYAN : colour_table[y->priority]);
+  for (p = y->text; *p; p++) {
+    putchar(*p);
+    if (*p == '\n') {
+      do_indent(indent + 5);
+    }
+  }
+  printf("%s\n", NORMAL);
+  if (verbose) {
+    print_timestamp(y->arrived, "Arrived", indent);
+    do_indent(indent + 2);
+    printf("%sPriority: %s%s%s\n",
+           GREEN, colour_table[y->priority], priority_text[y->priority], NORMAL);
+    if (y->required_by > 0) print_timestamp(y->required_by, "Required by", indent);
+    if (y->done > 0) print_timestamp(y->done, "Completed", indent);
+    printf("\n");
+  }
+
+}
+/*}}}*/
 static void list_chain(struct links *x, int indent, int verbose, int all, char *index_buffer)/*{{{*/
 {
   struct node *y;
   int idx, is_done;
   char component_buffer[8];
   char new_index_buffer[64];
-  char *p;
   
   for (y = x->next, idx = 1;
        y != (struct node *) x;
@@ -88,34 +121,16 @@ static void list_chain(struct links *x, int indent, int verbose, int all, char *
     is_done = (y->done > 0);
     if (!all && is_done) continue;
 
-    do_indent(indent);
     sprintf(component_buffer, "%d", idx);
     strcpy(new_index_buffer, index_buffer);
     if (strlen(new_index_buffer) > 0) {
       strcat(new_index_buffer, ".");
     }
     strcat(new_index_buffer, component_buffer);
-    printf("%s%s%s %s%s", GREEN, new_index_buffer, NORMAL,
-           (all && !verbose && is_done) ? CYAN "(DONE) " NORMAL : "",
-           is_done ? DIMCYAN : colour_table[y->priority]);
-    for (p = y->text; *p; p++) {
-      putchar(*p);
-      if (*p == '\n') {
-        do_indent(indent + 5);
-      }
-    }
-    printf("%s\n", NORMAL);
-    if (verbose) {
-      print_timestamp(y->arrived, "Arrived", indent);
-      do_indent(indent + 2);
-      printf("%sPriority: %s%s%s\n",
-             GREEN, colour_table[y->priority], priority_text[y->priority], NORMAL);
-      if (y->required_by > 0) print_timestamp(y->required_by, "Required by", indent);
-      if (y->done > 0) print_timestamp(y->done, "Completed", indent);
-      printf("\n");
-    }
 
-    list_chain(&y->kids, indent + 3, verbose, all, new_index_buffer);
+    print_details(y, indent, verbose, all, new_index_buffer);
+
+    list_chain(&y->kids, indent + INDENT_TAB, verbose, all, new_index_buffer);
   }
   return;
 }
@@ -124,16 +139,31 @@ void process_list(char **x)/*{{{*/
 {
   int verbose = 0;
   int all = 0; /* Even show done nodes */
-  char index_buffer[2];
+  int any_paths = 0;
+  char index_buffer[64];
+  char *y;
 
-  while (*x) {
-    if (!strcmp(*x, "-v")) verbose = 1;
-    if (!strcmp(*x, "-a")) all = 1;
+  while ((y = *x) != 0) {
+    if (!strcmp(y, "-v")) verbose = 1;
+    else if (!strcmp(y, "-a")) all = 1;
+    else if (isdigit(y[0]) ||
+             (((y[0] == '-') || (y[0] == '+')) &&
+              (isdigit(y[1])))) {
+      
+      struct node *n = lookup_node(y, 0, NULL);
+      any_paths = 1;
+      index_buffer[0] = '\0';
+      strcpy(index_buffer, y);
+      print_details(n, 0, verbose, all, index_buffer);
+      list_chain(&n->kids, INDENT_TAB, verbose, all, index_buffer);
+    }
+
     x++;
   }
   
-  index_buffer[0] = 0;
-
-  list_chain(&top, 0, verbose, all, index_buffer);
+  if (!any_paths) {
+    index_buffer[0] = 0;
+    list_chain(&top, 0, verbose, all, index_buffer);
+  }
 }
 /*}}}*/

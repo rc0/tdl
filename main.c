@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.5 2001/08/22 22:29:42 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.6 2001/08/23 21:23:05 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -173,9 +173,9 @@ static void usage(void)/*{{{*/
           "   Add a new entry to the database\n\n"
           "tdl log [<parent_index>] [<priority>] <entry_text>\n"
           "   Add a new entry to the database, mark it done as well\n\n"
-          "tdl list [-v] [-a]\n"
-          "tdll     [-v] [-a]\n"
-          "   List entries in database\n"
+          "tdl list [-v] [-a] [<parent_index>...]\n"
+          "tdll     [-v] [-a] [<parent_index>...]\n"
+          "   List entries in database (default from top node)\n"
           "   -v : verbose (show dates, priorities etc)\n"
           "   -a : show all entries, including 'done' ones\n\n"
           "tdl done <entry_index> ...\n"
