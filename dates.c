@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/dates.c,v 1.3 2001/10/28 22:57:04 richard Exp $
+   $Header: /cvs/src/tdl/dates.c,v 1.4 2001/11/11 22:28:44 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -93,7 +93,10 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
   
   len = strlen(d);
 
-  if (isalpha(d[0]) ||
+  if (!strcmp(d, ".")) {
+    result = ref;
+  
+  } else if (isalpha(d[0]) ||
       (((d[0] == '+')|| (d[0] == '-')) && isalpha(d[1]))) {
 
     /* Look for dayname, +dayname, or -dayname */
