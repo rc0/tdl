@@ -2,22 +2,32 @@
 .SH NAME
 tdl \- To do list manager
 .SH SYNOPSIS
-tdl add|edit|log
+tdl [-q] add|edit|log
 .br
-tdl list|done|report
+tdl [-q] list|done|report
 .br
-tdl remove|above|below|into
+tdl [-q] remove|above|below|into
 .br
-tdl version|help
+tdl [-q] version|help
 .br
-tdla
+tdla [-q]
 .br
-tdll
+tdll [-q]
 .br
-tdld
+tdld [-q]
+.br
+tdlg [-q]
 
 .SH DESCRIPTION
 A small program for managing a to-do list.
+.PP
+All forms may take
+.I -q
+as the first command line argument.  Currently, this suppresses the warning
+message if no existing database can be found.  The intended use is for using
+.B tdll
+when changing into a directory, to list outstanding work in that directory.
+
 .SH SUBCOMMANDS
 .B tdl above
 .I index_to_insert_above

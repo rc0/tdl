@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.8 2001/10/07 22:44:46 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.9 2001/10/14 21:35:47 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -182,47 +182,47 @@ static void usage(void)/*{{{*/
           "under certain conditions; see the GNU General Public License for details.\n\n");
 
   fprintf(stderr,
-          "tdl add [<parent_index>] [<priority>] <entry_text>\n"
-          "tdla    [<parent_index>] [<priority>] <entry_text>\n"
+          "tdl [-q] add [<parent_index>] [<priority>] <entry_text>\n"
+          "tdla [-q]    [<parent_index>] [<priority>] <entry_text>\n"
           "   Add a new entry to the database\n\n"
-          "tdl log [<parent_index>] [<priority>] <entry_text>\n"
-          "tdlg [<parent_index>] [<priority>] <entry_text>\n"
+          "tdl [-q] log [<parent_index>] [<priority>] <entry_text>\n"
+          "tdlg [-q] [<parent_index>] [<priority>] <entry_text>\n"
           "   Add a new entry to the database, mark it done as well\n\n"
-          "tdl list [-v] [-a] [<parent_index>...]\n"
-          "tdll     [-v] [-a] [<min-priority>] [<parent_index>...]\n"
+          "tdl [-q] list [-v] [-a] [<parent_index>...]\n"
+          "tdll [-q]     [-v] [-a] [<min-priority>] [<parent_index>...]\n"
           "   List entries in database (default from top node)\n"
           "   -v : verbose (show dates, priorities etc)\n"
           "   -a : show all entries, including 'done' ones\n\n"
-          "tdl done <entry_index>[...] ...\n"
-          "tdld     <entry_index>[...] ...\n"
+          "tdl [-q] done <entry_index>[...] ...\n"
+          "tdld [-q]     <entry_index>[...] ...\n"
           "   Mark 1 or more entries as done\n\n"
-          "tdl remove <entry_index>[...] ...\n"
+          "tdl[-q]  remove <entry_index>[...] ...\n"
           "   Remove 1 or more entries from the database\n\n"
-          "tdl above  <index_to_insert_above> <index_to_move> ...\n"
-          "tdl before <index_to_insert_above> <index_to_move> ...\n"
+          "tdl [-q] above  <index_to_insert_above> <index_to_move> ...\n"
+          "tdl [-q] before <index_to_insert_above> <index_to_move> ...\n"
           "   Move entries above another entry\n\n"
-          "tdl below <index_to_insert_below> <index_to_move> ...\n"
-          "tdl after <index_to_insert_below> <index_to_move> ...\n"
+          "tdl [-q] below <index_to_insert_below> <index_to_move> ...\n"
+          "tdl [-q] after <index_to_insert_below> <index_to_move> ...\n"
           "   Move entries below another entry\n\n"
-          "tdl into <new_parent_index> <index_to_move> ...\n"
+          "tdl [-q] into <new_parent_index> <index_to_move> ...\n"
           "   Move entries to end of new parent\n\n"
-          "tdl purge <interval_ago> [<ancestor_index> ...]\n"
+          "tdl [-q] purge <interval_ago> [<ancestor_index> ...]\n"
           "   Remove old done entries in subtrees\n\n"
-          "tdl edit <entry_index> <new_text>\n"
+          "tdl [-q] edit <entry_index> <new_text>\n"
           "   Change the text of an entry\n\n"
-          "tdl priority <new_priority> <entry_index> ...\n"
+          "tdl [-q] priority <new_priority> <entry_index> ...\n"
           "   Change the priority of 1 or more entries\n\n"
-          "tdl report <start_ago> [<end_ago>]\n"
+          "tdl [-q] report <start_ago> [<end_ago>]\n"
           "   Report completed tasks in interval (end defaults to now)\n\n"
-          "tdl create\n"
+          "tdl [-q] create\n"
           "   Create a new database in the current directory\n\n"
-          "tdl import <filename>\n"
+          "tdl [-q] import <filename>\n"
           "   Import entries from <filename>\n\n"
-          "tdl export <filename> <entry_index> ...\n"
+          "tdl [-q] export <filename> <entry_index> ...\n"
           "   Export entries to <filename>\n\n"
-          "tdl help\n"
+          "tdl [-q] help\n"
           "   Display this text\n\n"
-          "tdl version\n"
+          "tdl [-q] version\n"
           "   Display program version\n\n"
           "<index>    : 1, 1.1 etc (see output of 'tdl list')\n"
           "<priority> : urgent|high|normal|low|verylow\n"
@@ -268,6 +268,7 @@ int main (int argc, char **argv)
   int is_create_command;
   char *executable;
   int is_tdl;
+  int is_noisy = 1;
 
   /* Initialise database */
   top.prev = (struct node *) &top;
@@ -275,6 +276,12 @@ int main (int argc, char **argv)
 
   executable = executable_name(argv[0]);
   is_tdl = (!strcmp(executable, "tdl"));
+
+  if ((argc > 1) && (!strcmp(argv[1], "-q"))) {
+    is_noisy = 0;
+    ++argv;
+    --argc;
+  }
 
   /* Parse command line */
   if (is_tdl && (argc < 2)) {
@@ -296,7 +303,7 @@ int main (int argc, char **argv)
     fclose(in);
   } else {
     no_database_here = 1;
-    if (!is_create_command) {
+    if (!is_create_command && is_noisy) {
       fprintf(stderr, "warning: no database found above this directory\n");
     }
   }
