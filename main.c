@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.21 2002/05/20 22:55:49 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.22 2002/05/21 22:47:09 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -392,7 +392,7 @@ struct command cmds[] = {/*{{{*/
   {"import",   NULL,   process_import,   desc_import,  synop_import,  NULL,              1, 1, 2, 1, 1},
   {"into",     NULL,   process_into,     desc_into,    synop_into,    NULL,              1, 1, 2, 1, 1},
   {"list",     "tdll", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
-  {"log",      "tdlg", process_add,      desc_log,     synop_log,     NULL,              1, 1, 2, 1, 1},
+  {"log",      "tdlg", process_log,      desc_log,     synop_log,     NULL,              1, 1, 2, 1, 1},
   {"priority", NULL,   process_priority, desc_priority,synop_priority,complete_priority, 1, 1, 2, 1, 1},
   {"purge",    NULL,   process_purge,    desc_purge,   synop_purge,   NULL,              1, 1, 2, 1, 1},
   {"quit",     NULL,   process_quit,     desc_quit,    synop_quit,    NULL,              0, 0, 1, 1, 0},
