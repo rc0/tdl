@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.20 2002/05/19 22:46:31 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.21 2002/05/20 22:55:49 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -446,10 +446,11 @@ static void setup_signals(void)/*{{{*/
 static void print_copyright(void)/*{{{*/
 {
   fprintf(stderr,
-          "tdl, Copyright (C) 2001,2002 Richard P. Curnow\n"
+          "tdl %s, Copyright (C) 2001,2002 Richard P. Curnow\n"
           "tdl comes with ABSOLUTELY NO WARRANTY.\n"
           "This is free software, and you are welcome to redistribute it\n"
-          "under certain conditions; see the GNU General Public License for details.\n\n");
+          "under certain conditions; see the GNU General Public License for details.\n\n",
+          get_version());
 }
 /*}}}*/
 void dispatch(char **argv) /* and other args *//*{{{*/
