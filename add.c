@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.2 2001/08/21 22:43:24 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.3 2001/08/29 05:50:06 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -82,9 +82,11 @@ void process_add(char **x, int set_done)/*{{{*/
   prepend_child(nn, parent);
 
   /* Clear done status of parents - they can't be any longer! */
-  while (parent) {
-    parent->done = 0;
-    parent = parent->parent;
+  if (!set_done) {
+    while (parent) {
+      parent->done = 0;
+      parent = parent->parent;
+    }
   }
   
 }
