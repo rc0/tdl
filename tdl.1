@@ -4,11 +4,11 @@ tdl \- To do list manager
 .SH SYNOPSIS
 tdl [-q] add|edit|log
 .br
-tdl [-q] list|done|report
+tdl [-q] list|done|undo|report
 .br
 tdl [-q] remove|above|below|into
 .br
-tdl [-q] version|help
+tdl [-q] which|version|help
 .br
 tdla [-q]
 .br
@@ -27,6 +27,18 @@ as the first command line argument.  Currently, this suppresses the warning
 message if no existing database can be found.  The intended use is for using
 .B tdll
 when changing into a directory, to list outstanding work in that directory.
+.PP
+Any command that modifies the database will rename the old database to a file
+called
+.B .tdldb.bak
+before writing out the new
+.B .tdldb
+(The backup file will be in the same directory as the main one.)  This allows
+for one level of database recovery, if the database is corrupted or a command
+is issued in error which causes large losses of data (e.g. misuse of the
+.B remove
+command.)
+
 
 .SH SUBCOMMANDS
 .B tdl above
