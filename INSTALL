@@ -1,14 +1,17 @@
-tdl does not use autoconf.
+Although tdl does not use autoconf, it does have a hand-rolled configure script.
 
-Edit the supplied Makefile and change
+To build the program do
 
-prefix : where you want the program & manpage to be installed
-CC, CFLAGS : the C compiler and options you want to use
-
-Then just type
-
+    ./configure
     make
     make install
+
+You can see what options ./configure can take with
+
+    ./configure --help
+
+For example, you might want to use --prefix to install the software in a
+non-standard location.
 
 To get started,
 
@@ -21,6 +24,4 @@ It's suggested that you try
     man tdl
 
 as well.
-
-$Header: /cvs/src/tdl/INSTALL,v 1.1 2001/08/19 22:09:24 richard Exp $
 
