@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.9 2002/05/20 22:55:36 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.10 2002/05/21 22:47:02 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -57,25 +57,61 @@ static int add_new_node(char *parent_path, int set_done, int set_priority, enum 
   return 0;
 }
 /*}}}*/
-static int try_add_interactive(int set_done)/*{{{*/
+static int try_add_interactive(char *parent_path, int set_done)/*{{{*/
 {
   char *text;
   time_t insert_time;
   int error = 0;
   int blank;
   int status;
+  char prompt[128];
+  char *prompt_base;
 
+  prompt_base = set_done ? "log" : "add";
+  if (parent_path) {
+    sprintf(prompt, "%s (%s)> ", prompt_base, parent_path);
+  } else {
+    sprintf(prompt, "%s> ", prompt_base);
+  }
+  
   do {
-    text = interactive_add(&blank, &error);
+    text = interactive_text(prompt, NULL, &blank, &error);
     if (error < 0) return error;
     if (!blank) {
       time(&insert_time);
-      status = add_new_node(NULL, set_done, 0, PRI_NORMAL, insert_time, text);
+      status = add_new_node(parent_path, set_done, 0, PRI_NORMAL, insert_time, text);
       free(text);
       if (status < 0) return status;
     }
   } while (!blank);
   return 0;
+}
+/*}}}*/
+static int could_be_index(char *x)/*{{{*/
+{
+  enum {AFTER_DIGIT, AFTER_PERIOD, AFTER_MINUS} state;
+  char *p;
+  state = AFTER_PERIOD;
+  for (p=x; *p; p++) {
+    switch (state) {
+      case AFTER_DIGIT:
+        if (isdigit(*p))    state = AFTER_DIGIT;
+        else if (*p == '-') state = AFTER_MINUS;
+        else if (*p == '.') state = AFTER_PERIOD;
+        else return 0;
+        break;
+      case AFTER_PERIOD:
+        if (isdigit(*p))    state = AFTER_DIGIT;
+        else if (*p == '-') state = AFTER_MINUS;
+        else return 0;
+        break;
+      case AFTER_MINUS:
+        if (isdigit(*p))    state = AFTER_DIGIT;
+        else return 0;
+        break;
+    }
+  }
+  return 1;
 }
 /*}}}*/
 static int process_add_internal(char **x, int set_done)/*{{{*/
@@ -105,10 +141,14 @@ static int process_add_internal(char **x, int set_done)/*{{{*/
   
   switch (argc) {
     case 0:
-      return try_add_interactive(set_done);
+      return try_add_interactive(NULL, set_done);
       break;
     case 1:
-      text = x[0];
+      if (could_be_index(x[0])) {
+        return try_add_interactive(x[0], set_done);
+      } else {
+        text = x[0];
+      }
       break;
     case 2:
       text = x[1];
@@ -198,7 +238,23 @@ int process_edit(char **x) /*{{{*/
   if (argc == 2) {
     free(n->text);
     n->text = new_string(x[1]);
+  } else {
+    if (!had_new_time) {
+      /* Edit the text, if UI allows it */
+      int error;
+      int is_blank;
+      char *new_text;
+      char prompt[128];
+      sprintf(prompt, "edit (%s)> ", x[0]);
+      new_text = interactive_text(prompt, n->text, &is_blank, &error);
+      if (error < 0) return error;
+      if (!is_blank) {
+        free(n->text);
+        n->text = new_text; /* We own the pointer now */
+      }
+    }
   }
+
   if (had_new_time) {
     n->arrived = new_insert_time;
     if (do_descendents) modify_tree_arrival_time(n, new_insert_time);
