@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.13 2001/10/28 22:57:04 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.14 2001/10/29 22:03:42 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -216,8 +216,8 @@ static void usage(void)/*{{{*/
           "   Move entries to end of new parent\n\n"
           "tdl [-q] purge <since_datespec> [<ancestor_index> ...]\n"
           "   Remove old done entries in subtrees\n\n"
-          "tdl [-q] edit <entry_index> <new_text>\n"
-          "   Change the text of an entry\n\n"
+          "tdl [-q] edit [@<datespec>] <entry_index>[...] [<new_text>]\n"
+          "   Change the text and/or start time of an entry\n\n"
           "tdl [-q] priority <new_priority> <entry_index> ...\n"
           "   Change the priority of 1 or more entries\n\n"
           "tdl [-q] report <start_datespec> [<end_datespec>]\n"

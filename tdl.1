@@ -152,10 +152,30 @@ section later in this page.
 --ooOOoo--
 .PP
 .B tdl edit
-.I index_to_change
-.I new_text
+.I [@datespec]
+.I index_to_change...
+.I [new_text]
 .PP
-This command is used to change the text of an entry.
+This command is used to change an entry.
+.PP
+The text of an entry may be changed,
+in which case the '...' form of the index is not allowed; exactly one entry
+must be specified.
+.PP
+Also, the start time of an entry or tree of entries may be changed.  (This
+affects whether the entries are shown by the
+.B list
+command, i.e. the effect is the same as providing a future date to the
+.B add
+command.)
+.PP
+Both the start time and text of an entry may be modified at the same time.  In
+this case, only a single index may be provided (the '...' form is not allowed
+in this case.)
+.PP
+The format for the date is described in the
+.B "DATE SPECIFICATION"
+section below.
 .P
 .ce 1
 --ooOOoo--

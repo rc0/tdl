@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.4 2001/10/14 22:08:28 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.5 2001/10/29 22:03:42 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -65,7 +65,7 @@ void process_add(char **x, int set_done)/*{{{*/
       break;
 
     default:
-      fprintf(stderr, "add requires 1, 2 or 3 arguments\n");
+      fprintf(stderr, "Usage : add [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n");
       exit(1);
       break;
   }
@@ -98,20 +98,56 @@ void process_add(char **x, int set_done)/*{{{*/
   
 }
 /*}}}*/
+static void modify_tree_arrival_time(struct node *y, time_t new_time)/*{{{*/
+{
+  struct node *c;
+  for (c = y->kids.next; c != (struct node *) &y->kids; c = c->chain.next) {
+    c->arrived = new_time;
+    if (has_kids(c)) {
+      modify_tree_arrival_time(c, new_time);
+    }
+  }
+}
+/*}}}*/
 void process_edit(char **x) /*{{{*/
 {
   int argc;
   struct node *n;
+  time_t new_insert_time;
+  int had_new_time;
+  int do_descendents;
 
   argc = count_args(x);
-  if (argc != 2) {
-    fprintf(stderr, "Usage: edit <path> <new_text>\n");
+
+  new_insert_time = time(NULL);
+  if ((argc > 1) && (x[0][0] == '@')) {
+    new_insert_time = parse_date(x[0]+1, new_insert_time, 1);
+    argc--;
+    x++;
+    had_new_time = 1;
+  } else {
+    had_new_time = 0;
+  }
+  
+  if ((argc < 1) || (argc > 2)) {
+    fprintf(stderr, "Usage: edit [@<datespec>] <path> [<new_text>]\n");
     exit(1);
   }
 
+  do_descendents = include_descendents(*x); /* May modify *x */
+  if (do_descendents && (argc == 2)) {
+    fprintf(stderr, "You can't use '...' to modify the text for >1 entry at once\n");
+    exit(1);
+  }
   n = lookup_node(x[0], 0, NULL);
-  free(n->text);
-  n->text = new_string(x[1]);
+  if (argc == 2) {
+    free(n->text);
+    n->text = new_string(x[1]);
+  }
+  if (had_new_time) {
+    n->arrived = new_insert_time;
+    if (do_descendents) modify_tree_arrival_time(n, new_insert_time);
+  }
   return;
 }
 /*}}}*/
