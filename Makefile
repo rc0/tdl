@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.6 2001/10/14 22:08:28 richard Exp $
+#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.7 2001/10/28 22:59:45 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -46,16 +46,13 @@ clean:
 	rm -f tdl *.o core
 
 install:
-	[ -d $(prefix) ] || mkdir $(prefix)
+	[ -d $(prefix) ] || mkdir -p $(prefix)
 	[ -d $(bindir) ] || mkdir $(bindir)
 	[ -d $(mandir) ] || mkdir $(mandir)
 	[ -d $(man1dir) ] || mkdir $(man1dir)
 	cp tdl $(bindir)/tdl
 	chmod 555 $(bindir)/tdl
-	ln -sf $(bindir)/tdl $(bindir)/tdla
-	ln -sf $(bindir)/tdl $(bindir)/tdll
-	ln -sf $(bindir)/tdl $(bindir)/tdld
-	ln -sf $(bindir)/tdl $(bindir)/tdlg
+	(cd $(bindir); ln -sf tdl tdla; ln -sf tdl tdll; ln -sf tdl tdld; ln -sf tdl tdlg)
 	cp tdl.1 $(man1dir)/tdl.1
 	chmod 444 $(man1dir)/tdl.1
 
