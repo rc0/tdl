@@ -351,6 +351,7 @@ This section describes each of the tdl subcommands.
 * clone command::   Make a deep copy of one or more entries
 * copyto command::  Insert a deep copy of one or more entries into an existing entry
 * create command::  Create a new database in the current directory
+* defer command::   Modify starting time of one or more entries
 * delete command::  Remove 1 or more entries from the database
 * done command::    Mark 1 or more entries as done
 * edit command::    Change the text and/or start time of an entry
@@ -613,6 +614,35 @@ attempted.
 @example
 % tdl create
 @end example
+@c }}}
+@c {{{ defer command
+@node defer command
+@subsection defer command
+The @command{defer} command is used to modify the start-time of one or more existing entries.  Its argument structure is
+
+@example
+tdl> defer @@<datespec> <entry_index>[...] ...
+@end example
+
+where the @samp{@@} on the datespec is optional because the argument is
+required, although the @samp{@@} can be included for consistency with other
+commands where a datespec is optional.
+
+An example of use is 
+
+@example
+tdl> defer @@+fri 1 2.1... 5
+@end example
+
+which defers entries 1, 2.1 and all its children, and 5 until the following
+Friday.
+
+To list deferred entries, use @command{list -p}.
+
+To defer entries indefinitely, see @ref{postpone command}.
+
+To re-activate deferred or postponed entries, see @ref{open command}.
+
 @c }}}
 @c {{{ delete command
 @node delete command
@@ -1189,9 +1219,10 @@ shell (where it wouldn't make much sense).
 @c {{{ open command
 @node open command
 @subsection open command
-The @command{open} command is used to reverse the effect of the
-@command{postpone} command (@pxref{postpone command}).  Its effect is
-actually to set the arrival time of the entries to the current time.
+The @command{open} command is used to reverse the effect of the @command{defer}
+command (@pxref{defer command}) and @command{postpone} command (@pxref{postpone
+command}).  Its effect is actually to set the arrival time of the entries to
+the current time.
 
 The @command{open} command is used as follows
 @example
@@ -1207,11 +1238,11 @@ open 20 21... 25.2
 @c {{{ postpone command
 @node postpone command
 @subsection postpone command
-The @command{postpone} command is used to make 1 more more entries postponed.  Its
-effect is actually to set the arrival time of the entries a long way in the
-future (i.e. it's an extreme form of the 'deferred' feature available in the
-@command{add} and @command{edit} commands.) Postponed entries can be
-re-activated with the @command{open} command (@pxref{open command}).
+The @command{postpone} command is used to make 1 more more entries postponed
+indefinitely.  Its effect is actually to set the arrival time of the entries a
+long way in the future (i.e. it's an extreme form of the 'deferred' feature
+available in the @command{add} and @command{defer} commands.) Postponed entries
+can be re-activated with the @command{open} command (@pxref{open command}).
 
 The @command{postpone} command is used as follows
 @example
@@ -1222,6 +1253,10 @@ An example is
 @example
 postpone 20 21... 25.2
 @end example
+
+To postpone an entry until a specific time in the future, use the
+@command{defer} command (@pxref{defer command}).
+
 @c }}}
 @c {{{ priority command
 @node priority command
@@ -1609,6 +1644,7 @@ the command as shown below:
 @item @strong{Command} @tab @strong{Default} @tab @strong{Reason}
 @item add @tab + @tab Add entries with deferred start times
 @item edit @tab + @tab Add entries with deferred start times
+@item defer @tab + @tab Modify start times of entries
 @item done @tab - @tab Entries have been completed at some time in the past
 @item log @tab - @tab Entries have been completed at some time in the past
 @item report @tab - @tab Reporting on earlier completed tasks not future ones

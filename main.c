@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.32 2003/03/10 00:35:14 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.33 2003/04/14 22:14:33 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -265,6 +265,7 @@ static char desc_below[] = "Move entries below (after) another entry";
 static char desc_clone[] = "Make deep copy of one or more entries";
 static char desc_copyto[] = "Insert deep copy of one or more entries under another entry";
 static char desc_create[] = "Create a new database in the current directory";
+static char desc_defer[] = "Put off starting some tasks until a given time";
 static char desc_delete[] = "Remove 1 or more entries from the database";
 static char desc_done[] = "Mark 1 or more entries as done";
 static char desc_edit[] = "Change the text and/or start time of an entry";
@@ -277,8 +278,8 @@ static char desc_into[] = "Move entries to end of new parent";
 static char desc_list[] = "List entries in database (default from top node)";
 static char desc_log[] = "Add a new entry to the database, mark it done as well";
 static char desc_narrow[] = "Restrict actions to part of the database";
-static char desc_open[] = "Move one or more entries out of postponed state";
-static char desc_postpone[] = "Make one or more entries postponed";
+static char desc_open[] = "Move one or more entries out of postponed/deferred state";
+static char desc_postpone[] = "Make one or more entries postponed indefinitely";
 static char desc_priority[] = "Change the priority of 1 or more entries";
 static char desc_purge[] = "Remove old done entries in subtrees";
 static char desc_quit[] = "Exit program, NOT saving database";
@@ -302,6 +303,7 @@ static char synop_below[] = "<index_to_insert_below> <index_to_move> ...";
 static char synop_clone[] = "<index_to_clone> ...";
 static char synop_copyto[] = "<parent_index> <index_to_clone> ...";
 static char synop_create[] = "";
+static char synop_defer[] = "[@]<datespec> <entry_index>{...] ...";
 static char synop_delete[] = "<entry_index>[...] ...";
 static char synop_done[] = "[@<datespec>] <entry_index>[...] ...";
 static char synop_edit[] = "[@<datespec>] <entry_index>[...] [<new_text>]";
@@ -443,8 +445,9 @@ struct command cmds[] = {/*{{{*/
   {"clone",    NULL,   process_clone,    desc_clone,   synop_clone,   NULL,              1, 1, 2, 1, 1}, 
   {"copyto",   NULL,   process_copyto,   desc_copyto,  synop_copyto,  NULL,              1, 1, 2, 1, 1}, 
   {"create",   NULL,   process_create,   desc_create,  synop_create,  NULL,              1, 0, 2, 0, 1},
+  {"defer",    NULL,   process_defer,    desc_defer,   synop_defer,   NULL,              1, 1, 3, 1, 1},
   {"delete",   NULL,   process_remove,   desc_delete,  synop_delete,  NULL,              1, 1, 3, 1, 1},
-  {"done",     "tdld", process_done,     desc_done,    synop_done,    complete_done,     1, 1, 1, 1, 1},
+  {"done",     "tdld", process_done,     desc_done,    synop_done,    complete_done,     1, 1, 2, 1, 1},
   {"edit",     NULL,   process_edit,     desc_edit,    synop_edit,    NULL,              1, 1, 2, 1, 1},
   {"exit",     NULL,   process_exit,     desc_exit,    synop_exit,    NULL,              0, 0, 3, 1, 0},
   {"export",   NULL,   process_export,   desc_export,  synop_export,  NULL,              0, 1, 3, 1, 1},

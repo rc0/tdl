@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.13 2003/03/11 22:00:43 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.14 2003/04/14 22:14:33 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -259,6 +259,27 @@ int process_postpone(char **x)/*{{{*/
 int process_open(char **x)/*{{{*/
 {
   return internal_postpone_open(x, time(NULL));
+}
+/*}}}*/
+int process_defer(char **x)/*{{{*/
+{
+  int argc;
+  time_t new_start_time;
+  int error;
+  char *date_start;
+
+  argc = count_args(x);
+  if (argc < 2) {
+    fprintf(stderr, "Usage: defer <datespec> <index>...\n");
+    return -1;
+  }
+
+  date_start = x[0];
+  new_start_time = time(NULL);
+  /* 'defer' always takes a date so the @ is optional. */
+  if (*date_start == '@') date_start++;
+  new_start_time = parse_date(date_start, new_start_time, 1, &error);
+  return internal_postpone_open(x+1, new_start_time);
 }
 /*}}}*/
 int process_edit(char **x) /*{{{*/
