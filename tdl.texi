@@ -363,6 +363,7 @@ This section describes each of the tdl subcommands.
 * list command::    List entries in database (default from top node)
 * ls command::      List entries in database (default from top node)
 * log command::     Add a new entry to the database, mark it done as well
+* narrow command::  Restrict actions to part of the database
 * open command::    Move 1 or more entries out of postponed state
 * postpone command::Make 1 or more entries postponed
 * priority command::Change the priority of 1 or more entries
@@ -376,6 +377,7 @@ This section describes each of the tdl subcommands.
 * usage command::   Display help information
 * version command:: Display program version
 * which command::   Display filename of database being used
+* widen command::   Widen the part of the database to which actions apply
 @end menu
 @c }}}
 @c {{{ <--COMMANDS-->
@@ -1124,6 +1126,66 @@ process):
 @command{list} subcommand.)
 
 @c }}}
+@c {{{ narrow command
+@node narrow command
+@subsection narrow command
+The @command{narrow} command can be used to limit the effects of later commands
+to operate within a particular sub-tree of your database.  Because the indices
+you specify for the later operations have the common prefix omitted, this can
+save typing if you have many changes to make within the same subtree.
+
+The usage of the @command{narrow} command is
+
+@example
+narrow <new_root_index>
+@end example
+
+The following example illustrates:
+@example
+tdl> add a
+tdl> add b
+tdl> add -1 c
+tdl> add -1 d
+tdl> add -1 e
+tdl> list
+1 a
+2 b
+   2.1 c
+   2.2 d
+   2.3 e
+tdl> narrow 2
+tdl[2]> list
+2 b
+2.1 c
+2.2 d
+2.3 e
+tdl[2]> done 1 2
+tdl[2]> list
+2 b
+2.3 e
+tdl[2]> widen
+tdl>
+@end example
+
+If your listings are in colour, the common prefix is coloured in blue whilst
+the paths below the root of the sub-tree are shown in the usual green.  (In
+monochrome mode, there is no distinction.)
+
+Whilst your view is narrowed, the index of the sub-tree root is shown in square
+brackets between @samp{tdl} and @samp{>} (i.e. @samp{[2]} in the example
+above).
+
+If you want to operate on the sub-tree root entry itself whilst you are
+narrowed, you can use @samp{.} to specify its index (think: current directory
+in Unix.)
+
+To reverse the effects of the @command{narrow} command, use the @command{widen}
+command (@pxref{widen command}).
+
+This command is only available when @command{tdl} is being run interactively,
+i.e. when you have a @samp{tdl} prompt.  It is not available directly from the
+shell (where it wouldn't make much sense).
+@c }}}
 @c {{{ open command
 @node open command
 @subsection open command
@@ -1390,6 +1452,29 @@ tdl> which
 ./.tdldb
 tdl>
 @end example
+@c }}}
+@c {{{ widen command
+@node widen command
+@subsection widen command
+
+This command reverses the effects of the @command{narrow} command
+(@pxref{narrow command}).
+
+Its usage is:
+
+@example
+tdl> widen [<n_levels>]
+@example
+
+The optional @samp{n_levels} parameter tells tdl how many levels to widen the
+view.  If the parameter is not specified, it defaults to 1.  If you try to
+widen more levels than the depth of the current sub-tree root node, the
+widening will be silently limited to its depth.
+
+This command is only available when @command{tdl} is being run interactively,
+i.e. when you have a @samp{tdl} prompt.  It is not available directly from the
+shell (where it wouldn't make much sense).
+
 @c }}}
 @c }}}
 
