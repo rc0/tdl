@@ -254,11 +254,12 @@ the database, assigning them priorities, and so on.
 @node Reference
 @chapter Reference
 @menu
-* Start and Exit::  Starting and exiting tdl
-* Command list::    Alphabetical list of all commands
-* Completion::      Completion facilities
-* Datespec::        How dates are specified
-* Backup file::     How tdl saves a backup copy of the database
+* Start and Exit::      Starting and exiting tdl
+* Command list::        Alphabetical list of all commands
+* Completion::          Completion facilities
+* Datespec::            How dates are specified
+* Backup file::         How tdl saves a backup copy of the database
+* Index specification:: How indices can be specified
 @end menu
 
 @c {{{ Start and Exit
@@ -521,6 +522,10 @@ If the string "..." is appended to an index, it means that entry and all its
 descendents.  This provides a quick way to mark a whole sub-tree of tasks as
 being completed.
 
+No entry may be marked 'done' if it has any children that are still 'open'
+(i.e. not marked 'done').  (The @samp{...} form of the command marks the
+deepest entries first to bypass this.)
+
 @c }}}
 @c {{{ edit command
 @node edit command
@@ -721,7 +726,9 @@ tdl> list
 tdl>
 @end example
 
-The @command{into} command is closely related to @command{above}, @command{after}, @command{before} and @command{below}.  In fact the following two commands are equivalent
+The @command{into} command is closely related to @command{above},
+@command{after}, @command{before} and @command{below}.  In fact the following
+three commands are equivalent
 
 @example
 tdl> into N <indices> ...
@@ -735,6 +742,115 @@ tdl> before N.0 <indices> ...
 @c {{{ list command
 @node list command
 @subsection list command
+The @command{list} command is used to display the tasks in the database.  Its argument structure is:
+
+@example
+list [-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>...]
+@end example
+
+When run with no arguments, the list contains all tasks that are
+@itemize @bullet
+@item not marked 'done',
+@item at any levels of the database (i.e. any number of components in the task's index), and
+@item of priority normal or higher.
+@end itemize
+
+The arguments have the following functions:
+
+@table @samp
+@item -v
+This stands for @emph{verbose}.  It means that more information will be shown
+for each task.
+@item -a
+This stands for @emph{all}.  It means that tasks which are 'done', or which are
+'deferred' (by having arrival times in the future), will be shown as well as
+open tasks.
+@item -m
+This stands for @emph{monochrome}.  Normally, ANSI escape sequences are
+inserted to show the list with colour coding.  This flag stops these sequences
+being generated.
+@item -1, -2, ..., -9
+These options restrict the depth of the tree which is generated.  For example,
+with the @samp{-1} argument, only the first-level entries in the database are
+shown.  Sub-entries of these are shown by summary totals.  See below for an
+example.
+@item <min-priority>
+Normally (at least, if no indices are specified), only tasks with a priority of
+at least @samp{normal} are shown in the list.  If you specify this option,
+tasks of at least the specified priority are shown.  The values you can use are
+@samp{urgent}, @samp{high}, @samp{normal}, @samp{low} or @samp{verylow}.  Each
+can be abbreviated to just its initial letter.
+@item <parent_index...>
+If you want to list just part of the database, you can specify the indices of
+the leading entries for the parts you want to see.  Any number of entries can
+be included (you could even include an index twice if you wanted to for some
+reason.)
+
+When you specify indices, the behaviour regarding priority changes.  If no
+@samp{<min-priority>} argument was given, the priority of a sub-entry must be
+at least that of the entry with the given index for it to be shown.  This is
+most useful when the entire sub-tree has a lower than normal priority.
+
+If you use the @samp{-1} ... @samp{-9} options with this option, the depth is
+counted relative to the depth of the indexed node that you specify.
+@end table
+
+The command is best illustrated by examples.  Suppose the database contains
+these entries
+
+@example
+1 bibble
+   1.1 zzzz
+      1.1.1 (DONE) yyyy
+      1.1.2 wwww
+2 wibble
+   2.1 xxxx
+3 wubble
+@end example
+
+where @samp{wibble} and @samp{xxxx} have priority @samp{low}.  The following
+examples show the list command's behaviour.
+
+@example
+tdl> list
+1 bibble
+   1.1 zzzz
+      1.1.2 wwww
+3 wubble
+@end example
+
+(Entry 2 and its child are omitted due to priority.  Entry 1.1.1 is omitted
+because it is done.)
+
+@example
+1 bibble
+   1.1 zzzz
+      1.1.1 (DONE) yyyy
+      1.1.2 wwww
+2 wibble
+   2.1 xxxx
+3 wubble
+@end example
+
+(Passing these arguments shows the missing entries)
+
+@example
+tdl> list -1
+1 [1/1] bibble
+3 wubble
+@end example
+
+(The list is limited to top level entries.  The @samp{[1/1]} indices that entry
+1 has 1 open child out of a total of 1 children.)
+
+@example
+tdl> list -1 1.1
+1.1 [1/2] zzzz
+@end example
+
+(This lists the 1.1 subtree, showing that there is 1 open child out of a total
+of 2 children.)
+
 @c }}}
 @c {{{ log command
 @node log command
@@ -748,17 +864,62 @@ log [@@<datespec>] [<parent_index>] [<priority>] <entry_text>
 @end example
 
 You might use the @command{log} command if complete a new task immediately but
-want to make sure you log it for use in producing your weekly report (using,
-the @command{report} command, @xref{report command}).
+want to make sure you log it for use in producing your weekly report (using
+the @command{report} command, @xref{report command}.)
 
 @c }}}
 @c {{{ priority command
 @node priority command
 @subsection priority command
+The @command{priority} command is used to modify the priority of one or more entries.  Its argument structure is
+
+@example
+priority <new_priority> <entry_index>[...] ...
+@end example
+
+The @samp{new_priority} argument is the new priority to be assigned.  The
+values you can use are @samp{urgent}, @samp{high}, @samp{normal}, @samp{low} or
+@samp{verylow}.  Each can be abbreviated to just its initial letter.
+
+You can specify at least one @samp{entry_index}.  If an index is followed by
+@samp{...}, the whole sub-tree under the referenced entry will be modified too.
+For example,
+
+@example
+tdl> priority high 2 4.1...
+@end example
+
+will modify the priority of entry 2, entry 4.1, and all the entries under 4.1,
+to high.
 @c }}}
 @c {{{ purge command
 @node purge command
 @subsection purge command
+The @command{purge} command is used to remove outdated done tasks from the
+database.  For example, you might want to automatically remove everything you
+completed more than 2 months ago.
+
+Its argument structure is
+@example
+purge <since_datespec> [<ancestor_index> ...]
+@end example
+
+The @samp{since_datespec} argument specifies a date.  All entries which were
+marked 'done' before this date will be completely removed from the database.
+
+The default is to scan the entire database for done tasks that meet the date
+constraint.  You may specify one or more indices to limit the behaviour.  In
+this case, only the sub-trees headed by these indices will be considered for
+purge.
+
+An example:
+@example
+tdl> purge -2m 3.1 5
+@end example
+
+will purge all entries underneath entries 3.1 and 5 which were marked 'done'
+more than 2 months ago.
+
 @c }}}
 @c {{{ quit command
 @node quit command
@@ -782,14 +943,96 @@ database if a serious error had been made.
 @c {{{ remove command
 @node remove command
 @subsection remove command
+The @command{remove} command is used to remove entries from the database.  It
+differs from purge @pxref{purge command} in that there is no date constraint,
+and entries do not have to be marked 'done' to be removed.  You might use
+@command{remove} if an open tasks no longer needs to be performed.
+
+The argument structure is
+@example
+remove <entry_index>[...] ...
+@end example
+
+You can specify one or more entry indices to remove.  If an index is followed
+by @samp{...}, tdl will remove the whole sub-tree based at that index.
+
+You cannot remove an entry that has sub-entries below it.  (The @samp{...}
+handling for indices removes the deepest entries first to bypass this.)
+
+An example:
+@example
+tdl> remove 1.5.4 19... 20
+@end example
+
+will remove entries 1.5.4 and 20, as well as everything whose index starts with
+19.
+
 @c }}}
 @c {{{ report command
 @node report command
 @subsection report command
+The @command{report} command is used to show entries that were marked 'done'
+within a specific time interval.  Its argument structure is
+
+@example
+report <start_datespec> [<end_datespec>]
+@end example
+
+One or two date specifications may be given.  If only the start_datespec is
+provided, the end_datespec defaults to the present time.  The format of both
+arguments is described separately.  @xref{Datespec}.
+
+For example, suppose you have to write a report on what you have done in the
+last week.  You could use
+
+@example
+tdl> report 1w
+@end example
+
+The report is produced in a tree structure, mirroring the database structure.
+Entries which have 'done' children, but which haven't themselves been marked
+done, have their text surrounded by @samp{[[} and @samp{]]}.  For example
+
+@example
+tdl> list -a
+1 bibble
+   1.1 zzzz
+      1.1.1 (DONE) yyyy
+      1.1.2 wwww
+2 wibble
+   2.1 xxxx
+tdl> report 1w
+- [[bibble]]
+   - [[zzzz]]
+      - yyyy
+@end example
+
+You could cut-and-paste this text into your report, as a starting point that
+you can reformat into a report.  Alternatively, if you run the command direct
+from the shell prompt line, you can redirect the output to a file,
+
+@example
+% tdl report 1w > report.txt
+%
+@end example
+
 @c }}}
 @c {{{ undo command
 @node undo command
 @subsection undo command
+
+The @command{undo} command reverses the action of the @command{done} command
+@pxref{done command}.  You can use it to re-open entries, e.g. if you marked
+them 'done' by mistake.
+
+Its argument structure is
+@example
+undo <entry_index>[...] ...
+@end example
+
+You can specify one or more indices to act on.  If an index is suffixed by
+@samp{...}, tdl will re-open the entire sub-tree based at that index.
+
 @c }}}
 @c {{{ usage command
 @node usage command
@@ -811,6 +1054,14 @@ tdl>
 @c {{{ which command
 @node which command
 @subsection which command
+The @command{which} command displays the name of the current database file that
+tdl is using.  An example:
+
+@example
+tdl> which
+./.tdldb
+tdl>
+@end example
 @c }}}
 @c }}}
 
@@ -926,6 +1177,11 @@ is renamed to @file{.tdldb.bak}.
 If you need to restore the previous @file{.tdldb} for any reason (e.g. a gross
 mistake during editing, or if a bug causes it to be corrupted), you can
 manually rename @file{.tdldb.bak} to @file{.tdldb}.
+@c }}}
+@c {{{ Index specification
+@node Index specification
+@section Index specification
+Mention negative indices and effect on list command.
 @c }}}
 
 @bye
