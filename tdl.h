@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.10 2002/05/08 23:07:48 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.11 2002/05/09 23:06:34 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -66,6 +66,8 @@ extern struct links top;
 #define new_array(T, n) (T *) malloc(sizeof(T) * (n))
 #define grow_array(T, n, oldX) (T *) ((oldX) ? realloc(oldX, (sizeof(T) * (n))) : malloc(sizeof(T) * (n)))
 
+typedef char** (*Completer)(char *, int);
+
 /* Command table (shared between dispatcher and readline completer) */
 struct command {/*{{{*/
   char *name; /* add, remove etc */
@@ -73,6 +75,7 @@ struct command {/*{{{*/
   void *func; /* function pointer */
   char *descrip; /* One line description */
   char *synopsis; /* Description of parameters */
+  Completer completer; /* Function to generate completions */
   unsigned char  dirty; /* 1 if operation can dirty the database, 0 if read-only */
   unsigned char  nextra; /* how many integer args */
   unsigned char  i1;
@@ -89,7 +92,7 @@ extern int n_cmds;
 /* Function prototypes. */
 
 /* In io.c */
-void read_database(FILE *in, struct links *to);
+int read_database(FILE *in, struct links *to);
 void write_database(FILE *out, struct links *from);
 struct node *new_node(void);
 void append_node(struct node *n, struct links *l);
@@ -100,17 +103,17 @@ int has_kids(struct node *x);
 /* In list.c */
 void do_indent(int indent);
 void do_bullet_indent(int indent);
-void process_list(char **x);
+int process_list(char **x);
 
 /* In report.c */
-void process_report(char **x);
+int process_report(char **x);
 long read_interval(char *xx);
 
 /* In util.c */
 int count_args(char **x);
 int include_descendents(char *x);
 struct node *lookup_node(char *path, int allow_zero_index, struct node **parent);
-enum Priority parse_priority(char *priority);
+enum Priority parse_priority(char *priority, int *error);
 void clear_flags(struct links *x);
 void mark_all_descendents(struct node *n);
 int has_kids(struct node *x);
@@ -122,34 +125,37 @@ void prepend_child(struct node *child, struct node *parent);
 
 /* In done.c */
 int has_open_child(struct node *y);
-void process_done(char **x);
-void process_undo(char **x);
+int process_done(char **x);
+int process_undo(char **x);
 
 /* In add.c */
-void process_add(char **x, int set_done);
-void process_edit(char **x);
+int process_add(char **x, int set_done);
+int process_edit(char **x);
 
 /* In remove.c */
-void process_remove(char **x);
+int process_remove(char **x);
 
 /* In purge.c */
-void process_purge(char **x);
+int process_purge(char **x);
 
 /* In move.c */
-void process_move(char **x, int below_not_above, int into_parent);
+int process_move(char **x, int below_not_above, int into_parent);
 
 /* In impexp.c */
-void process_export(char **x);
-void process_import(char **x);
+int process_export(char **x);
+int process_import(char **x);
 
 /* In dates.c */
 time_t parse_date(char *d, time_t ref, int default_positive);
 
 /* In main.c */
-void dispatch(char **argv, int is_interactive);
+void dispatch(char **argv);
 
 /* In inter.c */
 void interactive(void);
+char **complete_help(char *, int);
+char **complete_list(char *, int);
+char **complete_priority(char *, int);
 
 #endif /* TDL_H */
           

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.18 2002/05/08 23:07:48 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.19 2002/05/09 23:06:34 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -48,7 +48,7 @@ static int currently_dirty = 0;
 /* Whether to complain about problems with file operations */
 static int is_noisy = 1;
 
-static int is_interactive_global = 0;
+static int is_interactive = 0;
 
 static void set_descendent_priority(struct node *x, enum Priority priority)/*{{{*/
 {
@@ -236,7 +236,7 @@ static char *get_version(void)/*{{{*/
 }
 /*}}}*/
 
-static void process_create(char **x)/*{{{*/
+static int process_create(char **x)/*{{{*/
 {
   char *dbpath = get_database_path(0);
   struct stat sb;
@@ -245,7 +245,7 @@ static void process_create(char **x)/*{{{*/
   result = stat(dbpath, &sb);
   if (result >= 0) {
     fprintf(stderr, "Can't create database <%s>, it already exists!\n", dbpath);
-    exit(1);
+    return -1;
   } else {
     /* Should have an empty database, and the dirty flag will be set */
     current_database_path = dbpath;
@@ -253,44 +253,51 @@ static void process_create(char **x)/*{{{*/
     is_noisy = 0;
     /* Force empty database to be written out */
     is_loaded = currently_dirty = 1;
-    return;
+    return 0;
   }
 }
 /*}}}*/
-static void process_priority(char **x)/*{{{*/
+static int process_priority(char **x)/*{{{*/
 {
-  enum Priority priority = parse_priority(*x);
+  int error;
+  enum Priority priority;
   struct node *n;
   int do_descendents;
  
+  priority = parse_priority(*x, &error);
+  if (error < 0) return error;
+
   while (*++x) {
     do_descendents = include_descendents(*x); /* May modify *x */
     n = lookup_node(*x, 0, NULL);
+    if (!n) return -1;
     n->priority = priority;
     if (do_descendents) {
       set_descendent_priority(n, priority);
     }
   }
+
+  return 0;
 }/*}}}*/
-static void process_which(char **argv)/*{{{*/
+static int process_which(char **argv)/*{{{*/
 {
   printf("%s\n", current_database_path);
-  return;
+  return 0;
 }
 /*}}}*/
-static void process_version(char **x)/*{{{*/
+static int process_version(char **x)/*{{{*/
 {
   fprintf(stderr, "tdl %s\n", get_version());
-  return;
+  return 0;
 }
 /*}}}*/
-static void process_exit(char **x)/*{{{*/
+static int process_exit(char **x)/*{{{*/
 {
   save_database(current_database_path);
   exit(0);
 }
 /*}}}*/
-static void process_quit(char **x)/*{{{*/
+static int process_quit(char **x)/*{{{*/
 {
   /* Just get out quick, don't write the database back */
   exit(0);
@@ -357,42 +364,42 @@ static char synop_which[] = "";
 /* }}} */
 
 /* All the main processing functions take an argv array and 0,1 or 2 integer
- * args */ 
-typedef void (*fun2)(char **, int, int);
-typedef void (*fun1)(char **, int);
-typedef void (*fun0)(char **);
+ * args.  The return value is zero for success, <0 for various failures */ 
+typedef int (*fun2)(char **, int, int);
+typedef int (*fun1)(char **, int);
+typedef int (*fun0)(char **);
 
 /* Forward prototype */
 static void usage(char **x);
 
 struct command cmds[] = {/*{{{*/
-  {"--help",   NULL,   (void *) usage,            desc_help,    NULL,          0, 0, 0, 0, 0, 0, 1},
-  {"-h",       NULL,   (void *) usage,            desc_help,    NULL,          0, 0, 0, 0, 0, 0, 1},
-  {"-V",       NULL,   (void *) process_version,  desc_version, NULL,          0, 0, 0, 0, 0, 0, 1},
-  {"above",    NULL,   (void *) process_move,     desc_above,   synop_above,   1, 2, 0, 0, 1, 1, 1},
-  {"add",      "tdla", (void *) process_add,      desc_add,     synop_add,     1, 1, 0, 0, 1, 1, 1},
-  {"after",    NULL,   (void *) process_move,     desc_after,   synop_after,   1, 2, 1, 0, 1, 1, 1},
-  {"below",    NULL,   (void *) process_move,     desc_below,   synop_below,   1, 2, 1, 0, 1, 1, 1},
-  {"before",   NULL,   (void *) process_move,     desc_before,  synop_before,  1, 2, 0, 0, 1, 1, 1},
-  {"create",   NULL,   (void *) process_create,   desc_create,  synop_create,  1, 0, 0, 0, 0, 0, 1},
-  {"done",     "tdld", (void *) process_done,     desc_done,    synop_done,    1, 0, 0, 0, 1, 1, 1},
-  {"edit",     NULL,   (void *) process_edit,     desc_edit,    synop_edit,    1, 0, 0, 0, 1, 1, 1},
-  {"exit",     NULL,   (void *) process_exit,     desc_exit,    synop_exit,    0, 0, 0, 0, 0, 1, 0},
-  {"export",   NULL,   (void *) process_export,   desc_export,  synop_export,  0, 0, 0, 0, 1, 1, 1},
-  {"help",     NULL,   (void *) usage,            desc_help,    synop_help,    0, 0, 0, 0, 0, 1, 1},
-  {"import",   NULL,   (void *) process_import,   desc_import,  synop_import,  1, 0, 0, 0, 1, 1, 1},
-  {"into",     NULL,   (void *) process_move,     desc_into,    synop_into,    1, 2, 0, 1, 1, 1, 1},
-  {"list",     "tdll", (void *) process_list,     desc_list,    synop_list,    0, 0, 0, 0, 1, 1, 1},
-  {"log",      "tdlg", (void *) process_add,      desc_log,     synop_log,     1, 1, 1, 0, 1, 1, 1},
-  {"priority", NULL,   (void *) process_priority, desc_priority,synop_priority,1, 0, 0, 0, 1, 1, 1},
-  {"purge",    NULL,   (void *) process_purge,    desc_purge,   synop_purge,   1, 0, 0, 0, 1, 1, 1},
-  {"quit",     NULL,   (void *) process_quit,     desc_quit,    synop_quit,    0, 0, 0, 0, 0, 1, 0},
-  {"remove",   NULL,   (void *) process_remove,   desc_remove,  synop_remove,  1, 0, 0, 0, 1, 1, 1},
-  {"report",   NULL,   (void *) process_report,   desc_report,  synop_report,  0, 0, 0, 0, 1, 1, 1},
-  {"undo",     NULL,   (void *) process_undo,     desc_undo,    synop_undo,    1, 0, 0, 0, 1, 1, 1},
-  {"usage",    NULL,   (void *) usage,            desc_usage,   synop_usage,   0, 0, 0, 0, 0, 1, 1},
-  {"version",  NULL,   (void *) process_version,  desc_version, synop_version, 0, 0, 0, 0, 0, 1, 1},
-  {"which",    NULL,   (void *) process_which,    desc_which,   synop_which,   0, 0, 0, 0, 0, 1, 1}
+  {"--help",   NULL,   (void *) usage,            desc_help,    NULL,          NULL,              0, 0, 0, 0, 0, 0, 1},
+  {"-h",       NULL,   (void *) usage,            desc_help,    NULL,          NULL,              0, 0, 0, 0, 0, 0, 1},
+  {"-V",       NULL,   (void *) process_version,  desc_version, NULL,          NULL,              0, 0, 0, 0, 0, 0, 1},
+  {"above",    NULL,   (void *) process_move,     desc_above,   synop_above,   NULL,              1, 2, 0, 0, 1, 1, 1},
+  {"add",      "tdla", (void *) process_add,      desc_add,     synop_add,     NULL,              1, 1, 0, 0, 1, 1, 1},
+  {"after",    NULL,   (void *) process_move,     desc_after,   synop_after,   NULL,              1, 2, 1, 0, 1, 1, 1},
+  {"below",    NULL,   (void *) process_move,     desc_below,   synop_below,   NULL,              1, 2, 1, 0, 1, 1, 1},
+  {"before",   NULL,   (void *) process_move,     desc_before,  synop_before,  NULL,              1, 2, 0, 0, 1, 1, 1},
+  {"create",   NULL,   (void *) process_create,   desc_create,  synop_create,  NULL,              1, 0, 0, 0, 0, 0, 1},
+  {"done",     "tdld", (void *) process_done,     desc_done,    synop_done,    NULL,              1, 0, 0, 0, 1, 1, 1},
+  {"edit",     NULL,   (void *) process_edit,     desc_edit,    synop_edit,    NULL,              1, 0, 0, 0, 1, 1, 1},
+  {"exit",     NULL,   (void *) process_exit,     desc_exit,    synop_exit,    NULL,              0, 0, 0, 0, 0, 1, 0},
+  {"export",   NULL,   (void *) process_export,   desc_export,  synop_export,  NULL,              0, 0, 0, 0, 1, 1, 1},
+  {"help",     NULL,   (void *) usage,            desc_help,    synop_help,    complete_help,     0, 0, 0, 0, 0, 1, 1},
+  {"import",   NULL,   (void *) process_import,   desc_import,  synop_import,  NULL,              1, 0, 0, 0, 1, 1, 1},
+  {"into",     NULL,   (void *) process_move,     desc_into,    synop_into,    NULL,              1, 2, 0, 1, 1, 1, 1},
+  {"list",     "tdll", (void *) process_list,     desc_list,    synop_list,    complete_list,     0, 0, 0, 0, 1, 1, 1},
+  {"log",      "tdlg", (void *) process_add,      desc_log,     synop_log,     NULL,              1, 1, 1, 0, 1, 1, 1},
+  {"priority", NULL,   (void *) process_priority, desc_priority,synop_priority,complete_priority, 1, 0, 0, 0, 1, 1, 1},
+  {"purge",    NULL,   (void *) process_purge,    desc_purge,   synop_purge,   NULL,              1, 0, 0, 0, 1, 1, 1},
+  {"quit",     NULL,   (void *) process_quit,     desc_quit,    synop_quit,    NULL,              0, 0, 0, 0, 0, 1, 0},
+  {"remove",   NULL,   (void *) process_remove,   desc_remove,  synop_remove,  NULL,              1, 0, 0, 0, 1, 1, 1},
+  {"report",   NULL,   (void *) process_report,   desc_report,  synop_report,  NULL,              0, 0, 0, 0, 1, 1, 1},
+  {"undo",     NULL,   (void *) process_undo,     desc_undo,    synop_undo,    NULL,              1, 0, 0, 0, 1, 1, 1},
+  {"usage",    NULL,   (void *) usage,            desc_usage,   synop_usage,   complete_help,     0, 0, 0, 0, 0, 1, 1},
+  {"version",  NULL,   (void *) process_version,  desc_version, synop_version, NULL,              0, 0, 0, 0, 0, 1, 1},
+  {"which",    NULL,   (void *) process_which,    desc_which,   synop_which,   NULL,              0, 0, 0, 0, 0, 1, 1}
 };/*}}}*/
 int n_cmds = 0;
 
@@ -443,7 +450,7 @@ static void print_copyright(void)/*{{{*/
           "under certain conditions; see the GNU General Public License for details.\n\n");
 }
 /*}}}*/
-void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
+void dispatch(char **argv) /* and other args *//*{{{*/
 {
   int i, index=-1;
   fun0 f0;
@@ -470,7 +477,7 @@ void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
     if (!is_interactive) {
       setup_signals();
       print_copyright();
-      is_interactive_global = 1;
+      is_interactive = 1;
       interactive();
     }
     return;
@@ -496,6 +503,8 @@ void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
   }
 
   if (index >= 0) {
+    int result;
+
     is_processing = 1;
 
     if (!is_loaded && cmds[index].load_db) {
@@ -507,19 +516,32 @@ void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
     switch (cmds[index].nextra) {
       case 0:
         f0 = (fun0) cmds[index].func;
-        (*f0) (pp);
+        result = (*f0) (pp);
         break;
       case 1:
         f1 = (fun1) cmds[index].func;
-        (*f1) (pp, cmds[index].i1);
+        result = (*f1) (pp, cmds[index].i1);
         break;
       case 2:
         f2 = (fun2) cmds[index].func;
-        (*f2) (pp, cmds[index].i1, cmds[index].i2);
+        result = (*f2) (pp, cmds[index].i1, cmds[index].i2);
         break;
     }
-    if (cmds[index].dirty) {
-      currently_dirty = 1;
+    
+    /* Check for failure */
+    if (result < 0) {
+      if (!is_interactive) {
+        exit(-result);
+      }
+
+      /* If interactive, the handling function has emitted its error message.
+       * Just 'abort' this command and go back to the prompt */
+
+    } else {
+    
+      if (cmds[index].dirty) {
+        currently_dirty = 1;
+      }
     }
 
     is_processing = 0;
@@ -545,7 +567,7 @@ static void usage(char **x)/*{{{*/
     index = -1;
     for (i=0; i<n_cmds; i++) {
       if (!strncmp(cmds[i].name, cmd, 3) &&
-          (is_interactive_global ? cmds[i].interactive_ok : cmds[i].non_interactive_ok)) {
+          (is_interactive ? cmds[i].interactive_ok : cmds[i].non_interactive_ok)) {
         index = i;
         break;
       }
@@ -554,7 +576,7 @@ static void usage(char **x)/*{{{*/
       fprintf(stderr, "Description\n  %s\n\n", cmds[i].descrip);
       fprintf(stderr, "Synopsis\n");
       
-      if (is_interactive_global) {
+      if (is_interactive) {
         fprintf(stderr, "  %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
       } else {
         fprintf(stderr, "  tdl  [-q] %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
@@ -578,8 +600,13 @@ static void usage(char **x)/*{{{*/
     }
         
   } else {
+    print_copyright();
+
+    if (!is_interactive) {
+      fprintf(stderr, "tdl  [-q]          : Enter interactive mode\n");
+    }
     for (i=0; i<n_cmds; i++) {
-      if (is_interactive_global) {
+      if (is_interactive) {
         if (cmds[i].interactive_ok) {
           fprintf(stderr, "%-8s : %s\n", cmds[i].name, cmds[i].descrip);
         }
@@ -592,6 +619,11 @@ static void usage(char **x)/*{{{*/
         }
       }
     }
+    if (is_interactive) {
+      fprintf(stderr, "\nEnter 'help <command-name>' for more help on a particular command\n");
+    } else {
+      fprintf(stderr, "\nEnter 'tdl help <command-name>' for more help on a particular command\n");
+    }
   }
 
   fprintf(stderr, "\n");
@@ -602,7 +634,7 @@ static void usage(char **x)/*{{{*/
 int main (int argc, char **argv)
 {
   n_cmds = N(cmds);
-  is_interactive_global = 0;
+  is_interactive = 0;
   
   /* Initialise database */
   top.prev = (struct node *) &top;
@@ -614,7 +646,7 @@ int main (int argc, char **argv)
 
   current_database_path = get_database_path(1);
 
-  dispatch(argv, 0);
+  dispatch(argv);
 
   save_database(current_database_path);
   return 0;
