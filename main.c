@@ -55,6 +55,9 @@ static char *lock_file_name = NULL;
  * the filesystem */
 static int currently_dirty = 0;
 
+/* Flag indicating whether to load databases read only */
+static int read_only = 0;
+
 /* Whether to complain about problems with file operations */
 static int is_noisy = 1;
 
@@ -271,7 +274,9 @@ static void load_database(char *path) /*{{{*/
   FILE *in;
   currently_dirty = 0;
 #ifdef USE_DOTLOCK
-  lock_database(path);
+  if (!read_only) {
+    lock_database(path);
+  }
 #endif
   in = fopen(path, "rb");
   if (in) {
@@ -318,6 +323,10 @@ static void save_database(char *path)/*{{{*/
   FILE *out = NULL;
   int out_fd;
   mode_t database_mode;
+  if (read_only) {
+    fprintf(stderr, "Warning : database opened read-only. Not saving.\n");
+    return;
+  }
   if (is_loaded && currently_dirty) {
     database_mode = get_mode(path);
     
@@ -486,6 +495,10 @@ static int process_create(char **x)/*{{{*/
     fprintf(stderr, "Can't create database <%s>, it already exists!\n", dbpath);
     return -1;
   } else {
+    if (read_only) {
+      fprintf(stderr, "Can't create database <%s> in read-only mode!\n", dbpath);
+       return -1;
+    }
     /* Should have an empty database, and the dirty flag will be set */
     current_database_path = dbpath;
     /* don't emit complaint about not being able to move database to its backup */
@@ -605,7 +618,7 @@ struct command cmds[] = {/*{{{*/
   {"import",   NULL,   process_import,   desc_import,  synop_import,  NULL,              1, 1, 2, 1, 1},
   {"into",     NULL,   process_into,     desc_into,    synop_into,    NULL,              1, 1, 2, 1, 1},
   {"list",     "tdll", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
-  {"ls",       NULL,   process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
+  {"ls",       "tdls", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
   {"log",      "tdlg", process_log,      desc_log,     synop_log,     NULL,              1, 1, 2, 1, 1},
   {"moveto",   NULL,   process_into,     desc_moveto,  synop_moveto,  NULL,              1, 1, 1, 1, 1},
   {"narrow",   NULL,   process_narrow,   desc_narrow,  synop_narrow,  NULL,              0, 1, 1, 1, 0},
@@ -676,7 +689,7 @@ static void print_copyright(void)/*{{{*/
 /*}}}*/
 void dispatch(char **argv) /* and other args *//*{{{*/
 {
-  int i, index=-1;
+  int i, p_len, matchlen, index=-1;
   char *executable;
   int is_tdl;
   char **p, **pp;
@@ -690,7 +703,7 @@ void dispatch(char **argv) /* and other args *//*{{{*/
   is_tdl = (!strcmp(executable, "tdl"));
   
   p = argv + 1;
-  if (*p && !strcmp(*p, "-q")) p++;
+  while (*p && *p[0] == '-') p++;
   
   /* Parse command line */
   if (is_tdl && !*p) {
@@ -705,9 +718,11 @@ void dispatch(char **argv) /* and other args *//*{{{*/
   }
 
   if (is_tdl) {
+    p_len = strlen(*p);
     for (i=0; i<n_cmds; i++) {
+      matchlen = p_len < cmds[i].matchlen ? cmds[i].matchlen : p_len;
       if ((is_interactive ? cmds[i].interactive_ok : cmds[i].non_interactive_ok) &&
-          !strncmp(cmds[i].name, *p, cmds[i].matchlen)) {
+          !strncmp(cmds[i].name, *p, matchlen)) {
         index = i;
         break;
       }
@@ -721,7 +736,14 @@ void dispatch(char **argv) /* and other args *//*{{{*/
     }
   }
 
-  if (index >= 0) {
+  /* Skip commands that dirty the database, if it was opened read-only. */
+  if (index >= 0 && cmds[index].dirty && read_only) {
+    fprintf(stderr, "Can't use command <%s> in read-only mode\n",
+                cmds[index].name);
+    if (!is_interactive) {
+      unlock_and_exit(-1);
+    }
+  } else if (index >= 0) {
     int result;
 
     is_processing = 1;
@@ -756,7 +778,11 @@ void dispatch(char **argv) /* and other args *//*{{{*/
     }
     
   } else {
-    fprintf(stderr, "Unknown command <%s>\n", argv[1]);
+    if (is_tdl && *p) {
+      fprintf(stderr, "tdl: Unknown command <%s>\n", *p);
+    } else {
+      fprintf(stderr, "tdl: Unknown command\n");
+    }
     if (!is_interactive) {
       unlock_and_exit(1);
     }
@@ -786,9 +812,9 @@ static int usage(char **x)/*{{{*/
       if (is_interactive) {
         fprintf(stdout, "  %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
       } else {
-        fprintf(stdout, "  tdl  [-q] %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
+        fprintf(stdout, "  tdl  [-qR] %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
         if (cmds[i].shortcut) {
-          fprintf(stdout, "  %s [-q] %s\n", cmds[i].shortcut, cmds[i].synopsis ? cmds[i].synopsis : "");
+          fprintf(stdout, "  %s [-qR] %s\n", cmds[i].shortcut, cmds[i].synopsis ? cmds[i].synopsis : "");
         }
       }
 
@@ -812,7 +838,7 @@ static int usage(char **x)/*{{{*/
     print_copyright();
 
     if (!is_interactive) {
-      fprintf(stdout, "tdl  [-q]          : Enter interactive mode\n");
+      fprintf(stdout, "tdl  [-qR]          : Enter interactive mode\n");
     }
     for (i=0; i<n_cmds; i++) {
       if (is_interactive) {
@@ -821,9 +847,9 @@ static int usage(char **x)/*{{{*/
         }
       } else {
         if (cmds[i].non_interactive_ok) {
-          fprintf(stdout, "tdl  [-q] %-8s : %s\n", cmds[i].name, cmds[i].descrip);
+          fprintf(stdout, "tdl  [-qR] %-8s : %s\n", cmds[i].name, cmds[i].descrip);
           if (cmds[i].shortcut) {
-            fprintf(stdout, "%s [-q]          : %s\n", cmds[i].shortcut, cmds[i].descrip);
+            fprintf(stdout, "%s [-qR]          : %s\n", cmds[i].shortcut, cmds[i].descrip);
           }
         }
       }
@@ -845,6 +871,7 @@ static int usage(char **x)/*{{{*/
 /*{{{  int main (int argc, char **argv)*/
 int main (int argc, char **argv)
 {
+  int i = 0;
   n_cmds = N(cmds);
   is_interactive = 0;
   
@@ -852,15 +879,29 @@ int main (int argc, char **argv)
   top.prev = (struct node *) &top;
   top.next = (struct node *) &top;
 
-  if ((argc > 1) && (!strcmp(argv[1], "-q"))) {
-    is_noisy = 0;
+  if (argc > 1) {
+    for (i=1; i<argc && argv[i][0] == '-'; i++) {
+      if (strspn(argv[i]+1, "qR")+1 != strlen(argv[i])) {
+        fprintf(stderr, "Unknown flag <%s>\n", argv[i]);
+        return 1;
+      }
+
+      if (strchr(argv[i], 'q')) {
+        is_noisy = 0;
+      }
+      if (strchr(argv[i], 'R')) {
+        read_only = 1;
+      }
+    }
   }
 
   current_database_path = get_database_path(1);
 
   dispatch(argv);
 
-  save_database(current_database_path);
+  if (! read_only) {
+    save_database(current_database_path);
+  }
   free_database(&top);
   unlock_and_exit(0);
   return 0; /* moot */

@@ -47,6 +47,11 @@ CONTACT
 
 ACKNOWLEDGEMENTS
 
+Ammon Riley
+    Read-only mode (-R)
+    tdls as a synonym for tdll
+    Bug fixes
+
 David Rhodes
     Concept for current builtin-help system
 
