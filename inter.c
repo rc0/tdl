@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.3 2002/05/09 23:05:45 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.4 2002/05/19 22:45:49 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -82,6 +82,139 @@ static char *generate_a_priority_completion(char *text, int state)/*{{{*/
 }
 /*}}}*/
 
+/* Structure to build a single linked list of nodes, working towards the
+ * ancestor. */
+struct node_chain {
+  struct node_chain *next;
+  struct node *node;
+  struct node *start; /* To see if we've got back to the start of the ring */
+  int index;
+};
+
+static struct node_chain *start_chain(struct links *x, struct node_chain *parent)/*{{{*/
+{
+  struct node_chain *result;
+  result = new(struct node_chain);
+  result->start = (struct node *) x;
+  result->node = x->next;
+  result->index = 1;
+  result->next = parent;
+  return result;
+}
+/*}}}*/
+static void cleanup_chain(struct node_chain *chain)/*{{{*/
+{
+  /* TODO: Reclaim memory */
+  return;
+}
+/*}}}*/
+static char *format_index(struct node_chain *chain)/*{{{*/
+{
+  int indices[256];
+  int n, first;
+  struct node_chain *x;
+  char buf[1024], buf1[32];
+
+  for (n=0, x=chain; x; n++, x=x->next) {
+    indices[n] = x->index;
+  }
+  buf[0] = '\0';
+  first = 1;
+  while (--n >= 0) {
+    sprintf(buf1, "%d", indices[n]);
+    if (!first) {
+      strcat(buf, ".");
+    } else {
+      first = 0;
+    }
+    strcat (buf, buf1);
+  }
+  return new_string(buf);
+}
+/*}}}*/
+static struct node *advance_chain(struct node_chain **pchain, char **index_string)/*{{{*/
+{
+  struct node_chain *chain = *pchain;
+  struct node *result = NULL;
+
+#if DEBUG_ADVANCE
+  fprintf(stderr, "advance chain, top index=%d\n", chain->index);
+#endif
+  
+  while (1) {
+    if (chain->node == chain->start) {
+      struct node_chain *next = chain->next;
+      free(chain);
+      chain = next;
+      if (chain) {
+        chain->node = chain->node->chain.next;
+        ++chain->index;
+#if DEBUG_ADVANCE
+        fprintf(stderr, "Returning to outer level, index=%d\n", chain->index);
+#endif
+        continue;
+      } else {
+#if DEBUG_ADVANCE
+        fprintf(stderr, "Got to outermost level\n");
+#endif
+        result = NULL;
+        break;
+      }
+    } else if (has_kids(chain->node)) {
+#if DEBUG_ADVANCE
+      fprintf(stderr, "Node has children, scanning children next\n");
+#endif
+      result = chain->node;
+      *index_string = format_index(chain);
+      /* Set-up to visit kids next time */
+      chain = start_chain(&chain->node->kids, chain);
+      break;
+    } else {
+      /* Ordinary case */
+#if DEBUG_ADVANCE
+      fprintf(stderr, "ordinary case\n");
+#endif
+      result = chain->node;
+      *index_string = format_index(chain);
+      chain->node = chain->node->chain.next;
+      ++chain->index;
+      break;
+    }
+  }
+
+  *pchain = chain;
+  return result;
+}
+/*}}}*/
+static char *generate_a_done_completion(char *text, int state)/*{{{*/
+{
+  static struct node_chain *chain = NULL;
+  struct node *node;
+  char *buf;
+  int len;
+
+  load_database_if_not_loaded();
+
+  if (!state) {
+    /* Re-initialise the node chain */
+    if (chain) cleanup_chain(chain);
+    chain = start_chain(&top, NULL);
+  }
+
+  len = strlen(text);
+  while ((node = advance_chain(&chain, &buf))) {
+    int undone = (!node->done);
+    if (undone && !strncmp(text, buf, len)) {
+      return buf;
+    } else {
+      /* Avoid gross memory leak */
+      free(buf);
+    }
+  }
+  return NULL;
+}
+/*}}}*/
+
 char **complete_help(char *text, int index)/*{{{*/
 {
   char **matches;
@@ -113,6 +246,13 @@ char **complete_list(char *text, int index)/*{{{*/
 char **complete_priority(char *text, int index)/*{{{*/
 {
   return complete_list(text, index);
+}
+/*}}}*/
+char **complete_done(char *text, int index)/*{{{*/
+{
+  char **matches;
+  matches = completion_matches(text, generate_a_done_completion);
+  return matches;
 }
 /*}}}*/
 
@@ -152,7 +292,11 @@ char **complete_priority(char *text, int index)/*{{{*/
 {
   return NULL;
 }/*}}}*/
-
+char **complete_done(char *text, int index)/*{{{*/
+{
+  return NULL;
+}
+/*}}}*/
 #endif
 
 static void add_null_arg(char ***av, int *max, int *n)/*{{{*/
