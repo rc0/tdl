@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.10 2001/10/20 21:20:08 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.11 2001/10/20 21:25:05 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -72,6 +72,12 @@ static void process_priority(char **x)/*{{{*/
     }
   }
 }/*}}}*/
+static void process_which(char *database_path)/*{{{*/
+{
+  printf("%s\n", database_path);
+  return;
+}
+/*}}}*/
 
 /* This will be variable eventually */
 static char default_database_path[] = "./" DBNAME;
@@ -224,6 +230,8 @@ static void usage(void)/*{{{*/
           "   Display this text\n\n"
           "tdl [-q] version\n"
           "   Display program version\n\n"
+          "tdl [-q] which\n"
+          "   Display filename of database being used\n\n"
           "<index>    : 1, 1.1 etc (see output of 'tdl list')\n"
           "<priority> : urgent|high|normal|low|verylow\n"
           "<datespec> : [-|+][0-9]+[shdwmy]  OR\n"
@@ -354,6 +362,8 @@ int main (int argc, char **argv)
     } else if (!strcmp(argv[1], "import")) {
       process_import(argv + 2);
       dirty = 1;
+    } else if (!strcmp(argv[1], "which")) {
+      process_which(database_path);
     } else if (!strcmp(argv[1], "help") ||
                !strcmp(argv[1], "usage") ||
                !strcmp(argv[1], "-h") ||

@@ -228,7 +228,8 @@ The
 command is used to display the entries in the database.  By default, only
 entries that have not been marked
 .B done
-are shown.  If you want to display all entries, include the
+and which don't have start times deferred into the future are shown.  If you
+want to display all entries, include the
 .B -a
 option (which means 'all').  If you want to display the dates and times when
 the entries were added and/or done, include the 
@@ -389,6 +390,13 @@ Same as
 .B tdl version
 .PP
 Show the version number of the software.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl which
+.PP
+Show the filename of the database that tdl accesses in the current context.
 
 .SH DATE SPECIFICATIONS
 .PP
