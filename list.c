@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.19 2003/03/11 22:30:08 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.20 2003/05/23 22:07:49 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -23,6 +23,7 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+#include <unistd.h>
 #include "tdl.h"
 
 struct list_options {
@@ -474,15 +475,16 @@ int process_list(char **x)/*{{{*/
   unsigned char *hits;
   int node_index, n_nodes;
 
-  if (getenv("TDL_LIST_MONOCHROME") != 0) {
-    options.monochrome = 1;
-  }
-
   options.monochrome = 0;
   options.show_all = 0;
   options.show_postponed = 0;
   options.verbose = 0;
   options.set_depth = 0;
+
+  if ( (getenv("TDL_LIST_MONOCHROME") != NULL) ||
+       (isatty(STDOUT_FILENO) == 0) ) {
+    options.monochrome = 1;
+  }
   
   /* Initialisation to support searching */
   node_index = 0;

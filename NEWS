@@ -1,3 +1,10 @@
+NEW IN VERSION 1.4.1
+
+- Fix TDL_LIST_MONOCHROME
+- Output without colours if stdout is not a terminal
+- Install manpage compressed and create links from other shortcuts to it
+- Don't include -g amongst default CFLAGS
+
 NEW IN VERSION 1.4
 
 - Add more intelligent configure script
@@ -101,4 +108,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.21 2003/05/13 21:06:13 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.22 2003/05/23 22:07:49 richard Exp $
