@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.17 2003/03/10 00:35:14 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.18 2003/03/11 20:02:42 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -175,7 +175,7 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
     printf(" ");
   }
 
-  if (options->monochrome) printf("%s", is_done ? CYAN : is_postponed ? MAGENTA : colour_table[y->priority]);
+  if (!options->monochrome) printf("%s", is_done ? CYAN : is_postponed ? MAGENTA : colour_table[y->priority]);
 
 #if 0
   
