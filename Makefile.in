@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Makefile.in,v 1.5 2003/05/14 23:51:52 richard Exp $
+#  $Header: /cvs/src/tdl/Makefile.in,v 1.6 2003/05/16 21:44:40 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -69,6 +69,8 @@ clean:
 	tdl.toc tdl.log tdl.dvi tdl.aux \
 	tdl.txt tdl.html tdl.info* tdl.pdf tdl.ps
 	
+distclean: clean
+	rm -f Makefile config.log
 
 install:
 	[ -d $(pprefix) ] || mkdir -p $(pprefix)
@@ -78,9 +80,11 @@ install:
 	cp tdl $(bindir)/tdl
 	chmod 555 $(bindir)/tdl
 	(cd $(bindir); ln -sf tdl tdla; ln -sf tdl tdll; ln -sf tdl tdld; ln -sf tdl tdlg)
-	cp tdl.1 $(man1dir)/tdl.1
-	chmod 444 $(man1dir)/tdl.1
+	gzip -9 < tdl.1 > $(man1dir)/tdl.1.gz
+	chmod 444 $(man1dir)/tdl.1.gz
+	(cd $(man1dir); for x in tdla tdll tdld tdlg ; do ln -sf tdl.1.gz ${x}.1.gz ; done )
 
+	
 docs : tdl.info tdl.txt tdl.html tdl.dvi tdl.pdf
 
 tdl.info : tdl.texi
