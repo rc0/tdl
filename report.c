@@ -1,8 +1,8 @@
 /*
-   $Header: /cvs/src/tdl/report.c,v 1.2 2001/10/20 21:20:08 richard Exp $
+   $Header: /cvs/src/tdl/report.c,v 1.3 2002/04/29 21:38:16 richard Exp $
   
    tdl - A console program for managing to-do lists
-   Copyright (C) 2001  Richard P. Curnow
+   Copyright (C) 2001,2002  Richard P. Curnow
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,12 +51,14 @@ static void print_report(struct links *x, int indent)/*{{{*/
   for (y = x->next; y != (struct node *) x; y = y->chain.next) {
     if (y->flag) {
       do_bullet_indent(indent+2);
+      if (!y->done) printf ("[[");
       for (p = y->text; *p; p++) {
         putchar(*p);
         if (*p == '\n') {
           do_indent(indent + 2);
         }
       }
+      if (!y->done) printf ("]]");
       putchar('\n');
 
       if (has_kids(y)) {
