@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.10 2002/05/19 22:44:57 richard Exp $
+#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.11 2002/07/22 21:10:44 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -31,9 +31,14 @@ CFLAGS=-g -Wall
 # If your readline library is in a non-standard location, you may need to use
 # the 2nd pair of lines and edit accordingly.
 INC_READLINE=-DUSE_READLINE
-LIB_READLINE=-lreadline -lhistory -ltermcap
+LIB_READLINE=-lreadline -ltermcap
 #INC_READLINE=-DUSE_READLINE -I/usr/include
-#LIB_READLINE=-lreadline -lhistory -ltermcap -L/usr/lib
+#LIB_READLINE=-lreadline -ltermcap -L/usr/lib
+
+# or you can use ncurses if you like, instead of termcap.  Uncomment + edit one
+# of these instead of those above if you want.
+#LIB_READLINE=-lreadline -lncurses
+#LIB_READLINE=-lreadline -lncurses -L/usr/lib
 
 #######################################################################
 # Edit this to change the directory to which the software is installed.
