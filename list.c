@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.12 2002/07/15 22:50:33 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.13 2002/07/17 23:34:51 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -424,7 +424,7 @@ int process_list(char **x)/*{{{*/
   allocate_indices(&top, &node_index);
   n_nodes = node_index;
 
-  hits = new_array(unsigned char, n_nodes);
+  hits = n_nodes ? new_array(unsigned char, n_nodes) : NULL;
 
   /* all nodes match until proven otherwise */
   memset(hits, 1, n_nodes);
@@ -503,6 +503,8 @@ int process_list(char **x)/*{{{*/
     list_chain(&top, 0, 0, &options, index_buffer, prio, now, hits);
   }
 
+  if (hits) free(hits);
+  
   return 0;
 }
 /*}}}*/

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.7 2002/05/21 22:47:40 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.8 2002/07/17 23:34:40 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -354,9 +354,11 @@ static void add_arg(char ***av, int *max, int *n, char *p, int len)/*{{{*/
   ++*n;
 }
 /*}}}*/
+
+static char **argv = NULL;
+
 static void split_line_and_dispatch(char *line)/*{{{*/
 {
-  static char **argv = NULL;
   static int max = 0;
   int i, n;
   char *av0 = "tdl";
@@ -571,6 +573,7 @@ void interactive(void)/*{{{*/
 #else
   interactive_stdio();
 #endif
+  if (argv) free(argv);
   return;
 }
 
