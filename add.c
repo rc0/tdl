@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.6 2002/05/09 23:07:06 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.7 2002/05/10 22:22:23 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -39,7 +39,9 @@ int process_add(char **x, int set_done)/*{{{*/
   insert_time = time(NULL);
 
   if ((argc > 1) && (x[0][0] == '@')) {
-    insert_time = parse_date(x[0]+1, insert_time, 1);
+    int error;
+    insert_time = parse_date(x[0]+1, insert_time, 1, &error);
+    if (error < 0) return error;
     argc--;
     x++;
   }
@@ -126,7 +128,9 @@ int process_edit(char **x) /*{{{*/
 
   new_insert_time = time(NULL);
   if ((argc > 1) && (x[0][0] == '@')) {
-    new_insert_time = parse_date(x[0]+1, new_insert_time, 1);
+    int error;
+    new_insert_time = parse_date(x[0]+1, new_insert_time, 1, &error);
+    if (error < 0) return error;
     argc--;
     x++;
     had_new_time = 1;

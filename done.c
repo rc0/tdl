@@ -1,5 +1,5 @@
-/*
-   $Header: /cvs/src/tdl/done.c,v 1.8 2002/05/09 23:07:05 richard Exp $
+/*;
+   $Header: /cvs/src/tdl/done.c,v 1.9 2002/05/10 22:22:23 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -64,7 +64,9 @@ int process_done(char **x)/*{{{*/
   clear_flags(&top);
 
   if (*x && (x[0][0] == '@')) {
-    done_time = parse_date(x[0]+1, done_time, 0);
+    int error;
+    done_time = parse_date(x[0]+1, done_time, 0, &error);
+    if (error < 0) return error;
     x++;
   }
 

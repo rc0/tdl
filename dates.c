@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/dates.c,v 1.4 2001/11/11 22:28:44 richard Exp $
+   $Header: /cvs/src/tdl/dates.c,v 1.5 2002/05/10 22:22:23 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -46,7 +46,7 @@ static time_t tm_to_time_t (struct tm *stm)/*{{{*/
   return t1 - diff;
 }
 /*}}}*/
-static void parse_time(char *d, int *hour, int *min, int *sec)/*{{{*/
+static int parse_time(char *d, int *hour, int *min, int *sec)/*{{{*/
 {
   int n;
   *hour = *min = *sec = 0;
@@ -55,36 +55,40 @@ static void parse_time(char *d, int *hour, int *min, int *sec)/*{{{*/
       n = sscanf(d, "%2d", hour);
       if (n != 1) {
         fprintf(stderr, "Can't parse hour from %s\n", d);
-        exit(2);
+        return -1;
       }
       break;
     case 4:
       n = sscanf(d, "%2d%2d", hour, min);
       if (n != 2) {
         fprintf(stderr, "Can't parse hour and minute from %s\n", d);
-        exit(2);
+        return -1;
       }
       break;
     case 6:
       n = sscanf(d, "%2d%2d%2d", hour, min, sec);
       if (n != 3) {
         fprintf(stderr, "Can't parse hour, minute and second from %s\n", d);
-        exit(2);
+        return -1;
       }
       break;
     default:
       fprintf(stderr, "Cannot parse time\n");
-      exit(2);
+      return -1;
       break;
   }
+
+  return 0;
 }
 /*}}}*/
-time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
+time_t parse_date(char *d, time_t ref, int default_positive, int *error)/*{{{*/
 {
   int len;
   char *hyphenpos;
   char *d0;
   time_t result;
+  
+  *error = 0; /* default : success */
   
   d0 = (*d == '-') ? d+1 : d;
   hyphenpos = strchr(d0, '-');
@@ -160,7 +164,8 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
 
     if (sscanf(d, "%ld%n", &interval, &nc) != 1) {
       fprintf(stderr, "Cannot recognize interval '%s'\n", d);
-      exit(1);
+      *error = -1;
+      return (time_t) 0; /* arbitrary */
     }
     
     d += nc;
@@ -173,7 +178,8 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
       case 's': break; /* use seconds */
       default:
         fprintf(stderr, "Can't understand interval multiplier '%s'\n", d);
-        exit(1);
+        *error = -1;
+        return (time_t) 0; /* arbitrary */
     }
     if (!posneg) interval = -interval;
   
@@ -198,7 +204,8 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
         n = sscanf(d, "%2d", &day);
         if (n != 1) {
           fprintf(stderr, "Can't parse day from %s\n", d);
-          exit(1);
+          *error = -1;
+          return (time_t) 0; /* arbitrary */
         }
         month = stm.tm_mon + 1;
         year = stm.tm_year;
@@ -207,7 +214,8 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
         n = sscanf(d, "%2d%2d", &month, &day);
         if (n != 2) {
           fprintf(stderr, "Can't parse month and day from %s\n", d);
-          exit(1);
+          *error = -1;
+          return (time_t) 0; /* arbitrary */
         }
         year = stm.tm_year;
         break;
@@ -215,7 +223,8 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
         n = sscanf(d, "%2d%2d%2d", &year, &month, &day);
         if (n != 3) {
           fprintf(stderr, "Can't parse year, month and day from %s\n", d);
-          exit(1);
+          *error = -1;
+          return (time_t) 0; /* arbitrary */
         }
         if (year < 70) year += 100;
         break;
@@ -223,13 +232,15 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
         n = sscanf(d, "%4d%2d%2d", &year, &month, &day);
         if (n != 3) {
           fprintf(stderr, "Can't parse year, month and day from %s\n", d);
-          exit(1);
+          *error = -1;
+          return (time_t) 0; /* arbitrary */
         }
         year -= 1900;
         break;
       default:
        fprintf(stderr, "Can't parse date from %s\n", d);
-       exit(2);
+        *error = -2;
+        return (time_t) 0; /* arbitrary */
        break;
     }
     stm.tm_year = year;
@@ -273,7 +284,7 @@ int main (int argc, char **argv)
 
   if (argc < 2) {
     fprintf(stderr, "Require an argument\n");
-    exit(1);
+    return 1;
   }
 
   newtime = parse_date(argv[1], ref, (argc > 2));

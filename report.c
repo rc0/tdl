@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/report.c,v 1.4 2002/05/09 23:07:05 richard Exp $
+   $Header: /cvs/src/tdl/report.c,v 1.5 2002/05/10 22:22:23 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -73,6 +73,7 @@ int process_report(char **x)/*{{{*/
   time_t now, start, end;
   int argc;
   char *d0, *d1;
+  int error;
 
   argc = count_args(x);
   start = end = now = time(NULL);
@@ -81,15 +82,18 @@ int process_report(char **x)/*{{{*/
     case 1:
       d0 = x[0];
       if (*d0 == '@') d0++;
-      start = parse_date(d0, now, 0);
+      start = parse_date(d0, now, 0, &error);
+      if (error < 0) return error;
       break;
     case 2:
       d0 = x[0];
       d1 = x[1];
       if (*d0 == '@') d0++;
       if (*d1 == '@') d1++;
-      start = parse_date(d0, now, 0);
-      end = parse_date(d1, now, 0);
+      start = parse_date(d0, now, 0, &error);
+      if (error < 0) return error;
+      end = parse_date(d1, now, 0, &error);
+      if (error < 0) return error;
       break;
     default:
       fprintf(stderr, "Usage: report <start_epoch> [<end_epoch>]\n");

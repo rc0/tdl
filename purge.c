@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/purge.c,v 1.4 2002/05/09 23:07:05 richard Exp $
+   $Header: /cvs/src/tdl/purge.c,v 1.5 2002/05/10 22:22:23 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -65,6 +65,7 @@ int process_purge(char **x)/*{{{*/
   int argc;
   time_t now, then;
   char *d;
+  int error;
 
   argc = count_args(x);
   if (argc < 1) {
@@ -75,7 +76,8 @@ int process_purge(char **x)/*{{{*/
   d = x[0];
   if (*d == '@') d++;
   now = time(NULL);
-  then = parse_date(d, now, 0);
+  then = parse_date(d, now, 0, &error);
+  if (error < 0) return error;
   x++;
 
   clear_flags(&top);
