@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.14 2001/10/29 22:03:42 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.15 2001/10/29 22:20:28 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -255,7 +255,8 @@ static char *get_version(void)/*{{{*/
       break;
     }
   }
-  if (!*p) {
+  while (isspace(*p)) p++;
+  if (*p == '$') {
     strcpy(buffer, "development version");
   } else {
     for (q=buffer; *p && *p != '$'; p++) {
