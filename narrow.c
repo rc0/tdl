@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/narrow.c,v 1.2 2003/04/04 06:55:48 richard Exp $
+   $Header: /cvs/src/tdl/narrow.c,v 1.3 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -34,7 +34,7 @@ char *get_narrow_prefix(void)/*{{{*/
   return narrow_prefix;
 }
 /*}}}*/
-static char *generate_prefix(struct node *x, char *suffix)
+static char *generate_prefix(struct node *x, char *suffix)/*{{{*/
 {
   int count;
   struct node *y, *parent;
@@ -70,7 +70,7 @@ static char *generate_prefix(struct node *x, char *suffix)
     return new_suffix;
   }
 }
-
+/*}}}*/
 static void setup_narrow_prefix(void)/*{{{*/
 {
   if (narrow_prefix) {
@@ -79,6 +79,11 @@ static void setup_narrow_prefix(void)/*{{{*/
   }
 
   narrow_prefix = generate_prefix(narrow_top, "");
+}
+/*}}}*/
+char *get_ident(struct node *n)/*{{{*/
+{
+  return generate_prefix(n, "");
 }
 /*}}}*/
 int process_narrow(char **x)/*{{{*/

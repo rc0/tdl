@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/purge.c,v 1.6 2003/03/11 22:30:36 richard Exp $
+   $Header: /cvs/src/tdl/purge.c,v 1.7 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -92,14 +92,18 @@ int process_purge(char **x)/*{{{*/
     /* If no indices given, do whole database */
     scan_from_top_down(to_purge_from, then);
   } else {
+    struct nodelist *nl, *a;
+    nl = make_nodelist();
     while (*x) {
-      struct node *n;
-      n = lookup_node(*x, 0, NULL);
-      if (!n) return -1;
-      if ((n->done > 0) && (n->done < then)) n->flag = 1;
-      scan_from_top_down(&n->kids, then);
+      lookup_nodes(*x, nl, 0);
       x++;
     }
+    for (a=nl->next; a!=nl; a=a->next) {
+      struct node *n = a->node;
+      if ((n->done > 0) && (n->done < then)) n->flag = 1;
+      scan_from_top_down(&n->kids, then);
+    }
+    free_nodelist(nl);
   }
 
   purge_from_bottom_up(to_purge_from);

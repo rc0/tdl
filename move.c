@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.8 2003/03/11 22:30:23 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.9 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -35,6 +35,44 @@ static int is_ancestor(struct node *anc, struct node *dec)/*{{{*/
 }
 /*}}}*/
 
+static void move_node(struct node *a, struct links **insert_point, /*{{{*/
+                      struct node *insert_parent, int below_not_above,
+                      int do_descendents)
+{
+  struct node *next, *prev;
+  char *old_id, *new_id;
+  old_id = get_ident(a);
+  next = a->chain.next;
+  prev = a->chain.prev;
+  prev->chain.next = next;
+  next->chain.prev = prev;
+  (below_not_above ? append_node : prepend_node) (a, *insert_point);
+  a->parent = insert_parent;
+  new_id = get_ident(a);
+  if (below_not_above) *insert_point = &a->chain;
+
+  printf("moved %s to %s\n", old_id, new_id);
+  free(old_id);
+  free(new_id);
+  
+  if (a->done == 0) {
+    struct node *parent;
+    parent = insert_parent;
+    while (parent) {
+      parent->done = 0;
+      parent = parent->parent;
+    }
+  }
+
+  if (do_descendents) {
+    struct node *y, *next_y;
+    for (y = a->kids.next; y != (struct node *) &a->kids; y = next_y) {
+      next_y = y->chain.next;
+      move_node(y, insert_point, insert_parent, below_not_above, 1);
+    }
+  }
+}
+/*}}}*/
 static int process_move_internal(char **x, int below_not_above, int into_parent)/*{{{*/
 {
   /* x is the argument list
@@ -42,10 +80,10 @@ static int process_move_internal(char **x, int below_not_above, int into_parent)
    * into_parent means an implicit .0 is appended to x[0] to get the path
    */
   
-  int argc, i, n;
+  int argc, n;
   struct links *insert_point;
-  struct node **table;
-  struct node *insert_parent, *insert_peer=NULL, *parent;
+  struct node *insert_parent, *insert_peer=NULL;
+  struct nodelist *nl, *a;
   
   char *option;
 
@@ -68,53 +106,35 @@ static int process_move_internal(char **x, int below_not_above, int into_parent)
     insert_point = (struct links *) &insert_peer->chain;
     if (!insert_point) return -1;
   }
-  table = new_array(struct node *, n);
+
+  /* Build list of nodes from argument list.  Do all lookups in a first pass,
+     o/w the later lookups will match different nodes because of moves caused
+     by earlier ones */
   x++;
-
-  /* Have to do the move in 2 passes, otherwise the indices of the entries
-     could change in mid-lookup. */
-  for (i=0; i<n; i++) {
-    table[i] = lookup_node(x[i], 0, NULL); /* Don't allow zero for this */
-    if (!table[i]) return -1; /* memory leak */
-
-    /* Check for an attempt to move a node onto one of its own descendents */
-    if (is_ancestor(table[i], insert_parent)) {
-      fprintf(stderr, "Can't re-parent entry %s onto a descendent of itself\n", x[i]);
-      return -1;
-    }
+  nl = make_nodelist();
+  while (*x) {
+    /* Moving descendents doesn't make sense?  It would just flatten the
+       structure out */
+    int do_descendents;
+    do_descendents = include_descendents(*x);
+    lookup_nodes(*x, nl, do_descendents);
+    /* Process each node */
+    x++;
   }
 
-  for (i=0; i<n; i++) { 
-    /* Unlink from its current location */
-    struct node *prev, *next;
-    next = table[i]->chain.next;
-    prev = table[i]->chain.prev;
-    prev->chain.next = next;
-    next->chain.prev = prev;
-
-    (below_not_above ? append_node : prepend_node) (table[i], insert_point);
-    if (into_parent) {
-      table[i]->parent = insert_parent;
+  for (a = nl->next; a!=nl; a=a->next) {
+    if (is_ancestor(a->node, insert_parent)) {
+      char *ident = get_ident(a->node);
+      fprintf(stderr, "Can't re-parent entry %s onto a descendent of itself\n", ident);
+      free(ident);
     } else {
-      /* in this case 'insert_peer' is just the one we're putting things above
-       * or below, i.e. the entries being moved will be siblings of it and will
-       * share its parent. */
-      table[i]->parent = insert_peer->parent;
-    }
-      
-    /* To insert the nodes in the command line order */
-    if (below_not_above) insert_point = &table[i]->chain;
-    /* if inserting above something, the insertion point stays fixed */
-    
-    /* Clear done status of insertion point and its ancestors */
-    if (table[i]->done == 0) {
-      parent = insert_parent;
-      while (parent) {
-        parent->done = 0;
-        parent = parent->parent;
-      }
+      move_node(a->node, &insert_point, 
+                (into_parent ? insert_parent : insert_peer->parent),
+                below_not_above, a->flag);
     }
   }
+
+  free_nodelist(nl);
 
   return 0;
 }

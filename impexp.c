@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/impexp.c,v 1.6 2003/03/11 22:29:44 richard Exp $
+   $Header: /cvs/src/tdl/impexp.c,v 1.7 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -58,6 +58,7 @@ int process_export(char **x)/*{{{*/
   char *filename;
   int argc, i;
   struct links data;
+  struct nodelist *nl, *a;
 
   argc = count_args(x);
 
@@ -70,14 +71,21 @@ int process_export(char **x)/*{{{*/
 
   data.prev = data.next = (struct node *) &data;
 
+  nl = make_nodelist();
+
   /* Build linked list of data to write */
   for (i=1; i<argc; i++) {
+    lookup_nodes(x[i], nl, 0);
+  }
+
+  for (a=nl->next; a!=nl; a=a->next) {
     struct node *n, *nn;
-    n = lookup_node(x[i], 0, NULL);
-    if (!n) return -1;
+    n = a->node;
     nn = clone_node(n, NULL);
     prepend_node(nn, &data);
   }
+
+  free_nodelist(nl);
   
   out = fopen(filename, "wb");
   if (!out) {
@@ -145,12 +153,17 @@ static int internal_copy_clone(struct links *l, char **x)/*{{{*/
   }
 
   for (i=0; i<argc; i++) {
-    struct node *n, *nn;
-    n = lookup_node(x[i], 0, NULL);
-    if (!n) return -1;
-    nn = clone_node(n, NULL);
-    set_arrived_time(nn, now);
-    prepend_node(nn, l);
+    struct nodelist *nl, *a;
+    nl = make_nodelist();
+    lookup_nodes(x[i], nl, 0);
+    for (a=nl->next; a!=nl; a=a->next) {
+      struct node *n = a->node;
+      struct node *nn;
+      nn = clone_node(n, NULL);
+      set_arrived_time(nn, now);
+      prepend_node(nn, l);
+    }
+    free_nodelist(nl);
   }
 
   return 0;

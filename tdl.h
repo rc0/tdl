@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.22 2003/04/14 22:14:33 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.23 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2002  Richard P. Curnow
@@ -65,6 +65,14 @@ struct node {
 
 extern struct links top;
 
+/* Type used for building lists of nodes to operate on */
+struct nodelist {
+  struct nodelist *next;
+  struct nodelist *prev;
+  struct node *node;
+  int flag;
+};
+
 /* Memory macros */
 
 #define new_string(s) strcpy((char *) malloc(1+strlen(s)), (s))
@@ -128,6 +136,10 @@ void append_node(struct node *n, struct links *l);
 void prepend_node(struct node *n, struct links *l);
 void prepend_child(struct node *child, struct node *parent);
 
+void lookup_nodes(const char *path, struct nodelist *list, int flag);
+struct nodelist *make_nodelist(void);
+void free_nodelist (struct nodelist *list);
+
 /* In done.c */
 int has_open_child(struct node *y);
 int process_done(char **x);
@@ -182,6 +194,7 @@ struct node *get_narrow_top(void);
 char *get_narrow_prefix(void);
 int process_narrow(char **x);
 int process_widen(char **x);
+char *get_ident(struct node *);
 
 #endif /* TDL_H */
           

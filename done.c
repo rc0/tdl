@@ -1,5 +1,5 @@
 /*;
-   $Header: /cvs/src/tdl/done.c,v 1.10 2002/07/18 22:13:58 richard Exp $
+   $Header: /cvs/src/tdl/done.c,v 1.11 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -47,7 +47,9 @@ static void mark_done_from_bottom_up(struct links *x, time_t done_time)/*{{{*/
     
     if (y->flag) {
       if (has_open_child(y)) {
-        fprintf(stderr, "Cannot mark %s done, it has open sub-tasks\n", y->scratch);
+        char *ident = get_ident(y);
+        fprintf(stderr, "Cannot mark %s done, it has open sub-tasks\n", ident);
+        free(ident);
       } else {
         y->done = done_time;
       }
@@ -57,22 +59,25 @@ static void mark_done_from_bottom_up(struct links *x, time_t done_time)/*{{{*/
 /*}}}*/
 static int internal_done(time_t when, char **x)/*{{{*/
 {
-  struct node *n;
   int do_descendents;
+  struct nodelist *nl = make_nodelist(), *a;
 
   clear_flags(&top);
 
   while (*x) {
     do_descendents = include_descendents(*x); /* May modify *x */
-    n = lookup_node(*x, 0, NULL);
-    if (!n) return -1;
-    n->flag = 1;
-    if (do_descendents) {
-      mark_all_descendents(n);
-    }
-    n->scratch = *x; /* Safe to alias, *x has long lifetime */
+    lookup_nodes(*x, nl, do_descendents);
     x++;
   }
+
+  for (a=nl->next; a!=nl; a=a->next) {
+    a->node->flag = 1;
+    if (a->flag) {
+      mark_all_descendents(a->node);
+    }
+  }
+
+  free_nodelist(nl);
    
   mark_done_from_bottom_up(&top, when);
 
@@ -125,18 +130,21 @@ static void undo_ancestors(struct node *y)/*{{{*/
 /*}}}*/
 int process_undo(char **x)/*{{{*/
 {
-  struct node *n;
+  struct nodelist *nl, *a;
   int do_descendents;
 
   while (*x) {
+    nl = make_nodelist();
     do_descendents = include_descendents(*x); /* May modify *x */
-    n = lookup_node(*x, 0, NULL);
-    if (!n) return -1;
-    n->done = 0;
-    undo_ancestors(n);
-    if (do_descendents) {
-      undo_descendents(n);
+    lookup_nodes(*x, nl, 0);
+    for(a=nl->next; a!=nl; a=a->next) {
+      a->node->done = 0;
+      undo_ancestors(a->node);
+      if (do_descendents) {
+        undo_descendents(a->node);
+      }
     }
+    free_nodelist(nl);
     x++;
   }
 

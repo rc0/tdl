@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.20 2003/05/23 22:07:49 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.21 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -135,7 +135,9 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   is_ignored = (y->done == IGNORED_TIME);
   is_postponed = (y->arrived == POSTPONED_TIME);
   is_deferred = (y->arrived > now);
-  if (!options->show_all && is_done) return;
+  if (is_done && !options->show_all) return;
+  if ((is_deferred || is_postponed) &&
+      !(options->show_all || options->show_postponed)) return;
 
   do_indent(indent);
   count_kids(&y->kids, &n_kids, NULL, &n_open_kids);
@@ -465,12 +467,12 @@ int process_list(char **x)/*{{{*/
 {
   struct list_options options;
   int options_done = 0;
-  int any_paths = 0;
   char index_buffer[256];
   char *y;
   enum Priority prio = PRI_NORMAL, prio_to_use, node_prio;
   int prio_set = 0;
   time_t now = time(NULL);
+  struct nodelist *nl, *a;
   
   unsigned char *hits;
   int node_index, n_nodes;
@@ -495,6 +497,8 @@ int process_list(char **x)/*{{{*/
 
   /* all nodes match until proven otherwise */
   memset(hits, 1, n_nodes);
+
+  nl = make_nodelist();
   
   while ((y = *x) != 0) {
     /* An argument starting '1' or '+1' or '+-1' (or '-1' after '--') is
@@ -505,27 +509,10 @@ int process_list(char **x)/*{{{*/
          (isdigit(y[1]) ||
           ((y[1] == '-' && isdigit(y[2])))))) {
       
-      struct node *n = lookup_node(y, 0, NULL);
       int summarise_kids;
-
-      if (!n) return -1;
-      
-      any_paths = 1;
-      index_buffer[0] = '\0';
-      strcat(index_buffer, y);
       summarise_kids = (options.set_depth && (options.depth==0));
-      if (hits[n->iscratch]) {
-        print_details(n, 0, summarise_kids, &options, index_buffer, now);
-      }
-      if (!options.set_depth || (options.depth > 0)) {
-        node_prio = n->priority;
+      lookup_nodes(y, nl, summarise_kids);
 
-        /* If the priority has been set on the cmd line, always use that.
-         * Otherwise, use the priority from the specified node, _except_ when
-         * that is higher than normal, in which case use normal. */
-        prio_to_use = (prio_set) ? prio : ((node_prio > prio) ? prio : node_prio);
-        list_chain(&n->kids, INDENT_TAB, 0, &options, index_buffer, prio_to_use, now, hits);
-      }
     } else if ((y[0] == '-') && (y[1] == '-')) {
       options_done = 1;
     } else if (y[0] == '-') {
@@ -567,8 +554,26 @@ int process_list(char **x)/*{{{*/
 
     x++;
   }
-  
-  if (!any_paths) {
+
+  if (nl->next != nl) {
+    for (a = nl->next; a != nl; a = a->next) {
+      struct node *n = a->node;
+      int summarise_kids = a->flag;
+      char *ident = get_ident(n);
+      if (hits[n->iscratch]) {
+        print_details(n, 0, summarise_kids, &options, ident, now);
+      }
+      if (!options.set_depth || (options.depth > 0)) {
+        node_prio = n->priority;
+
+        /* If the priority has been set on the cmd line, always use that.
+         * Otherwise, use the priority from the specified node, _except_ when
+         * that is higher than normal, in which case use normal. */
+        prio_to_use = (prio_set) ? prio : ((node_prio > prio) ? prio : node_prio);
+        list_chain(&n->kids, INDENT_TAB, 0, &options, ident, prio_to_use, now, hits);
+      }
+    }
+  } else { 
     struct node *narrow_top = get_narrow_top();
     if (narrow_top) {
       index_buffer[0] = 0;

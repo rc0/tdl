@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.40 2003/06/12 21:43:27 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.41 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -400,6 +400,7 @@ static int process_priority(char **x)/*{{{*/
   int error;
   enum Priority priority;
   struct node *n;
+  struct nodelist *nl, *a;
   int do_descendents;
  
   priority = parse_priority(*x, &error);
@@ -408,12 +409,15 @@ static int process_priority(char **x)/*{{{*/
     return error;
   }
 
+  nl = make_nodelist();
   while (*++x) {
     do_descendents = include_descendents(*x); /* May modify *x */
-    n = lookup_node(*x, 0, NULL);
-    if (!n) return -1;
+    lookup_nodes(*x, nl, do_descendents);
+  }
+  for (a=nl->next; a!=nl; a=a->next) {
+    n = a->node;
     n->priority = priority;
-    if (do_descendents) {
+    if (a->flag) {
       set_descendent_priority(n, priority);
     }
   }

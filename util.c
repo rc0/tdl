@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.8 2003/03/10 00:35:14 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.9 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -137,6 +137,248 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
   return y;
 }
 /*}}}*/
+
+static void add_noderef_to_list(struct nodelist *list, struct node *n, int flag)/*{{{*/
+{
+  struct nodelist *new_node = new(struct nodelist);
+  new_node->node = n;
+  new_node->flag = flag;
+  new_node->next = list;
+  new_node->prev = list->prev;
+  list->prev->next = new_node;
+  list->prev = new_node;
+  return;
+}
+/*}}}*/
+enum what_lookup {
+  WL_BOTH,
+  WL_START,
+  WL_END
+};
+
+static struct node *lookup_one_node(struct links *x, const char *s, const char *e, enum what_lookup wl)/*{{{*/
+{
+  char *temp;
+  int len = e - s;
+  int index;
+  struct node *result;
+  
+  temp = new_array(char, len + 1);
+  strncpy(temp, s, len);
+  temp[len] = 0;
+  /* Eventually this could be more sophisticated */
+  if (sscanf(temp, "%d", &index) != 1) {
+    fprintf(stderr, "Could not extract index from <%s>\n", temp);
+    result = NULL;
+  } else {
+    int aindex, direction, tindex;
+    struct node *y;
+
+    if (x->next == (struct node *)x) {
+      fprintf(stderr, "Tree not that deep\n");
+      result = NULL;
+      goto out;
+    }
+
+    if (index > 0) {
+      direction = 1;
+      aindex = index;
+    } else if (index < 0) {
+      direction = 0;
+      aindex = -index;
+    } else {
+      switch (wl) {
+        case WL_BOTH:
+          fprintf(stderr, "Zero index not allowed\n");
+          result = NULL;
+          goto out;
+        case WL_START:
+          result = x->next;
+          goto out;
+        case WL_END:
+          result = x->prev;
+          goto out;
+      }
+    }
+
+    for (y = direction ? x->next : x->prev, tindex = aindex; --tindex; ) {
+      y = direction ? y->chain.next : y->chain.prev;
+      if (y == (struct node *) x) {
+        fprintf(stderr, "Can't find entry %d for XXth component of path ...\n",
+            index);
+        result = NULL;
+        goto out;
+      }
+    }
+
+    result = y;
+  }
+
+out: 
+  free(temp);
+  return result;
+}
+/*}}}*/
+static int node_after_node(struct node *n1, struct node *n2, struct links *links)/*{{{*/
+{
+  /* FIXME : provide a real definition! */
+  struct node *n;
+  for (n = n1; ; n = n->chain.next) {
+    if (n == (struct node *) links) return 0;
+    if (n == n2) break;
+  }
+  return 1;
+}
+/*}}}*/
+static void lookup_range(struct links *x, const char *start, const char *end, struct nodelist *list, int flag)/*{{{*/
+{
+  char *dash;
+  struct node *n1, *n2, *n;
+  
+  dash = strchr(((start[0]=='-') ? (start+1) : start), '-');
+  if (!dash || (dash >= end)) {
+    /* single term */
+    n1 = lookup_one_node(x, start, end, WL_BOTH);
+    if (!n1) return; /* Don't add anything if faulty */
+    add_noderef_to_list(list, n1, flag);
+  } else {
+    /* two terms */
+    n1 = lookup_one_node(x, start, dash, WL_START);
+    n2 = lookup_one_node(x, dash+1, end, WL_END);
+    if (!n1 || !n2) return; /* Don't add anything if faulty */
+    if (!node_after_node(n1, n2, x)) {
+      fprintf(stderr, "Start node after end node\n"); 
+      return; /* Return if out of order. */
+    }
+    /* Add whole range (inclusive) to list. */
+    for (n=n1; ; n = n->chain.next) {
+      add_noderef_to_list(list, n, flag);
+      if (n == n2) break;
+    }
+  }
+}
+/*}}}*/
+static void lookup_final(struct links *x, const char *p, struct nodelist *list, int flag)/*{{{*/
+{
+  const char *q;
+  do {
+    q = strchr(p, ',');
+    if (!q) {
+      /* Last range in the string */
+      q = p;
+      while (*q) q++;
+      lookup_range(x, p, q, list, flag);
+      break;
+    } else {
+      lookup_range(x, p, q, list, flag);
+      p = q + 1; /* Character after the comma */
+    }
+  } while (1);
+  return;
+}
+/*}}}*/
+static struct links *lookup_non_final(struct links *x, const char *p, const char *dotpos)/*{{{*/
+{
+  /* Check that [p,dotpos) is a valid index, then find that index in x.
+     Actually, we're less picky, only require that we can read an integer
+     starting at 'p'. */
+  int idx, aidx, tidx, direction;
+  struct node *y;
+  
+  if (sscanf(p, "%d", &idx) != 1) {
+    fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
+    return NULL;
+  }
+  if (idx > 0) {
+    direction = 1;
+    aidx = idx;
+  } else if (idx < 0) {
+    direction = 0;
+    aidx = -idx;
+  } else {
+    fprintf(stderr, "Zero index not allowed\n");
+    return NULL;
+  }
+
+  if (x->next == (struct node *)x) {
+    fprintf(stderr, "Tree not that deep\n");
+    return NULL;
+  }
+
+  for (y = direction ? x->next : x->prev, tidx = aidx; --tidx; ) {
+    y = direction ? y->chain.next : y->chain.prev;
+    if (y == (struct node *) x) {
+      fprintf(stderr, "Can't find entry %d for XXth component of path ...\n",
+          idx);
+      return NULL;
+    }
+  }
+  return &(y->kids);
+
+}
+/*}}}*/
+void lookup_nodes(const char *path, struct nodelist *list, int flag)/*{{{*/
+{
+  /* Find nodes matched by path, and append them to the list */
+  struct node *narrow_top;
+  struct links *our_top, *x;
+  const char *p;
+
+  narrow_top = get_narrow_top();
+  if (narrow_top) {
+    if (!strcmp(path, ".")) {
+      add_noderef_to_list(list, narrow_top, flag);
+    } else {
+      our_top = &narrow_top->kids;
+    }
+  } else {
+    our_top = &top;
+  }
+
+  /* General syntax:
+   * a.b.c.X where a, b, c are integers (eventually may be names when we add node-naming)
+   * X is a list of comma-separated ranges, each range is a single integer/name, or a
+   * range of 2 integer/names separated by hyphen. */
+  
+  x = our_top;
+  p = path;
+  do {
+    const char *dotpos;
+    dotpos = strchr(p, '.');
+    if (!dotpos) {
+      /* Final component */
+      lookup_final(x, p, list, flag);
+      return;
+    } else {
+      /* Non-final component */
+      x = lookup_non_final(x, p, dotpos);
+      /* Failure - just don't add anything to the nodelist. */
+      if (!x) return;
+    }
+    p = dotpos + 1;
+  } while (1);
+
+}
+/*}}}*/
+struct nodelist *make_nodelist(void)/*{{{*/
+{
+  struct nodelist *result;
+  result = new(struct nodelist);
+  result->next = result->prev = result;
+  return result;
+}
+/*}}}*/
+void free_nodelist(struct nodelist *list)/*{{{*/
+{
+  struct nodelist *next, *x;
+  for (x = list; x != list; x = x->next) {
+    next = x->next;
+    free(x);
+  }
+  return;
+}
+/*}}}*/
+
 enum Priority parse_priority(char *priority, int *error)/*{{{*/
 {
   enum Priority result;

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.16 2003/04/14 23:19:25 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.17 2003/07/17 22:35:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -239,17 +239,24 @@ static void modify_tree_arrival_time(struct node *y, time_t new_time)/*{{{*/
 static int internal_postpone_open(char **x, time_t when)/*{{{*/
 {
   struct node *n;
+  struct nodelist *nl, *a;
   int do_descendents;
   
+  nl = make_nodelist();
   while (*x) {
     do_descendents = include_descendents(*x); /* May modify *x */
-    n = lookup_node(*x, 0, NULL);
-    if (n) {
-      n->arrived = when;
-      if (do_descendents) modify_tree_arrival_time(n, when);
-    }
+    lookup_nodes(*x, nl, do_descendents);
     x++;
   }
+
+  for (a=nl->next; a!=nl; a=a->next) {
+    n = a->node;
+    n->arrived = when;
+    if (a->flag) modify_tree_arrival_time(n, when);
+  }
+  
+  free_nodelist(nl);
+
   return 0;
 }
 /*}}}*/
