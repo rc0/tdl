@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.17 2002/07/17 23:35:29 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.18 2002/07/18 22:13:58 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -35,6 +35,9 @@ enum Priority {
   PRI_HIGH    = 4,
   PRI_URGENT  = 5
 };
+
+/* Magic time_t value used in the 'done' field to signify an ignored item */
+#define IGNORED_TIME 1
 
 struct node;
 
@@ -125,6 +128,7 @@ void prepend_child(struct node *child, struct node *parent);
 /* In done.c */
 int has_open_child(struct node *y);
 int process_done(char **x);
+int process_ignore(char **x);
 int process_undo(char **x);
 
 /* In add.c */

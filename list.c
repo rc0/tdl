@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.13 2002/07/17 23:34:51 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.14 2002/07/18 22:13:58 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -120,10 +120,12 @@ static void count_kids(struct links *x, int *n_kids, int *n_done_kids, int *n_op
 static void print_details(struct node *y, int indent, int summarise_kids, const struct list_options *options, char *index_buffer, time_t now)/*{{{*/
 {
   int is_done;
+  int is_ignored;
   char *p;
   int n_kids, n_open_kids;
 
   is_done = (y->done > 0);
+  is_ignored = (y->done == IGNORED_TIME);
   if (!options->show_all && is_done) return;
 
   do_indent(indent);
@@ -131,10 +133,12 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   if (summarise_kids && (n_kids > 0)) {
     if (options->monochrome) {
       printf("%s [%d/%d] %s", index_buffer, n_open_kids, n_kids,
+             (options->show_all && !options->verbose && is_ignored) ? "(IGNORED) : " : 
              (options->show_all && !options->verbose && is_done) ? "(DONE) : " : 
              (options->show_all && !options->verbose && (y->arrived > now)) ? "(DEFERRED) : " : ": ");
     } else {
       printf("%s%s %s[%d/%d]%s %s%s", GREEN, index_buffer, CYAN, n_open_kids, n_kids, NORMAL,
+             (options->show_all && !options->verbose && is_ignored) ? BLUE "(IGNORED) " NORMAL :
              (options->show_all && !options->verbose && is_done) ? CYAN "(DONE) " NORMAL :
              (options->show_all && !options->verbose && (y->arrived > now)) ? MAGENTA "(DEFERRED) " : "",
              is_done ? DIMCYAN : colour_table[y->priority]);
@@ -142,10 +146,12 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   } else {
     if (options->monochrome) {
       printf("%s %s", index_buffer,
+             (options->show_all && !options->verbose && is_ignored) ? "(IGNORED) : " : 
              (options->show_all && !options->verbose && is_done) ? "(DONE) : " : 
              (options->show_all && !options->verbose && (y->arrived > now)) ? "(DEFERRED) : " : ": ");
     } else {
       printf("%s%s%s %s%s", GREEN, index_buffer, NORMAL,
+             (options->show_all && !options->verbose && is_ignored) ? BLUE "(IGNORED) " NORMAL :
              (options->show_all && !options->verbose && is_done) ? CYAN "(DONE) " NORMAL :
              (options->show_all && !options->verbose && (y->arrived > now)) ? MAGENTA "(DEFERRED) " : "",
              is_done ? DIMCYAN : colour_table[y->priority]);

@@ -352,6 +352,7 @@ This section describes each of the tdl subcommands.
 * exit command::    Exit program, saving database
 * export command::  Export entries to another database
 * help command::    Display help information
+* ignore command::  Postpone/partially-remove 1 or more entries
 * import command::  Import entries from another database
 * into command::    Move entries to end of new parent
 * list command::    List entries in database (default from top node)
@@ -807,6 +808,33 @@ tdl>
 
 The @command{help} command is synonymous with the @command{usage} command.
 
+@c }}}
+@c {{{ ignore command
+@node ignore command
+@subsection ignore command
+The @command{ignore} command puts one or more entries into an @emph{ignored}
+state.  It is actually implemented in the same way as marking them as
+@emph{done}, but as though they were @emph{done} a very long time ago.  Thus,
+ignored entries will be deleted by any subsequent purge operation.
+
+I added this feature because, when applying @command{remove} to several
+entries, I kept getting tripped up by the indices changing below the entry that
+was removed (I kept removing the wrong entries later by not using the revised
+indices).
+
+Another use for the @emph{ignore} command would be to postpone entries to stop
+them cluttering up the normal listing, but without removing them entirely.
+
+The @command{ignore} command is run as follows
+
+@example
+ignore <entry_index>[...] ...
+@end example
+
+An example is
+@example
+ignore 20 21.6.3 25... 28.1
+@end example
 @c }}}
 @c {{{ import command
 @node import command

@@ -1,5 +1,5 @@
 /*;
-   $Header: /cvs/src/tdl/done.c,v 1.9 2002/05/10 22:22:23 richard Exp $
+   $Header: /cvs/src/tdl/done.c,v 1.10 2002/07/18 22:13:58 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -55,20 +55,12 @@ static void mark_done_from_bottom_up(struct links *x, time_t done_time)/*{{{*/
   }
 }
 /*}}}*/
-int process_done(char **x)/*{{{*/
+static int internal_done(time_t when, char **x)/*{{{*/
 {
   struct node *n;
   int do_descendents;
-  time_t done_time = time(NULL);
 
   clear_flags(&top);
-
-  if (*x && (x[0][0] == '@')) {
-    int error;
-    done_time = parse_date(x[0]+1, done_time, 0, &error);
-    if (error < 0) return error;
-    x++;
-  }
 
   while (*x) {
     do_descendents = include_descendents(*x); /* May modify *x */
@@ -82,12 +74,34 @@ int process_done(char **x)/*{{{*/
     x++;
   }
    
-  mark_done_from_bottom_up(&top, done_time);
+  mark_done_from_bottom_up(&top, when);
 
   return 0;
 }
 /*}}}*/
+int process_done(char **x)/*{{{*/
+{
+  time_t done_time = time(NULL);
 
+  if (*x && (x[0][0] == '@')) {
+    int error;
+    done_time = parse_date(x[0]+1, done_time, 0, &error);
+    if (error < 0) return error;
+    x++;
+  }
+
+  internal_done(done_time, x);
+  return 0;
+}
+/*}}}*/
+int process_ignore(char **x)/*{{{*/
+{
+  /* (struct node).done == 0 means not done yet.  So use 1 to mean ancient
+   * history (never shows up in reports, sure to be purged at next purge) */
+  internal_done(IGNORED_TIME, x);
+  return 0;
+}
+/*}}}*/
 static void undo_descendents(struct node *y)/*{{{*/
 {
   struct node *c;

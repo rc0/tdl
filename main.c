@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.25 2002/07/18 21:06:13 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.26 2002/07/18 22:13:58 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -341,6 +341,7 @@ static char desc_exit[] = "Exit program, saving database";
 static char desc_export[] = "Export entries to another database";
 static char desc_help[] = "Display help information";
 static char desc_import[] = "Import entries from another database";
+static char desc_ignore[] = "Postpone or partially remove 1 or more entries";
 static char desc_into[] = "Move entries to end of new parent";
 static char desc_list[] = "List entries in database (default from top node)";
 static char desc_log[] = "Add a new entry to the database, mark it done as well";
@@ -369,6 +370,7 @@ static char synop_edit[] = "[@<datespec>] <entry_index>[...] [<new_text>]";
 static char synop_exit[] = "";
 static char synop_export[] = "<filename> <entry_index> ...";
 static char synop_help[] = "[<command-name>]";
+static char synop_ignore[] = "<entry_index>[...] ...";
 static char synop_import[] = "<filename>";
 static char synop_into[] = "<new_parent_index> <index_to_move> ...";
 static char synop_list[] = "[-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>|/<search_condition>...]\n"
@@ -410,6 +412,7 @@ struct command cmds[] = {/*{{{*/
   {"exit",     NULL,   process_exit,     desc_exit,    synop_exit,    NULL,              0, 0, 3, 1, 0},
   {"export",   NULL,   process_export,   desc_export,  synop_export,  NULL,              0, 1, 3, 1, 1},
   {"help",     NULL,   usage,            desc_help,    synop_help,    complete_help,     0, 0, 1, 1, 1},
+  {"ignore",   NULL,   process_ignore,   desc_ignore,  synop_ignore,  complete_done,     1, 1, 2, 1, 1},
   {"import",   NULL,   process_import,   desc_import,  synop_import,  NULL,              1, 1, 2, 1, 1},
   {"into",     NULL,   process_into,     desc_into,    synop_into,    NULL,              1, 1, 2, 1, 1},
   {"list",     "tdll", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
