@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.22 2002/05/21 22:47:09 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.23 2002/05/23 22:46:09 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -359,7 +359,7 @@ static char synop_list[] = "[-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_ind
                            "-m : don't use colours (monochrome)\n"
                            "-1,-2,..,-9 : summarise (and don't show) entries below this depth";
 static char synop_log[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_text>";
-static char synop_priority[] = "<new_priority> <entry_index> ...";
+static char synop_priority[] = "<new_priority> <entry_index>[...] ...";
 static char synop_purge[] = "<since_datespec> [<ancestor_index> ...]";
 static char synop_quit[] = "";
 static char synop_remove[] = "<entry_index>[...] ...";
