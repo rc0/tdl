@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.38 2003/05/13 21:06:13 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.39 2003/05/14 23:33:37 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -674,19 +674,19 @@ static int usage(char **x)/*{{{*/
       }
     }
     if (index >= 0) {
-      fprintf(stderr, "Description\n  %s\n\n", cmds[i].descrip);
-      fprintf(stderr, "Synopsis\n");
+      fprintf(stdout, "Description\n  %s\n\n", cmds[i].descrip);
+      fprintf(stdout, "Synopsis\n");
       
       if (is_interactive) {
-        fprintf(stderr, "  %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
+        fprintf(stdout, "  %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
       } else {
-        fprintf(stderr, "  tdl  [-q] %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
+        fprintf(stdout, "  tdl  [-q] %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
         if (cmds[i].shortcut) {
-          fprintf(stderr, "  %s [-q] %s\n", cmds[i].shortcut, cmds[i].synopsis ? cmds[i].synopsis : "");
+          fprintf(stdout, "  %s [-q] %s\n", cmds[i].shortcut, cmds[i].synopsis ? cmds[i].synopsis : "");
         }
       }
 
-      fprintf(stderr,
+      fprintf(stdout,
               "\n"
               "General notes (where they apply to a command):\n"
               "\n"
@@ -706,30 +706,30 @@ static int usage(char **x)/*{{{*/
     print_copyright();
 
     if (!is_interactive) {
-      fprintf(stderr, "tdl  [-q]          : Enter interactive mode\n");
+      fprintf(stdout, "tdl  [-q]          : Enter interactive mode\n");
     }
     for (i=0; i<n_cmds; i++) {
       if (is_interactive) {
         if (cmds[i].interactive_ok) {
-          fprintf(stderr, "%-8s : %s\n", cmds[i].name, cmds[i].descrip);
+          fprintf(stdout, "%-8s : %s\n", cmds[i].name, cmds[i].descrip);
         }
       } else {
         if (cmds[i].non_interactive_ok) {
-          fprintf(stderr, "tdl  [-q] %-8s : %s\n", cmds[i].name, cmds[i].descrip);
+          fprintf(stdout, "tdl  [-q] %-8s : %s\n", cmds[i].name, cmds[i].descrip);
           if (cmds[i].shortcut) {
-            fprintf(stderr, "%s [-q]          : %s\n", cmds[i].shortcut, cmds[i].descrip);
+            fprintf(stdout, "%s [-q]          : %s\n", cmds[i].shortcut, cmds[i].descrip);
           }
         }
       }
     }
     if (is_interactive) {
-      fprintf(stderr, "\nEnter 'help <command-name>' for more help on a particular command\n");
+      fprintf(stdout, "\nEnter 'help <command-name>' for more help on a particular command\n");
     } else {
-      fprintf(stderr, "\nEnter 'tdl help <command-name>' for more help on a particular command\n");
+      fprintf(stdout, "\nEnter 'tdl help <command-name>' for more help on a particular command\n");
     }
   }
 
-  fprintf(stderr, "\n");
+  fprintf(stdout, "\n");
 
   return 0;
 
