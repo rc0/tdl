@@ -1,11 +1,11 @@
 #!/bin/sh
 #########################################################################
 #
-# $Id: configure,v 1.2 2003/05/05 22:05:41 richard Exp $
+# $Id: configure,v 1.3 2003/05/05 22:08:05 richard Exp $
 #
 # =======================================================================
 #
-# spill - segregated package install logical linker
+# tdl - A console program for managing to-do lists
 #
 # Copyright (C) Richard P. Curnow  2003
 #
