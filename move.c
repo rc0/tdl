@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.7 2003/03/10 00:35:14 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.8 2003/03/11 22:30:23 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -45,7 +45,7 @@ static int process_move_internal(char **x, int below_not_above, int into_parent)
   int argc, i, n;
   struct links *insert_point;
   struct node **table;
-  struct node *insert_parent, *insert_peer, *parent;
+  struct node *insert_parent, *insert_peer=NULL, *parent;
   
   char *option;
 
