@@ -1464,7 +1464,7 @@ Its usage is:
 
 @example
 tdl> widen [<n_levels>]
-@example
+@end example
 
 The optional @samp{n_levels} parameter tells tdl how many levels to widen the
 view.  If the parameter is not specified, it defaults to 1.  If you try to
