@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.13 2003/03/10 00:35:14 richard Exp $
+#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.14 2003/04/01 21:33:27 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -57,7 +57,7 @@ DESTDIR=
 pprefix=$(DESTDIR)$(prefix)
 bindir=$(pprefix)/bin
 mandir=$(pprefix)/man
-man1dir=$(pprefix)/man/man1
+man1dir=$(mandir)/man1
 
 OBJ = main.o io.o add.o done.o remove.o move.o list.o \
       report.o purge.o util.o dates.o impexp.o narrow.o \
@@ -87,9 +87,9 @@ clean:
 
 install:
 	[ -d $(pprefix) ] || mkdir -p $(pprefix)
-	[ -d $(bindir) ] || mkdir $(bindir)
-	[ -d $(mandir) ] || mkdir $(mandir)
-	[ -d $(man1dir) ] || mkdir $(man1dir)
+	[ -d $(bindir) ] || mkdir -p $(bindir)
+	[ -d $(mandir) ] || mkdir -p $(mandir)
+	[ -d $(man1dir) ] || mkdir -p $(man1dir)
 	cp tdl $(bindir)/tdl
 	chmod 555 $(bindir)/tdl
 	(cd $(bindir); ln -sf tdl tdla; ln -sf tdl tdll; ln -sf tdl tdld; ln -sf tdl tdlg)
