@@ -127,6 +127,26 @@ appear as the first children of the parent node afterwards.
 .ce 1
 --ooOOoo--
 .PP
+.B tdl create
+.PP
+This command is used to create a .tdldb file in the current
+directory (or at the location specified by the environment variable
+TDL_DATABASE).  If the database file is already found to exist, a warning will
+be printed and the command has no effect.
+.PP
+The situation where you are likely to use this command is where there is
+already a .tdldb file in another directory further up the path from this one.
+Most of the tdl commands will find and use this other database file, assuming
+that you want to share it across all the directories in the tree.  You might
+want to use a single database across an entire large project, for example.  The
+.B create
+command will ignore any .tdldb file found in an ancestor directory.  It always
+operates in either the current directory or on the file pointed to by
+TDL_DATABASE.
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl done
 .I @datespec
 .I index_of_done_entry ...
@@ -546,6 +566,26 @@ parent directory is used, and so on, until the root directory of the filesystem
 is reached.  If the database is still not found, a new one will be created in
 the current directory (except for options that don't modify the database, such
 as list, help and version.)
+.PP
+If you want to have a .tdldb file in 
+.I every
+directory, the suggested approach is to set the TDL_DATABASE environment variable to "./.tdldb".  So in a Bourne-like shell (sh, bash, zsh, ksh etc), you'd write
+.IP
+TDL_DATABASE=./.tdldb
+.br
+export TDL_DATABASE
+.PP
+and in a C-like shell (csh, tcsh etc) you'd write
+.IP
+setenv TDL_DATABASE ./.tdldb
+.PP
+If you want to share .tdldb files between directory hierarchies in some non-standard way, the suggested approach is to use symbolic links to do this, for example:
+.IP
+cd project1
+.br
+ln -s ../project2/.tdldb .
+
+
 
 .SH BUGS
 Please report them to the author.
