@@ -75,14 +75,15 @@ void do_bullet_indent(int indent)/*{{{*/
 static void print_timestamp(int timestamp, char *leader, int indent, int monochrome)/*{{{*/
 {
   char buffer[32];
-  time_t now;
+  time_t now, timestamp2;
   long diff, days_ago, days_ahead;
   
   now = time(NULL);
   diff = now - timestamp;
   days_ago = (diff + ((diff > 0) ? 43200 : -43200)) / 86400;
+  timestamp2 = (time_t) timestamp;
   strftime(buffer, sizeof(buffer), "%a %d %b %Y %H:%M", 
-           localtime((time_t *)&timestamp));
+           localtime(&timestamp2));
   do_indent(indent+2);
   if (days_ago < 0) {
     days_ahead = - days_ago;

@@ -315,7 +315,7 @@ static mode_t get_mode(const char *path)/*{{{*/
 /*}}}*/
 static void save_database(char *path)/*{{{*/
 {
-  FILE *out;
+  FILE *out = NULL;
   int out_fd;
   mode_t database_mode;
   if (is_loaded && currently_dirty) {
@@ -365,7 +365,7 @@ void free_database(struct links *x)/*{{{*/
 static char *get_version(void)/*{{{*/
 {
   static char buffer[256];
-  static char cvs_version[] = "$Name:  $";
+  static char cvs_version[] = "$Name: Btdl1 $";
   char *p, *q;
   for (p=cvs_version; *p; p++) {
     if (*p == ':') {

@@ -2,25 +2,25 @@
 .SH NAME
 tdl \- To do list manager
 .SH SYNOPSIS
-tdl  [-q]
+tdl  [\-q]
 .br
-tdl  [-q] add|edit|defer|log
+tdl  [\-q] add|edit|defer|log
 .br
-tdl  [-q] list|done|undo|report
+tdl  [\-q] list|done|undo|report
 .br
-tdl  [-q] remove|above|below|into|clone|copyto
+tdl  [\-q] remove|above|below|into|clone|copyto
 .br
-tdl  [-q] postpone|ignore|open
+tdl  [\-q] postpone|ignore|open
 .br
-tdl  [-q] which|version|help
+tdl  [\-q] which|version|help
 .br
-tdla [-q]
+tdla [\-q]
 .br
-tdll [-q]
+tdll [\-q]
 .br
-tdld [-q]
+tdld [\-q]
 .br
-tdlg [-q]
+tdlg [\-q]
 
 .SH DESCRIPTION
 A program for managing a to-do list.
@@ -70,7 +70,7 @@ all changes made in this tdl run.
 
 .pp
 All forms may take
-.I -q
+.I \-q
 as the first command line argument.  Currently, this suppresses the warning
 message if no existing database can be found.  The intended use is for using
 .B tdll
@@ -233,7 +233,7 @@ An example of use is
 .P
 which defers entries 1, 2.1 and all its children, and 5 until the following Friday. 
 To list deferred entries, use 
-.I list -p
+.I list \-p
 , to defer entries indefinitely, see 
 .I postpone 
 command. 
@@ -384,20 +384,20 @@ argument has ".0" appended to it.
 --ooOOoo--
 .PP
 .B tdl list
-.I [-v]
-.I [-a]
-.I [-p]
-.I [-m]
-.I [-1...9]
+.I [\-v]
+.I [\-a]
+.I [\-p]
+.I [\-m]
+.I [\-1...9]
 .I [<min-priority>]
 .I [<parent_index>|<search_conditions>...]
 .br
 .B tdll
-.I [-v]
-.I [-a]
-.I [-p]
-.I [-m]
-.I [-1...9]
+.I [\-v]
+.I [\-a]
+.I [\-p]
+.I [\-m]
+.I [\-1...9]
 .I [<min-priority>]
 .I [<parent_index>|<search_conditions...]
 .PP
@@ -410,13 +410,13 @@ entries that have not been marked
 .B done
 and which don't have start times deferred into the future are shown.  If you
 want to display all entries, include the
-.B -a
+.B \-a
 option (which means 'all').  If you want to display the dates and times when
 the entries were added and/or done, include the 
-.B -v
+.B \-v
 option (which means 'verbose').
 The
-.B -p
+.B \-p
 option stands for postponed. It means that tasks which are 'deferred' or 'postponed' 
 are shown as well as open tasks. 
 .PP
@@ -431,14 +431,14 @@ the database, additional arguments can be given.  These are the indices of the
 top node of each part of the database you want to show.  So if your database
 contains entries with indices 1, 2, 2.1, 2.2, 2.2.1, 3 and 4, the command
 .PP
-tdl list -a 2
+tdl list \-a 2
 .PP
 will show all entries 2, 2.1, 2.2 and 2.2.1, whether or not they are completed.
 .PP
 Also by default, all entries in the database, at any depth, will be shown.  If
 you only wish to show 'top-level' entries, for example, you can use
 .PP
-tdl list -1
+tdl list \-1
 .PP
 This lists level-1 entries.  Any level-1 entry with hidden child entries
 underneath it will show a summary of how many such children there are.  For
@@ -454,11 +454,11 @@ Because the single digit arguments are used this way for the 'list' subcommand,
 the normal 'negative index' method can't be used to specify an entry a certain
 distance from the end of the list.  If you want to do this, use a syntax like
 .PP
-tdl list -- -1
+tdl list \-\- \-1
 .PP
 to show the last index in the array, or
 .PP
-tdl list -2 -- -3 -2 -1
+tdl list \-2 \-\- \-3 \-2 \-1
 .PP
 to show level-1 and level-2 entries within the last 3 level-1 entries in the
 list.
@@ -489,7 +489,7 @@ tdll from the shell and pipe the output to grep. The internal matching does
 approximate matches with keys up to 31 characters. 
 .PP
 By default, the listing is produced with colour highlighting.  The
-.B -m
+.B \-m
 option can be used to produce a monochrome listing instead.  Alternatively, the
 .B TDL_LIST_MONOCHROME
 enviroment variable can be set (to any value) to achieve the same effect.
@@ -831,30 +831,30 @@ specified in several formats, shown by the following examples:
 .TS
 tab(&);
 l l.
--1h & exactly 1 hour ago
--2d & exactly 2 days ago
+\-1h & exactly 1 hour ago
+\-2d & exactly 2 days ago
 +1w & exactly 1 week in the future
 +1m & exactly 1 month (30 days) in the future
 +2y & exactly 2 years in the future
--1d-0815 & 08:15am yesterday
-+1d-08 & 8am tomorrow
-+1w-08 & 8am on the same day as today next week
-+6h-08 & 8am on the day containing the time 6 hours ahead of now
-\.-08 & 8am today
-\.-20 & 8pm today
+\-1d\-0815 & 08:15am yesterday
++1d\-08 & 8am tomorrow
++1w\-08 & 8am on the same day as today next week
++6h\-08 & 8am on the day containing the time 6 hours ahead of now
+\.\-08 & 8am today
+\.\-20 & 8pm today
 20011020 & absolute : 12 noon on 20th October 2001
 011020 & absolute : 12 noon on 20th October 2001 (current century)
 1020 & absolute : 12 noon on 20th October 2001 (current century and year)
 20 & absolute : 12 noon on 20th October 2001 (current century, year and month)
-20011020-081500 & absolute : 08:15am on 20th October 2001
-20011020-0815 & absolute : 08:15am on 20th October 2001 (seconds=0)
-20011020-08 & absolute : 08:00am on 20th October 2001 (minutes=seconds=0)
-011020-08 & absolute : 08:00am on 20th October 2001 (minutes=seconds=0, current century)
+20011020\-081500 & absolute : 08:15am on 20th October 2001
+20011020\-0815 & absolute : 08:15am on 20th October 2001 (seconds=0)
+20011020\-08 & absolute : 08:00am on 20th October 2001 (minutes=seconds=0)
+011020\-08 & absolute : 08:00am on 20th October 2001 (minutes=seconds=0, current century)
 etc & (see below)
--sun & 12 noon on the previous Sunday
+\-sun & 12 noon on the previous Sunday
 +sat & 12 noon on the following Saturday
-+sat-08 & 8am on the following Saturday
--tue-0815 & 08:15am on the previous Tuesday
++sat\-08 & 8am on the following Saturday
+\-tue\-0815 & 08:15am on the previous Tuesday
 etc & (see below)
 .TE
 .PP
@@ -943,7 +943,7 @@ If you want to share .tdldb files between directory hierarchies in some non-stan
 .IP
 cd project1
 .br
-ln -s ../project2/.tdldb .
+ln \-s ../project2/.tdldb .
 
 .SH BUGS
 Please report them to the author.
