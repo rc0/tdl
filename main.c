@@ -652,14 +652,27 @@ int n_cmds = 0;
 #define N(x) (sizeof(x) / sizeof(x[0]))
 
 static int is_processing = 0;
-static int was_signalled = 0;
+static int signal_count = 0;
 
 static void handle_signal(int a)/*{{{*/
 {
-  was_signalled = 1;
+  signal_count++;
   /* And close stdin, which should cause readline() in inter.c to return
    * immediately if it was active when the signal arrived. */
   close(0);
+
+  if (signal_count == 3) {
+    /* User is desperately hitting ^C to stop the program.  Bail out without tidying up, and give a warning. */
+    static char msg[] = "About to force exit due to repeated termination signals.\n"
+       "Database changes since the last save will be LOST.\n";
+    write(2, msg, strlen(msg));
+  }
+  if (signal_count == 4) {
+    static char msg[] = "The database may be left locked.\n"
+      "You will need to run 'tdl -u' next time to unlock it.\n";
+    write(2, msg, strlen(msg));
+    exit(1);
+  }
 }
 /*}}}*/
 static void guarded_sigaction(int signum, struct sigaction *sa)/*{{{*/
@@ -704,7 +717,7 @@ void dispatch(char **argv) /* and other args *//*{{{*/
   int is_tdl;
   char **p, **pp;
 
-  if (was_signalled) {
+  if (signal_count > 0) {
     save_database(current_database_path);
     unlock_and_exit(0);
   }
@@ -782,7 +795,7 @@ void dispatch(char **argv) /* and other args *//*{{{*/
     }
 
     is_processing = 0;
-    if (was_signalled) {
+    if (signal_count > 0) {
       save_database(current_database_path);
       unlock_and_exit(0);
     }

@@ -286,6 +286,7 @@ the database, assigning them priorities, and so on.
 * Command line flags::  Flags that can be used from the shell command line
 * Command list::        Alphabetical list of all commands
 * Shortcuts::           Quick access to tdl commands from the shell
+* Interrupting::        How to make tdl stop whilst it is running
 * Location::            How tdl finds the database file to use
 * Completion::          Completion facilities
 * Datespec::            How dates are specified
@@ -1544,7 +1545,7 @@ shell (where it wouldn't make much sense).
 
 @c }}}
 @c }}}
-
+@c {{{ shortcuts
 @node Shortcuts
 @section Shortcut forms of certain commands
 For convenience, several shortcut commands are provided to access the most
@@ -1571,7 +1572,24 @@ This is a shortcut for @command{tdl list}.
 This is another shortcut for @command{tdl list}.
 
 @end table
+@c }}}
+@c {{{ interrupting
+@node Interrupting
+@section Interrupting
+Most programs will stop where they are if you hit @key{Ctrl-C}.  This is also
+true (normally) for tdl.  However, tdl intercepts signals like this so that it
+can try to write out the database when it is safe to do so.  This avoids the
+loss of updates made to the database during the current session.
 
+Because of this approach, it is possible that tdl can get stuck in an endless
+loop if a bug arises.  For this reason, tdl will exit forcibly if @key{Ctrl-C}
+is pressed 4 times.  After the third press, a warning message is printed.
+
+If tdl has to be terminated in this way, the database will not be written back
+out.  Therefore, any edits made in the current session will be lost.  Also, a
+stale lock file will be left behind.  The @samp{-u} command line flag should be
+used on the next run of tdl to force the removal of this stale lock file.
+@c }}}
 @c {{{ Location
 @node Location
 @section How tdl finds the databse file to use
