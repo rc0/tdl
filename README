@@ -56,8 +56,11 @@ Juergen Daubert
 Laurent Papier
     Fixing the RPM spec file
 
+Pedro Zorzenon Neto
+    Handling of database permissions
+
 taviso
     Bug fixes
    
-$Header: /cvs/src/tdl/README,v 1.6 2003/04/04 21:40:53 richard Exp $
+$Header: /cvs/src/tdl/README,v 1.7 2003/05/13 21:00:46 richard Exp $
 

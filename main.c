@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.36 2003/05/11 22:28:53 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.37 2003/05/13 21:00:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -24,6 +24,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -198,11 +199,17 @@ void load_database_if_not_loaded(void)/*{{{*/
 static mode_t get_mode(const char *path)/*{{{*/
 {
   mode_t result;
+  const mode_t default_result = 0600; /* access to user only. */
   struct stat sb;
   if (stat(path, &sb) < 0) {
-    result = 0644; /* default */
+    result = default_result;
   } else {
-    result = sb.st_mode;
+    if (!S_ISREG(sb.st_mode)) {
+      fprintf(stderr, "Warning : existing database is not a regular file!\n");
+      result = default_result;
+    } else {
+      result = sb.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+    }
   }
   return result;
 }
@@ -210,21 +217,31 @@ static mode_t get_mode(const char *path)/*{{{*/
 static void save_database(char *path)/*{{{*/
 {
   FILE *out;
+  int out_fd;
   mode_t database_mode;
   if (is_loaded && currently_dirty) {
+    database_mode = get_mode(path);
+    
     /* The next line only used to happen if the command wasn't 'create'.
      * However, it should quietly fail for create, where the existing database
      * doesn't exist */
-    database_mode = get_mode(path);
     rename_database(path);
-    out = fopen(path, "wb");
+
+    /* Open database this way so that the permissions from the existing
+       database can be duplicated onto the new one in way free of race
+       conditions. */
+    out_fd = open(path, O_WRONLY | O_CREAT | O_EXCL, database_mode);
+    if (out_fd < 0) {
+      fprintf(stderr, "Could not open new database %s for writing : %s\n",
+              path, strerror(errno));
+      exit(1);
+    } else {
+      /* Normal case */
+      out = fdopen(out_fd, "wb");
+    }
     if (!out) {
       fprintf(stderr, "Cannot open database %s for writing\n", path);
       exit(1);
-    }
-    if (fchmod(fileno(out), database_mode) < 0) {
-      perror("Warning : can't modify permissions of database :");
-      /* Just treat this as a warning and continue. */
     }
     write_database(out, &top);
     fclose(out);
