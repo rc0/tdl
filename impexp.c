@@ -61,7 +61,7 @@ int process_export(char **x)/*{{{*/
 
   argc = count_args(x);
 
-  if (argc < 3) {
+  if (argc < 2) {
     fprintf(stderr, "Need a filename and at least one index to write\n");
     return -2;
   }
