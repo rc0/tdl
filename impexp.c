@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/impexp.c,v 1.5 2003/03/10 00:35:14 richard Exp $
+   $Header: /cvs/src/tdl/impexp.c,v 1.6 2003/03/11 22:29:44 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -158,7 +158,9 @@ static int internal_copy_clone(struct links *l, char **x)/*{{{*/
 /*}}}*/
 int process_clone(char **x)/*{{{*/
 {
-  return internal_copy_clone(&top, x);
+  struct node *narrow_top;
+  narrow_top = get_narrow_top();
+  return internal_copy_clone((narrow_top ? &narrow_top->kids : &top), x);
 }
 /*}}}*/
 int process_copyto(char **x)/*{{{*/
