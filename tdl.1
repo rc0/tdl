@@ -1,4 +1,4 @@
-.TH "tdl" 1 "August 2001"
+.TH "tdl" 1 "May 2002"
 .SH NAME
 tdl \- To do list manager
 .SH SYNOPSIS
@@ -265,6 +265,7 @@ argument has ".0" appended to it.
 .I [-v]
 .I [-a]
 .I [-m]
+.I [-1...9]
 .I [<min-priority>]
 .I [<parent_index> ...]
 .br
@@ -272,6 +273,7 @@ argument has ".0" appended to it.
 .I [-v]
 .I [-a]
 .I [-m]
+.I [-1...9]
 .I [<min-priority>]
 .I [<parent_index> ...]
 .PP
@@ -302,6 +304,34 @@ contains entries with indices 1, 2, 2.1, 2.2, 2.2.1, 3 and 4, the command
 tdl list -a 2
 .PP
 will show all entries 2, 2.1, 2.2 and 2.2.1, whether or not they are completed.
+.PP
+Also by default, all entries in the database, at any depth, will be shown.  If
+you only wish to show 'top-level' entries, for example, you can use
+.PP
+tdl list -1
+.PP
+This lists level-1 entries.  Any level-1 entry with hidden child entries
+underneath it will show a summary of how many such children there are.  For
+example, the output
+.PP
+3 [2/7] A top level entry
+.PP
+means that the entry with index 3 has a total of 7 entries underneath it, of
+which 2 are still open and 5 are completed (i.e. they've had 'tdl done' applied
+to them.)
+.PP
+Because the single digit arguments are used this way for the 'list' subcommand,
+the normal 'negative index' method can't be used to specify an entry a certain
+distance from the end of the list.  If you want to do this, use a syntax like
+.PP
+tdl list -- -1
+.PP
+to show the last index in the array, or
+.PP
+tdl list -2 -- -3 -2 -1
+.PP
+to show level-1 and level-2 entries within the last 3 level-1 entries in the
+list.
 .PP
 By default, the listing is produced with colour highlighting.  The
 .B -m
@@ -426,6 +456,11 @@ will list all tasks completed in the previous week, whereas
 tdl report 2w 1w
 .PP
 will list all tasks completed between 2 and 1 weeks ago.
+.PP
+Where a child entry has been completed in the reporting period, but its parent
+has not been completed, the parent text in the report will be surrounded by
+'[[' and ']]'.  To give one example, this will happen if the parent has other
+child entries that haven't been completed yet.
 .P
 .ce 1
 --ooOOoo--
