@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.39.2.5 2004/01/07 23:30:52 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.39.2.6 2004/02/03 22:17:22 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2004  Richard P. Curnow
@@ -110,7 +110,8 @@ static void lock_database(char *path)/*{{{*/
   lock_file_name = new_array(char, len);
   sprintf(lock_file_name, "%s.lock", path);
   len += strlen(uu.nodename);
-  len += 7; /* max width of pid field + 2 '.' chars */
+  /* add on max width of pid field (allow up to 32 bit pid_t) + 2 '.' chars */
+  len += (10 + 2);
   tname = new_array(char, len);
   sprintf(tname, "%s.%d.%s", lock_file_name, pid, uu.nodename);
   out = fopen(tname, "w");
