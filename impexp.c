@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/impexp.c,v 1.3 2002/07/17 23:35:39 richard Exp $
+   $Header: /cvs/src/tdl/impexp.c,v 1.4 2002/07/18 21:06:31 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -41,6 +41,15 @@ static struct node *clone_node(struct node *x, struct node *parent)/*{{{*/
   }
 
   return r;
+}
+/*}}}*/
+static void set_arrived_time(struct node *x, time_t now)/*{{{*/
+{
+  struct node *k;
+  x->arrived = now;
+  for (k = x->kids.next; k != (struct node *) &x->kids; k = k->chain.next) {
+    set_arrived_time(k, now);
+  }
 }
 /*}}}*/
 int process_export(char **x)/*{{{*/
@@ -124,6 +133,9 @@ int process_import(char **x)/*{{{*/
 static int internal_copy_clone(struct links *l, char **x)/*{{{*/
 {
   int argc, i;
+  time_t now;
+
+  now = time(NULL);
 
   argc = count_args(x);
   if (argc < 1) {
@@ -136,6 +148,7 @@ static int internal_copy_clone(struct links *l, char **x)/*{{{*/
     n = lookup_node(x[i], 0, NULL);
     if (!n) return -1;
     nn = clone_node(n, NULL);
+    set_arrived_time(nn, now);
     prepend_node(nn, l);
   }
 
