@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Makefile.in,v 1.1 2003/05/05 22:05:41 richard Exp $
+#  $Header: /cvs/src/tdl/Makefile.in,v 1.2 2003/05/08 22:37:37 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -18,6 +18,9 @@
 #  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
 
 #######################################################################
+# Note, the @xxx@ macros are filled in by the configure script.  You
+# should not need to edit this file directly.
+#######################################################################
 # Select C compiler and compile options
 CC=@cc@
 CFLAGS=@cflags@
@@ -33,19 +36,14 @@ LIB_READLINE=@lib_readline@
 DESTDIR=
 
 #######################################################################
-# Edit this to change the directory to which the software is installed.
-prefix=DESTDIR@prefix@
-bindir=DESTDIR@bindir@
-mandir=DESTDIR@mandir@
-man1dir=DESTDIR@man1dir@
+
+prefix=$(DESTDIR)@prefix@
+bindir=$(DESTDIR)@bindir@
+mandir=$(DESTDIR)@mandir@
+man1dir=$(DESTDIR)@man1dir@
 
 #######################################################################
 # YOU SHOULD NOT NEED TO CHANGE ANYTHING BELOW HERE
-
-pprefix=$(DESTDIR)$(prefix)
-bindir=$(pprefix)/bin
-mandir=$(pprefix)/man
-man1dir=$(mandir)/man1
 
 OBJ = main.o io.o add.o done.o remove.o move.o list.o \
       report.o purge.o util.o dates.o impexp.o narrow.o \
