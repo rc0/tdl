@@ -47,11 +47,13 @@ appear as the last children of the parent node afterwards.
 --ooOOoo--
 .PP
 .B tdl add
+.I [@datespec]
 .I [parent_index]
 .I [priority]
 .I text_for_node
 .br
 .B tdla
+.I [@datespec]
 .I [parent_index]
 .I [priority]
 .I text_for_node
@@ -59,6 +61,14 @@ appear as the last children of the parent node afterwards.
 The
 .B add
 command is used to add a new entry to the database.
+.PP
+.B datespec
+is the time at which the entry will be visible when the database is printed
+with the
+.B list
+command.  It defaults to now.  The format for datespec is described in the
+.B "DATE SPECIFICATION"
+section later in this page.
 .PP
 .B parent_index
 is the index of the parent node (e.g. 1 or 2.4).  This defaults to the root
@@ -106,9 +116,11 @@ appear as the first children of the parent node afterwards.
 --ooOOoo--
 .PP
 .B tdl done
+.I @datespec
 .I index_of_done_entry ...
 .PP
 .B tdld
+.I @datespec
 .I index_of_done_entry ...
 .PP
 The
@@ -124,6 +136,17 @@ The entries are eligible for removal by the purge command (tdl purge.)
 If the string "..." is appended to an index, it means that entry and all its
 descendents.  This provides a quick way to mark a whole sub-tree of tasks as
 being completed.
+.PP
+.B datespec
+is the time at which the entry/entries should be marked as having been
+completed.  The default is to mark them completed at the current time.  The
+competion time of an entry affects whether it is shown by the
+.B report
+command for a particular range of reported times.
+.PP
+The format for datespec is described in the
+.B "DATE SPECIFICATION"
+section later in this page.
 .P
 .ce 1
 --ooOOoo--
@@ -297,10 +320,9 @@ commands.
 .PP
 The
 .B since_epoch
-argument specifies a time in the past.  The time is specified as an interval
-before the current time, in the same way as the
-.B report
-command uses.  Entries that were marked done (using the
+argument specifies a time.  The format for this argument is described in the
+.B "DATE SPECIFICATION"
+section later. Entries that were marked done (using the
 .B done
 command) before that epoch will be purged.
 .PP
@@ -327,8 +349,8 @@ descendents.  This provides a quick way to remove a whole sub-tree of tasks.
 --ooOOoo--
 .PP
 .B tdl report
-.I start_time_ago
-.I [end_time_ago]
+.I start_time
+.I [end_time]
 .PP
 The
 .B report
@@ -337,10 +359,12 @@ certain time period.  This is useful if (for example) you have to write a
 weekly summary of the work you've done.
 .PP
 The default for the end of the time period is the current time, if the
-.B end_time_ago
+.B end_time
 argument is not present.  The start of the period to report on must always be
-specified.  The format is a number of time units in the past relative to the
-current time.  Examples :
+specified.  The format for the time arguments is described in the
+.B "DATE SPECIFICATION"
+section later.
+Examples :
 .PP
 tdl report 1w
 .PP
@@ -349,9 +373,6 @@ will list all tasks completed in the previous week, whereas
 tdl report 2w 1w
 .PP
 will list all tasks completed between 2 and 1 weeks ago.
-.PP
-The times can be specified in any of the following formats : 1y (1 year), 2m (2
-months), 3w (3 weeks), 4d (4 days), 5h (5 hours), 6 (6 seconds). 
 .P
 .ce 1
 --ooOOoo--
@@ -368,6 +389,66 @@ Same as
 .B tdl version
 .PP
 Show the version number of the software.
+
+.SH DATE SPECIFICATIONS
+.PP
+The commands
+.BR add ,
+.BR done ,
+.BR purge ,
+.BR report ,
+take arguments defining dates (with add and done it is optional).  Dates may be specified in several formats, shown by the following examples:
+.PP
+.TS
+tab(&);
+l l.
+-1h & relative : exactly 1 hour ago
+-2d & relative : exactly 2 days ago
++1w & relative : exactly 1 week in the future
++1m & relative : exactly 1 month (30 days) in the future
++2y & relative : exactly 2 years in the future
+20011020 & absolute : 12 noon on 20th October 2001
+011020 & absolute : 12 noon on 20th October 2001 (current century)
+1020 & absolute : 12 noon on 20th October 2001 (current century and year)
+20 & absolute : 12 noon on 20th October 2001 (current century, year and month)
+20011020-081500 & absolute : 08:15am on 20th October 2001
+20011020-0815 & absolute : 08:15am on 20th October 2001 (seconds=0)
+20011020-08 & absolute : 08:00am on 20th October 2001 (minutes=seconds=0)
+011020-08 & absolute : 08:00am on 20th October 2001 (minutes=seconds=0, current century)
+etc & (see below)
+-sun & 12 noon on the previous Sunday
++sat & 12 noon on the following Saturday
++sat-08 & 8am on the following Saturday
+-tue-0815 & 08:15am on the previous Tuesday
+etc & (see below)
+.TE
+.PP
+In the 'all-numeric' format, the rule is that dates can have fields omitted
+from the start (assumed to be the current value), and times can have fields
+omitted from the end (assumed to be zero, except if the hours figure is missing
+it is assumed to be 12, since most work is done in the day.)
+.PP
+In the 'weekday and time' format, the time rule is the same: missing minutes
+and seconds are taken as zero and missing hours as 12.  If the weekday is the
+same as today, the offset is always 7 days in the required direction.  If the
+weekday is not the same as today, the offset will always be less than 7 days in
+the required direction.
+.PP
+For the weekday and relative formats, the sign is actually optional.  The
+default sign (implying past (-) or future (+)) will then be assumed depending on
+the command as shown below:
+
+.PP
+.TS
+tab(&);
+l l l.
+Command & Default & Reason
+_
+add & + & Add entries with deferred start times
+done & - & Entries have been completed at some time in the past
+report & - & Reporting on earlier completed tasks not future ones
+purge & - & Tasks won't be completed in the future, so no need to purge future ones
+.TE
 
 .SH AUTHOR
 .PP

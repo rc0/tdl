@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.9 2001/10/14 21:35:47 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.10 2001/10/20 21:20:08 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -182,19 +182,19 @@ static void usage(void)/*{{{*/
           "under certain conditions; see the GNU General Public License for details.\n\n");
 
   fprintf(stderr,
-          "tdl [-q] add [<parent_index>] [<priority>] <entry_text>\n"
-          "tdla [-q]    [<parent_index>] [<priority>] <entry_text>\n"
+          "tdl [-q] add [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
+          "tdla [-q]    [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
           "   Add a new entry to the database\n\n"
-          "tdl [-q] log [<parent_index>] [<priority>] <entry_text>\n"
-          "tdlg [-q] [<parent_index>] [<priority>] <entry_text>\n"
+          "tdl [-q] log [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
+          "tdlg [-q]    [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
           "   Add a new entry to the database, mark it done as well\n\n"
           "tdl [-q] list [-v] [-a] [<parent_index>...]\n"
           "tdll [-q]     [-v] [-a] [<min-priority>] [<parent_index>...]\n"
           "   List entries in database (default from top node)\n"
           "   -v : verbose (show dates, priorities etc)\n"
           "   -a : show all entries, including 'done' ones\n\n"
-          "tdl [-q] done <entry_index>[...] ...\n"
-          "tdld [-q]     <entry_index>[...] ...\n"
+          "tdl [-q] done [@<datespec>] <entry_index>[...] ...\n"
+          "tdld [-q]     [@<datespec>] <entry_index>[...] ...\n"
           "   Mark 1 or more entries as done\n\n"
           "tdl[-q]  remove <entry_index>[...] ...\n"
           "   Remove 1 or more entries from the database\n\n"
@@ -206,13 +206,13 @@ static void usage(void)/*{{{*/
           "   Move entries below another entry\n\n"
           "tdl [-q] into <new_parent_index> <index_to_move> ...\n"
           "   Move entries to end of new parent\n\n"
-          "tdl [-q] purge <interval_ago> [<ancestor_index> ...]\n"
+          "tdl [-q] purge <since_datespec> [<ancestor_index> ...]\n"
           "   Remove old done entries in subtrees\n\n"
           "tdl [-q] edit <entry_index> <new_text>\n"
           "   Change the text of an entry\n\n"
           "tdl [-q] priority <new_priority> <entry_index> ...\n"
           "   Change the priority of 1 or more entries\n\n"
-          "tdl [-q] report <start_ago> [<end_ago>]\n"
+          "tdl [-q] report <start_datespec> [<end_datespec>]\n"
           "   Report completed tasks in interval (end defaults to now)\n\n"
           "tdl [-q] create\n"
           "   Create a new database in the current directory\n\n"
@@ -226,7 +226,9 @@ static void usage(void)/*{{{*/
           "   Display program version\n\n"
           "<index>    : 1, 1.1 etc (see output of 'tdl list')\n"
           "<priority> : urgent|high|normal|low|verylow\n"
-          "<ago>      : 1h, 3d, 1w, 2m, 3y (a digit + multiplier)\n"
+          "<datespec> : [-|+][0-9]+[shdwmy]  OR\n"
+          "             [-|+](sun|mon|tue|wed|thu|fri|sat)[-hh[mm[ss]]] OR\n"
+          "             [[[cc]yy]mm]dd[-hh[mm[ss]]]\n"
           "<text>     : Any text (you'll need to quote it if >1 word)\n"
           );
 

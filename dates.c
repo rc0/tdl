@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/dates.c,v 1.1 2001/10/14 22:08:28 richard Exp $
+   $Header: /cvs/src/tdl/dates.c,v 1.2 2001/10/20 21:20:08 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -46,6 +46,39 @@ static time_t tm_to_time_t (struct tm *stm)/*{{{*/
   return t1 - diff;
 }
 /*}}}*/
+static void parse_time(char *d, int *hour, int *min, int *sec)/*{{{*/
+{
+  int n;
+  *hour = *min = *sec = 0;
+  switch (strlen(d)) {
+    case 2:
+      n = sscanf(d, "%2d", hour);
+      if (n != 1) {
+        fprintf(stderr, "Can't parse hour from %s\n", d);
+        exit(2);
+      }
+      break;
+    case 4:
+      n = sscanf(d, "%2d%2d", hour, min);
+      if (n != 2) {
+        fprintf(stderr, "Can't parse hour and minute from %s\n", d);
+        exit(2);
+      }
+      break;
+    case 6:
+      n = sscanf(d, "%2d%2d%2d", hour, min, sec);
+      if (n != 3) {
+        fprintf(stderr, "Can't parse hour, minute and second from %s\n", d);
+        exit(2);
+      }
+      break;
+    default:
+      fprintf(stderr, "Cannot parse time\n");
+      exit(2);
+      break;
+  }
+}
+/*}}}*/
 time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
 {
   int len;
@@ -60,7 +93,17 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
     int posneg, diff;
     char *dd = d;
     struct tm stm;
+    int hour, min, sec;
+    char *hyphenpos;
+    time_t result;
+
+    /* Don't treat leading hyphen as the date/time field separator */
+    hyphenpos = strchr(d+1, '-');
     
+    if (hyphenpos) {
+      *hyphenpos = 0;
+    }
+
     if      (*dd == '+') posneg = 1, dd++;
     else if (*dd == '-') posneg = 0, dd++;
     else                 posneg = default_positive;
@@ -86,18 +129,36 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
     if (diff == 0) {
       /* If the day specified is the same day of the week as today, step a
        * whole week in the required direction. */
-      if (posneg) return ref + (7*86400);
-      else        return ref - (7*86400);
+      if (posneg) result = ref + (7*86400);
+      else        result = ref - (7*86400);
       
     } else if (diff > 0) {
-      if (posneg) return ref + (diff * 86400);
-      else        return ref - ((7-diff) * 86400);
+      if (posneg) result = ref + (diff * 86400);
+      else        result = ref - ((7-diff) * 86400);
     } else { /* diff < 0 */
-      if (posneg) return ref + ((7+diff) * 86400);
-      else        return ref + (diff * 86400);
+      if (posneg) result = ref + ((7+diff) * 86400);
+      else        result = ref + (diff * 86400);
     }
+
+    stm = *localtime(&result);
       
-  } else if (!isdigit(d[len-1])) {
+    if (hyphenpos) {
+      /* Replace current time on the specified day by the specified time */
+      char *hp1 = hyphenpos + 1;
+      parse_time(hp1, &hour, &min, &sec);
+    } else {
+      hour = 12;
+      min = sec = 0;
+    }
+    
+    stm.tm_hour = hour;
+    stm.tm_min = min;
+    stm.tm_sec = sec;
+    result = tm_to_time_t(&stm);
+
+    return result;
+    
+  } else if ((len > 1) && isalpha(d[len-1])) {
     /* Relative time */
     long interval;
     int nc;
@@ -145,6 +206,11 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
      * Formats allowed : dd, mmdd, yymmdd, yyyymmdd.
      * Time is assumed to be noon on the specified day */
     switch (len) {
+      case 0:
+        day = stm.tm_mday;
+        month = stm.tm_mon + 1;
+        year = stm.tm_year;
+        break;
       case 2:
         n = sscanf(d, "%2d", &day);
         if (n != 1) {
@@ -190,33 +256,7 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
     if (hyphenpos) {
       int hour=0, min=0, sec=0;
       char *hp1 = hyphenpos + 1;
-      switch (strlen(hp1)) {
-        case 2:
-          n = sscanf(hp1, "%2d", &hour);
-          if (n != 1) {
-            fprintf(stderr, "Can't parse hour from %s\n", hp1);
-            exit(2);
-          }
-          break;
-        case 4:
-          n = sscanf(hp1, "%2d%2d", &hour, &min);
-          if (n != 2) {
-            fprintf(stderr, "Can't parse hour and minute from %s\n", hp1);
-            exit(2);
-          }
-          break;
-        case 6:
-          n = sscanf(hp1, "%2d%2d%2d", &hour, &min, &sec);
-          if (n != 3) {
-            fprintf(stderr, "Can't parse hour, minute and second from %s\n", hp1);
-            exit(2);
-          }
-          break;
-        default:
-          fprintf(stderr, "Cannot parse time\n");
-          exit(2);
-          break;
-      }
+      parse_time(hp1, &hour, &min, &sec);
       stm.tm_hour = hour;
       stm.tm_min = min;
       stm.tm_sec = sec;

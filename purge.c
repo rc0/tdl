@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/purge.c,v 1.2 2001/08/21 22:43:24 richard Exp $
+   $Header: /cvs/src/tdl/purge.c,v 1.3 2001/10/20 21:20:08 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -63,8 +63,8 @@ static void scan_from_top_down(struct links *x, time_t then)/*{{{*/
 void process_purge(char **x)/*{{{*/
 {
   int argc;
-  long interval;
   time_t now, then;
+  char *d;
 
   argc = count_args(x);
   if (argc < 1) {
@@ -72,12 +72,14 @@ void process_purge(char **x)/*{{{*/
     exit(1);
   }
 
-  interval = read_interval(x[0]);
+  d = x[0];
+  if (*d == '@') d++;
+  now = time(NULL);
+  then = parse_date(d, now, 0);
   x++;
 
   clear_flags(&top);
   now = time(NULL);
-  then = now - interval;
  
   if (!*x) {
     /* If no indices given, do whole database */

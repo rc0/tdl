@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/report.c,v 1.1 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/report.c,v 1.2 2001/10/20 21:20:08 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -66,54 +66,31 @@ static void print_report(struct links *x, int indent)/*{{{*/
   }
 }
 /*}}}*/
-long read_interval(char *xx)/*{{{*/
-{
-  long interval;
-  int nc;
-  
-  if (sscanf(xx, "%ld%n", &interval, &nc) != 1) {
-    fprintf(stderr, "Cannot recognize interval '%s'\n", xx);
-    exit(1);
-  }
-  
-  xx += nc;
-  switch (xx[0]) {
-    case 'h': interval *= 3600; break;
-    case 'd': interval *= 86400; break;
-    case 'w': interval *= 7 * 86400; break;
-    case 'm': interval *= 30 * 86400; break;
-    case 'y': interval *= 365 * 86400; break;
-    case 's':
-    case '\0': break; /* no multiplier or 's' : use seconds */
-    default:
-      fprintf(stderr, "Can't understand interval multiplier '%s'\n", xx);
-      exit(1);
-  }
-  return interval;
-}
-/*}}}*/
 void process_report(char **x)/*{{{*/
 {
-  long interval;
   time_t now, start, end;
   int argc;
+  char *d0, *d1;
 
   argc = count_args(x);
   start = end = now = time(NULL);
 
   switch (argc) {
     case 1:
-      interval = read_interval(x[0]);
-      start = now - interval;
+      d0 = x[0];
+      if (*d0 == '@') d0++;
+      start = parse_date(d0, now, 0);
       break;
     case 2:
-      interval = read_interval(x[0]);
-      start = now - interval;
-      interval = read_interval(x[1]);
-      end = now - interval;
+      d0 = x[0];
+      d1 = x[1];
+      if (*d0 == '@') d0++;
+      if (*d1 == '@') d1++;
+      start = parse_date(d0, now, 0);
+      end = parse_date(d1, now, 0);
       break;
     default:
-      fprintf(stderr, "Usage: report <start_ago> [<end_ago>] (e.g. 3h, 5d, 1w etc)\n");
+      fprintf(stderr, "Usage: report <start_epoch> [<end_epoch>]\n");
       break;
   }
 
