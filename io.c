@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/io.c,v 1.1 2001/08/19 22:09:24 richard Exp $
+   $Header: /cvs/src/tdl/io.c,v 1.2 2001/08/20 22:38:00 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -21,7 +21,6 @@
 
 #include <string.h>
 #include "tdl.h"
-#include "memory.h"
 
 #define MAGIC1 0x99bb0001UL
 
@@ -102,42 +101,6 @@ void write_database(FILE *out)/*{{{*/
   }
 }
 /*}}}*/
-struct node *new_node(void)/*{{{*/
-{
-  struct node *result = new (struct node);
-  result->text = NULL;
-  result->priority = PRI_NORMAL;
-  result->arrived = result->required_by = result->done = 0U;
-  result->kids.next = result->kids.prev = (struct node *) &result->kids;
-  result->chain.next = result->chain.prev = (struct node *) &result->chain;
-  return result;
-}
-/*}}}*/
-static void free_node(struct node *x)/*{{{*/
-{
-  /* FIXME : To be written */
-
-
-}
-/*}}}*/
-void append_node(struct node *n, struct links *l)/*{{{*/
-{
-  n->chain.prev = l->prev;
-  n->chain.next = (struct node *) l;
-  l->prev->chain.next = n;
-  l->prev = n;
-}
-/*}}}*/
-void append_child(struct node *child, struct node *parent)/*{{{*/
-{
-  child->parent = parent;
-  if (parent) {
-    append_node(child, &parent->kids);
-  } else {
-    append_node(child, &top);
-  }
-}
-/*}}}*/
 /*{{{  static struct node *read_node(FILE *in)*/
 static struct node *read_node(FILE *in)
 {
@@ -200,20 +163,4 @@ void read_database(FILE *in)
   }
 }
 
-/*}}}*/
-void clear_flags(struct links *x)/*{{{*/
-{
-  struct node *y;
-  for (y = x->next; y != (struct node *) x; y = y->chain.next) {
-    y->flag = 0;
-    if (has_kids(y)) {
-      clear_flags(&y->kids);
-    }
-  }
-}
-/*}}}*/
-int has_kids(struct node *x)/*{{{*/
-{
-  return (x->kids.next != (struct node *) &x->kids);
-}
 /*}}}*/
