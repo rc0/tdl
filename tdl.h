@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.2 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.3 2001/08/21 22:43:25 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -87,14 +87,15 @@ long read_interval(char *xx);
 
 /* In util.c */
 int count_args(char **x);
-struct node *lookup_node(char *path);
+struct node *lookup_node(char *path, int allow_zero_index, struct node **parent);
 enum Priority parse_priority(char *priority);
 void clear_flags(struct links *x);
 int has_kids(struct node *x);
 struct node *new_node(void);
 void free_node(struct node *x);
 void append_node(struct node *n, struct links *l);
-void append_child(struct node *child, struct node *parent);
+void prepend_node(struct node *n, struct links *l);
+void prepend_child(struct node *child, struct node *parent);
 
 /* In done.c */
 void process_done(char **x);
@@ -108,6 +109,9 @@ void process_remove(char **x);
 
 /* In purge.c */
 void process_purge(char **x);
+
+/* In move.c */
+void process_move(char **x, int below_not_above);
 
 #endif /* TDL_H */
           

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/io.c,v 1.2 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/io.c,v 1.3 2001/08/21 22:43:24 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -124,7 +124,7 @@ static struct node *read_node(FILE *in)
   for (i=0; i<n_kids; i++) {
     struct node *nn;
     nn = read_node(in);
-    append_child(nn, r);
+    prepend_child(nn, r);
   }
 
   return r;
@@ -159,7 +159,7 @@ void read_database(FILE *in)
   for (i=0; i<n_kids; i++) {
     struct node *nn;
     nn = read_node(in);
-    append_child(nn, NULL);
+    prepend_child(nn, NULL);
   }
 }
 

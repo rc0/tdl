@@ -8,6 +8,26 @@ A small program for managing a to-do list.
 .PP
 This page has not been finished yet.
 See the online help (tdl -h) for details.
+.SH SUBCOMMANDS
+.B tdl above
+.I index_to_insert_above
+.I index_to_move ...
+.PP
+This command moves one or more entries to a new location in the tree.  The
+first index specifies the entry which will end up immediately below the moved
+entries after the operation.  As a special case, you can specify the final
+component of the first argument as zero.  In this case, the moved entries
+appear as the last children of the parent node afterwards.
+.PP
+.B tdl add
+.I [parent_index]
+.I [priority]
+.I text_for_node
+.PP
+The
+.B add
+command is used to add a new entry to the database.
+
 .SH OPTIONS
 .SH SEE ALSO
 .SH FILES

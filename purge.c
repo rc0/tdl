@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/purge.c,v 1.1 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/purge.c,v 1.2 2001/08/21 22:43:24 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -85,7 +85,7 @@ void process_purge(char **x)/*{{{*/
   } else {
     while (*x) {
       struct node *n;
-      n = lookup_node(*x);
+      n = lookup_node(*x, 0, NULL);
       if ((n->done > 0) && (n->done < then)) n->flag = 1;
       scan_from_top_down(&n->kids, then);
       x++;

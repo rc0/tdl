@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.1 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.2 2001/08/21 22:43:24 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -42,7 +42,7 @@ void process_add(char **x, int set_done)/*{{{*/
     case 2:
       text = x[1];
       x0 = x[0];
-      if (isdigit(x0[0])) {
+      if (isdigit(x0[0]) || (x0[0] == '-') || (x0[0] == '+')) {
         parent_path = x[0];
       } else {
         priority = parse_priority(x0);
@@ -63,7 +63,7 @@ void process_add(char **x, int set_done)/*{{{*/
   }
 
   if (parent_path) {
-    parent = lookup_node(parent_path);
+    parent = lookup_node(parent_path, 0, NULL);
   } else {
     parent = NULL;
   }
@@ -79,7 +79,7 @@ void process_add(char **x, int set_done)/*{{{*/
   nn->priority = (parent && !set_priority) ? parent->priority
                                            : priority;
 
-  append_child(nn, parent);
+  prepend_child(nn, parent);
 
   /* Clear done status of parents - they can't be any longer! */
   while (parent) {
@@ -100,7 +100,7 @@ void process_edit(char **x) /*{{{*/
     exit(1);
   }
 
-  n = lookup_node(x[0]);
+  n = lookup_node(x[0], 0, NULL);
   free(n->text);
   n->text = new_string(x[1]);
   return;

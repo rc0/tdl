@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.3 2001/08/20 22:41:29 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.4 2001/08/21 22:43:24 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -54,7 +54,7 @@ static void process_priority(char **x)/*{{{*/
   struct node *n;
  
   while (*++x) {
-    n = lookup_node(*x);
+    n = lookup_node(*x, 0, NULL);
     n->priority = priority;
   }
 }/*}}}*/
@@ -166,6 +166,10 @@ static void usage(void)/*{{{*/
           "   Mark 1 or more entries as done\n\n"
           "tdl remove <entry_index> ...\n"
           "   Remove 1 or more entries from the database\n\n"
+          "tdl above <index_to_insert_above> <index_to_move>\n"
+          "   Move entries above another entry\n\n"
+          "tdl below <index_to_insert_below> <index_to_move>\n"
+          "   Move entries below another entry\n\n"
           "tdl purge <interval_ago> [<ancestor_index> ...]\n"
           "   Remove old done entries in subtrees\n\n"
           "tdl edit <entry_index> <new_text>\n"
@@ -272,6 +276,12 @@ int main (int argc, char **argv)
       dirty = 1;
     } else if (!strcmp(argv[1], "remove")) {
       process_remove(argv + 2);
+      dirty = 1;
+    } else if (!strcmp(argv[1], "below")) {
+      process_move(argv + 2, 1);
+      dirty = 1;
+    } else if (!strcmp(argv[1], "above")) {
+      process_move(argv + 2, 0);
       dirty = 1;
     } else if (!strcmp(argv[1], "done")) {
       process_done(argv + 2);

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/done.c,v 1.1 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/done.c,v 1.2 2001/08/21 22:43:24 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -60,7 +60,7 @@ void process_done(char **x)/*{{{*/
   clear_flags(&top);
 
   while (*x) {
-    n = lookup_node(*x);
+    n = lookup_node(*x, 0, NULL);
     n->flag = 1;
     n->scratch = *x; /* Safe to alias, *x has long lifetime */
     x++;

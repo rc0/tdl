@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.1 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.2 2001/08/21 22:43:25 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -31,32 +31,58 @@ int count_args(char **x)/*{{{*/
   return n;
 }
 /*}}}*/
-struct node *lookup_node(char *path)/*{{{*/
+struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)/*{{{*/
 {
   char *p = path;
-  int n, nc, idx, tidx, ncomp, comp10;
+  int n, nc, idx, tidx, aidx, ncomp, comp10;
+  int direction;
   struct links *x = &top;
   struct node *y = NULL;
 
   ncomp = 1;
+  if (parent) *parent = NULL;
 
   while (*p) {
-    if (x->next == (struct node *) x) {
-      fprintf(stderr, "Path [%s] doesn't exist - tree not that deep\n", path);
-      exit(1);
-    }
-
     n = sscanf(p, "%d%n", &idx, &nc);
     if (n != 1) {
       fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
       exit(1);
     }
     p += nc;
+    
+    if (idx > 0) {
+      direction = 1;
+      aidx = idx;
+    } else if (idx < 0) {
+      direction = 0;
+      aidx = -idx;
+    } else {
+      if (allow_zero_index) {
+        if (*p) {
+          fprintf(stderr, "Zero index only allowed as last component\n");
+          exit(1);
+        } else {
+          /* This is a special cheat to allow inserting entries at
+             the start or end of a chain for the 'above' and
+             'below' commands */
+          return (struct node *) x;
+        }
+      } else {
+        fprintf(stderr, "Zero in index not allowed\n");
+        exit(1);
+      }
+    }
+      
+    if (x->next == (struct node *) x) {
+      fprintf(stderr, "Path [%s] doesn't exist - tree not that deep\n", path);
+      exit(1);
+    }
 
     comp10 = ncomp % 10;
-    for (y = x->next, tidx = idx; --tidx;) {
+
+    for (y = direction ? x->next : x->prev, tidx = aidx; --tidx;) {
       
-      y = y->chain.next;
+      y = direction ? y->chain.next : y->chain.prev;
 
       if (y == (struct node *) x) {
         fprintf(stderr, "Can't find entry %d for %d%s component of path %s\n",
@@ -72,6 +98,7 @@ struct node *lookup_node(char *path)/*{{{*/
     if (*p == '.') {
       p++;
       x = &y->kids;
+      if (parent) *parent = y;
     }
 
     ncomp++;
@@ -137,19 +164,27 @@ void free_node(struct node *x)/*{{{*/
 /*}}}*/
 void append_node(struct node *n, struct links *l)/*{{{*/
 {
+  n->chain.next = l->next;
+  n->chain.prev = (struct node *) l;
+  l->next->chain.prev = n;
+  l->next = n;
+}
+/*}}}*/
+void prepend_node(struct node *n, struct links *l)/*{{{*/
+{
   n->chain.prev = l->prev;
   n->chain.next = (struct node *) l;
   l->prev->chain.next = n;
   l->prev = n;
 }
 /*}}}*/
-void append_child(struct node *child, struct node *parent)/*{{{*/
+void prepend_child(struct node *child, struct node *parent)/*{{{*/
 {
   child->parent = parent;
   if (parent) {
-    append_node(child, &parent->kids);
+    prepend_node(child, &parent->kids);
   } else {
-    append_node(child, &top);
+    prepend_node(child, &top);
   }
 }
 /*}}}*/

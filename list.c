@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.1 2001/08/20 22:38:00 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.2 2001/08/21 22:43:24 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -32,6 +32,7 @@
 #define CYAN    "[36m"
 #define NORMAL  "[0m"
 #define DIM     "[37m[2m"
+#define DIMCYAN "[36m[2m"
 
 /* Table to map priority levels to colours */
 static char *colour_table[] = {
@@ -96,7 +97,7 @@ static void list_chain(struct links *x, int indent, int verbose, int all, char *
     strcat(new_index_buffer, component_buffer);
     printf("%s%s%s %s%s", GREEN, new_index_buffer, NORMAL,
            (all && !verbose && is_done) ? CYAN "(DONE) " NORMAL : "",
-           is_done ? CYAN : colour_table[y->priority]);
+           is_done ? DIMCYAN : colour_table[y->priority]);
     for (p = y->text; *p; p++) {
       putchar(*p);
       if (*p == '\n') {
