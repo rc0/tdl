@@ -9,6 +9,7 @@ NEW IN VERSION 1.6
 - Hitting ^C 4 times exits a wedged run (with data loss)
 - Allow start of entry text to be used for indexing instead of just entry
   number.
+- Switch development and release process to use GNU Arch instead of CVS.
 
 NEW IN VERSION 1.5.2
 

@@ -20,6 +20,7 @@
    */
 
 #include "tdl.h"
+#include "version.h"
 #include <assert.h>
 #include <string.h>
 #include <errno.h>
@@ -381,33 +382,6 @@ void free_database(struct links *x)/*{{{*/
   x->next = x->prev = (struct node *) x;
 }
 /*}}}*/
-static char *get_version(void)/*{{{*/
-{
-  static char buffer[256];
-  static char cvs_version[] = "$Name: Btdl1 $";
-  char *p, *q;
-  for (p=cvs_version; *p; p++) {
-    if (*p == ':') {
-      p++;
-      break;
-    }
-  }
-  while (isspace(*p)) p++;
-  if (*p == '$') {
-    strcpy(buffer, "development version");
-  } else {
-    for (q=buffer; *p && *p != '$'; p++) {
-      if (!isspace(*p)) {
-        if (*p == '_') *q++ = '.';
-        else *q++ = *p;
-      }
-    }
-    *q = 0;
-  }
-
-  return buffer;
-}
-/*}}}*/
 
 /* {{{ One line descriptions of the subcommands */
 static char desc_above[] = "Move entries above (before) another entry";
@@ -552,7 +526,7 @@ static int process_which(char **argv)/*{{{*/
 /*}}}*/
 static int process_version(char **x)/*{{{*/
 {
-  fprintf(stderr, "tdl %s\n", get_version());
+  fprintf(stderr, "tdl %s\n", PROGRAM_VERSION);
   return 0;
 }
 /*}}}*/
@@ -709,7 +683,7 @@ static void print_copyright(void)/*{{{*/
           "tdl comes with ABSOLUTELY NO WARRANTY.\n"
           "This is free software, and you are welcome to redistribute it\n"
           "under certain conditions; see the GNU General Public License for details.\n\n",
-          get_version());
+          PROGRAM_VERSION);
 }
 /*}}}*/
 void dispatch(char **argv) /* and other args *//*{{{*/
