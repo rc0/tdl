@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.19 2002/05/09 23:06:34 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.20 2002/05/19 22:46:31 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -187,6 +187,14 @@ static void load_database(char *path) /*{{{*/
   }
 }
 /*}}}*/
+void load_database_if_not_loaded(void)/*{{{*/
+{
+  if (!is_loaded) {
+    load_database(current_database_path);
+    is_loaded = 1;
+  }
+}
+/*}}}*/
 static void save_database(char *path)/*{{{*/
 {
   FILE *out;
@@ -363,43 +371,37 @@ static char synop_version[] = "";
 static char synop_which[] = "";
 /* }}} */
 
-/* All the main processing functions take an argv array and 0,1 or 2 integer
- * args.  The return value is zero for success, <0 for various failures */ 
-typedef int (*fun2)(char **, int, int);
-typedef int (*fun1)(char **, int);
-typedef int (*fun0)(char **);
-
 /* Forward prototype */
-static void usage(char **x);
+static int usage(char **x);
 
 struct command cmds[] = {/*{{{*/
-  {"--help",   NULL,   (void *) usage,            desc_help,    NULL,          NULL,              0, 0, 0, 0, 0, 0, 1},
-  {"-h",       NULL,   (void *) usage,            desc_help,    NULL,          NULL,              0, 0, 0, 0, 0, 0, 1},
-  {"-V",       NULL,   (void *) process_version,  desc_version, NULL,          NULL,              0, 0, 0, 0, 0, 0, 1},
-  {"above",    NULL,   (void *) process_move,     desc_above,   synop_above,   NULL,              1, 2, 0, 0, 1, 1, 1},
-  {"add",      "tdla", (void *) process_add,      desc_add,     synop_add,     NULL,              1, 1, 0, 0, 1, 1, 1},
-  {"after",    NULL,   (void *) process_move,     desc_after,   synop_after,   NULL,              1, 2, 1, 0, 1, 1, 1},
-  {"below",    NULL,   (void *) process_move,     desc_below,   synop_below,   NULL,              1, 2, 1, 0, 1, 1, 1},
-  {"before",   NULL,   (void *) process_move,     desc_before,  synop_before,  NULL,              1, 2, 0, 0, 1, 1, 1},
-  {"create",   NULL,   (void *) process_create,   desc_create,  synop_create,  NULL,              1, 0, 0, 0, 0, 0, 1},
-  {"done",     "tdld", (void *) process_done,     desc_done,    synop_done,    NULL,              1, 0, 0, 0, 1, 1, 1},
-  {"edit",     NULL,   (void *) process_edit,     desc_edit,    synop_edit,    NULL,              1, 0, 0, 0, 1, 1, 1},
-  {"exit",     NULL,   (void *) process_exit,     desc_exit,    synop_exit,    NULL,              0, 0, 0, 0, 0, 1, 0},
-  {"export",   NULL,   (void *) process_export,   desc_export,  synop_export,  NULL,              0, 0, 0, 0, 1, 1, 1},
-  {"help",     NULL,   (void *) usage,            desc_help,    synop_help,    complete_help,     0, 0, 0, 0, 0, 1, 1},
-  {"import",   NULL,   (void *) process_import,   desc_import,  synop_import,  NULL,              1, 0, 0, 0, 1, 1, 1},
-  {"into",     NULL,   (void *) process_move,     desc_into,    synop_into,    NULL,              1, 2, 0, 1, 1, 1, 1},
-  {"list",     "tdll", (void *) process_list,     desc_list,    synop_list,    complete_list,     0, 0, 0, 0, 1, 1, 1},
-  {"log",      "tdlg", (void *) process_add,      desc_log,     synop_log,     NULL,              1, 1, 1, 0, 1, 1, 1},
-  {"priority", NULL,   (void *) process_priority, desc_priority,synop_priority,complete_priority, 1, 0, 0, 0, 1, 1, 1},
-  {"purge",    NULL,   (void *) process_purge,    desc_purge,   synop_purge,   NULL,              1, 0, 0, 0, 1, 1, 1},
-  {"quit",     NULL,   (void *) process_quit,     desc_quit,    synop_quit,    NULL,              0, 0, 0, 0, 0, 1, 0},
-  {"remove",   NULL,   (void *) process_remove,   desc_remove,  synop_remove,  NULL,              1, 0, 0, 0, 1, 1, 1},
-  {"report",   NULL,   (void *) process_report,   desc_report,  synop_report,  NULL,              0, 0, 0, 0, 1, 1, 1},
-  {"undo",     NULL,   (void *) process_undo,     desc_undo,    synop_undo,    NULL,              1, 0, 0, 0, 1, 1, 1},
-  {"usage",    NULL,   (void *) usage,            desc_usage,   synop_usage,   complete_help,     0, 0, 0, 0, 0, 1, 1},
-  {"version",  NULL,   (void *) process_version,  desc_version, synop_version, NULL,              0, 0, 0, 0, 0, 1, 1},
-  {"which",    NULL,   (void *) process_which,    desc_which,   synop_which,   NULL,              0, 0, 0, 0, 0, 1, 1}
+  {"--help",   NULL,   usage,            desc_help,    NULL,          NULL,              0, 0, 3, 0, 1},
+  {"-h",       NULL,   usage,            desc_help,    NULL,          NULL,              0, 0, 2, 0, 1},
+  {"-V",       NULL,   process_version,  desc_version, NULL,          NULL,              0, 0, 2, 0, 1},
+  {"above",    NULL,   process_above,    desc_above,   synop_above,   NULL,              1, 1, 2, 1, 1},
+  {"add",      "tdla", process_add,      desc_add,     synop_add,     NULL,              1, 1, 2, 1, 1},
+  {"after",    NULL,   process_below,    desc_after,   synop_after,   NULL,              1, 1, 2, 1, 1},
+  {"before",   NULL,   process_above,    desc_before,  synop_before,  NULL,              1, 1, 3, 1, 1},
+  {"below",    NULL,   process_below,    desc_below,   synop_below,   NULL,              1, 1, 3, 1, 1},
+  {"create",   NULL,   process_create,   desc_create,  synop_create,  NULL,              1, 0, 1, 0, 1},
+  {"done",     "tdld", process_done,     desc_done,    synop_done,    complete_done,     1, 1, 1, 1, 1},
+  {"edit",     NULL,   process_edit,     desc_edit,    synop_edit,    NULL,              1, 1, 2, 1, 1},
+  {"exit",     NULL,   process_exit,     desc_exit,    synop_exit,    NULL,              0, 0, 3, 1, 0},
+  {"export",   NULL,   process_export,   desc_export,  synop_export,  NULL,              0, 1, 3, 1, 1},
+  {"help",     NULL,   usage,            desc_help,    synop_help,    complete_help,     0, 0, 1, 1, 1},
+  {"import",   NULL,   process_import,   desc_import,  synop_import,  NULL,              1, 1, 2, 1, 1},
+  {"into",     NULL,   process_into,     desc_into,    synop_into,    NULL,              1, 1, 2, 1, 1},
+  {"list",     "tdll", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
+  {"log",      "tdlg", process_add,      desc_log,     synop_log,     NULL,              1, 1, 2, 1, 1},
+  {"priority", NULL,   process_priority, desc_priority,synop_priority,complete_priority, 1, 1, 2, 1, 1},
+  {"purge",    NULL,   process_purge,    desc_purge,   synop_purge,   NULL,              1, 1, 2, 1, 1},
+  {"quit",     NULL,   process_quit,     desc_quit,    synop_quit,    NULL,              0, 0, 1, 1, 0},
+  {"remove",   NULL,   process_remove,   desc_remove,  synop_remove,  NULL,              1, 1, 3, 1, 1},
+  {"report",   NULL,   process_report,   desc_report,  synop_report,  NULL,              0, 1, 3, 1, 1},
+  {"undo",     NULL,   process_undo,     desc_undo,    synop_undo,    NULL,              1, 1, 2, 1, 1},
+  {"usage",    NULL,   usage,            desc_usage,   synop_usage,   complete_help,     0, 0, 2, 1, 1},
+  {"version",  NULL,   process_version,  desc_version, synop_version, NULL,              0, 0, 1, 1, 1},
+  {"which",    NULL,   process_which,    desc_which,   synop_which,   NULL,              0, 0, 1, 1, 1}
 };/*}}}*/
 int n_cmds = 0;
 
@@ -453,9 +455,6 @@ static void print_copyright(void)/*{{{*/
 void dispatch(char **argv) /* and other args *//*{{{*/
 {
   int i, index=-1;
-  fun0 f0;
-  fun1 f1;
-  fun2 f2;
   char *executable;
   int is_tdl;
   char **p, **pp;
@@ -485,16 +484,14 @@ void dispatch(char **argv) /* and other args *//*{{{*/
 
   if (is_tdl) {
     for (i=0; i<n_cmds; i++) {
-      /* This is a crock - eventually, replace by a search that can hit at the shortest unambiguous substring */
       if ((is_interactive ? cmds[i].interactive_ok : cmds[i].non_interactive_ok) &&
-          !strncmp(cmds[i].name, *p, 3)) {
+          !strncmp(cmds[i].name, *p, cmds[i].matchlen)) {
         index = i;
         break;
       }
     }
   } else {
     for (i=0; i<n_cmds; i++) {
-      /* This is a crock - eventually, replace by a search that can hit at the shortest unambiguous substring */
       if (cmds[i].shortcut && !strcmp(cmds[i].shortcut, executable)) {
         index = i;
         break;
@@ -512,21 +509,7 @@ void dispatch(char **argv) /* and other args *//*{{{*/
     }
 
     pp = is_tdl ? (p + 1) : p;
-    
-    switch (cmds[index].nextra) {
-      case 0:
-        f0 = (fun0) cmds[index].func;
-        result = (*f0) (pp);
-        break;
-      case 1:
-        f1 = (fun1) cmds[index].func;
-        result = (*f1) (pp, cmds[index].i1);
-        break;
-      case 2:
-        f2 = (fun2) cmds[index].func;
-        result = (*f2) (pp, cmds[index].i1, cmds[index].i2);
-        break;
-    }
+    result = (cmds[index].func)(pp);
     
     /* Check for failure */
     if (result < 0) {
@@ -557,7 +540,7 @@ void dispatch(char **argv) /* and other args *//*{{{*/
   
 }
 /*}}}*/
-static void usage(char **x)/*{{{*/
+static int usage(char **x)/*{{{*/
 {
   int i, index;
   char *cmd = *x;
@@ -627,6 +610,9 @@ static void usage(char **x)/*{{{*/
   }
 
   fprintf(stderr, "\n");
+
+  return 0;
+
 }
 /*}}}*/
 

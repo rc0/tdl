@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.12 2002/05/10 22:22:23 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.13 2002/05/19 22:47:11 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -72,15 +72,13 @@ typedef char** (*Completer)(char *, int);
 struct command {/*{{{*/
   char *name; /* add, remove etc */
   char *shortcut; /* tdla etc */
-  void *func; /* function pointer */
+  int (*func)(char **); /* ptr to function that actually does the work for this cmd */
   char *descrip; /* One line description */
   char *synopsis; /* Description of parameters */
-  Completer completer; /* Function to generate completions */
+  char ** (*completer)(char *, int); /* Function to generate completions */
   unsigned char  dirty; /* 1 if operation can dirty the database, 0 if read-only */
-  unsigned char  nextra; /* how many integer args */
-  unsigned char  i1;
-  unsigned char  i2;    /* the integer args */
   unsigned char  load_db; /* 1 if cmd requires current database to be loaded first */
+  unsigned char  matchlen; /* number of characters to make command unambiguous */
   unsigned char  interactive_ok; /* 1 if OK to use interactively. */
   unsigned char  non_interactive_ok; /* 1 if OK to use from command line */
 };
@@ -129,7 +127,8 @@ int process_done(char **x);
 int process_undo(char **x);
 
 /* In add.c */
-int process_add(char **x, int set_done);
+int process_add(char **x);
+int process_log(char **x);
 int process_edit(char **x);
 
 /* In remove.c */
@@ -139,7 +138,9 @@ int process_remove(char **x);
 int process_purge(char **x);
 
 /* In move.c */
-int process_move(char **x, int below_not_above, int into_parent);
+int process_above(char **x);
+int process_below(char **x);
+int process_into(char **x);
 
 /* In impexp.c */
 int process_export(char **x);
@@ -150,12 +151,14 @@ time_t parse_date(char *d, time_t ref, int default_positive, int *error);
 
 /* In main.c */
 void dispatch(char **argv);
+void load_database_if_not_loaded(void);
 
 /* In inter.c */
 void interactive(void);
 char **complete_help(char *, int);
 char **complete_list(char *, int);
 char **complete_priority(char *, int);
+char **complete_done(char *, int);
 
 #endif /* TDL_H */
           
