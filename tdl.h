@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.4 2001/08/22 22:29:43 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.5 2001/08/23 21:23:31 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -98,6 +98,7 @@ void prepend_node(struct node *n, struct links *l);
 void prepend_child(struct node *child, struct node *parent);
 
 /* In done.c */
+int has_open_child(struct node *y);
 void process_done(char **x);
 
 /* In add.c */

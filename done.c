@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/done.c,v 1.2 2001/08/21 22:43:24 richard Exp $
+   $Header: /cvs/src/tdl/done.c,v 1.3 2001/08/23 21:23:31 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -21,10 +21,23 @@
 
 #include "tdl.h"
 
+int has_open_child(struct node *y)/*{{{*/
+{
+  struct node *c;
+  int result = 0;
+  for (c = y->kids.next; c != (struct node *) &y->kids; c = c->chain.next) {
+    if (c->done == 0) {
+      result = 1;
+      break;
+    }
+  }
+
+  return result;
+}
+/*}}}*/
 static void mark_done_from_bottom_up(struct links *x)/*{{{*/
 {
-  struct node *y, *c; 
-  int has_open_child;
+  struct node *y; 
 
   for (y = x->next; y != (struct node *) x; y = y->chain.next) {
 
@@ -33,16 +46,7 @@ static void mark_done_from_bottom_up(struct links *x)/*{{{*/
     }
     
     if (y->flag) {
-      has_open_child = 0;
-      if (has_kids(y)) {
-        for (c = y->kids.next; c != (struct node *) &y->kids; c = c->chain.next) {
-          if (c->done == 0) {
-            has_open_child = 1;
-            break;
-          }
-        }
-      }
-      if (has_open_child) {
+      if (has_open_child(y)) {
         fprintf(stderr, "Cannot mark %s done, it has open sub-tasks\n", y->scratch);
       } else {
         time_t now;
