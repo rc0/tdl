@@ -364,6 +364,7 @@ This section describes each of the tdl subcommands.
 * list command::    List entries in database (default from top node)
 * ls command::      List entries in database (default from top node)
 * log command::     Add a new entry to the database, mark it done as well
+* moveto command::  Move entries to end of new parent
 * narrow command::  Restrict actions to part of the database
 * open command::    Move 1 or more entries out of postponed state
 * postpone command::Make 1 or more entries postponed
@@ -1130,6 +1131,12 @@ process):
 @samp{log}.  The shortcut @samp{tdll} was already allocated for the
 @command{list} subcommand.)
 
+@c }}}
+@c {{{ moveto command
+@node moveto command
+@subsection moveto command
+The @command{moveto} and @command{into} commands are synonymous.  See the
+description of @command{into} (@pxref{into command}).
 @c }}}
 @c {{{ narrow command
 @node narrow command
