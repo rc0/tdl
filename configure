@@ -1,7 +1,7 @@
 #!/bin/sh
 #########################################################################
 #
-# $Id: configure,v 1.4 2003/05/08 22:37:27 richard Exp $
+# $Id: configure,v 1.5 2003/05/16 21:44:53 richard Exp $
 #
 # =======================================================================
 #
@@ -34,7 +34,7 @@ else
 fi
 
 if [ "x${CFLAGS}" = "x" ]; then
-  MYCFLAGS="-O2 -Wall -g"
+  MYCFLAGS="-O2 -Wall"
 else
   MYCFLAGS="${CFLAGS}"
 fi
