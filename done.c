@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/done.c,v 1.6 2001/10/20 22:06:20 richard Exp $
+   $Header: /cvs/src/tdl/done.c,v 1.7 2001/12/13 22:22:44 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -63,7 +63,7 @@ void process_done(char **x)/*{{{*/
 
   clear_flags(&top);
 
-  if (x[0][0] == '@') {
+  if (*x && (x[0][0] == '@')) {
     done_time = parse_date(x[0]+1, done_time, 0);
     x++;
   }
