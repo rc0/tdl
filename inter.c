@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.2 2002/05/08 23:07:48 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.3 2002/05/09 23:05:45 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -31,12 +31,14 @@
 #include <readline/history.h>
 #endif
 
+
+#ifdef USE_READLINE
 static int completion_entry_function(void)/*{{{*/
 {
   return 0;
 }
 /*}}}*/
-static char *generate_a_completion(char *text, int state)/*{{{*/
+static char *generate_a_command_completion(char *text, int state)/*{{{*/
 {
   static int list_index, len;
   char *name;
@@ -58,27 +60,78 @@ static char *generate_a_completion(char *text, int state)/*{{{*/
   return NULL; /* For no matches */
 }
 /*}}}*/
+static char *generate_a_priority_completion(char *text, int state)/*{{{*/
+{
+  static char *priorities[] = {"urgent", "high", "normal", "low", "verylow", NULL};
+  static int list_index, len;
+  char *name;
+
+  if (!state) {
+    list_index = 0;
+    len = strlen(text);
+  }
+
+  while ((name = priorities[list_index])) {
+    list_index++;
+    if (!strncmp(name, text, len)) {
+      return new_string(name);
+    }
+  }
+
+  return NULL; /* For no matches */
+}
+/*}}}*/
+
+char **complete_help(char *text, int index)/*{{{*/
+{
+  char **matches;
+  matches = completion_matches(text, generate_a_command_completion);
+  return matches;
+}
+/*}}}*/
+char **default_completer(char *text, int index)/*{{{*/
+{
+  if (cmds[index].synopsis) {
+    fprintf(stderr, "\n%s %s\n", cmds[index].name, cmds[index].synopsis);
+    rl_on_new_line();
+  }
+  return NULL;
+}
+/*}}}*/
+char **complete_list(char *text, int index)/*{{{*/
+{
+  char **matches;
+  if (text[0] && isalpha(text[0])) {
+    /* Try to complete priority */
+    matches = completion_matches(text, generate_a_priority_completion);
+    return matches;
+  } else {
+    return default_completer(text, index);
+  }
+}
+/*}}}*/
+char **complete_priority(char *text, int index)/*{{{*/
+{
+  return complete_list(text, index);
+}
+/*}}}*/
+
 static char **tdl_completion(char *text, int start, int end)/*{{{*/
 {
   char **matches = NULL;
   if (start == 0) {
-    matches = completion_matches(text, generate_a_completion);
+    matches = completion_matches(text, generate_a_command_completion);
   } else {
     int i;
   
-    if (!strncmp(rl_line_buffer, "usage", 5) ||
-        !strncmp(rl_line_buffer, "help", 4)) {
-
-      matches = completion_matches(text, generate_a_completion);
-      
-    } else {
-      for (i=0; i<n_cmds; i++) {
-        if (!strncmp(rl_line_buffer, cmds[i].name, 3)) {
-          if (cmds[i].synopsis) {
-            fprintf(stderr, "\n%s %s\n", cmds[i].name, cmds[i].synopsis);
-            rl_on_new_line();
-          }
+    for (i=0; i<n_cmds; i++) {
+      if (!strncmp(rl_line_buffer, cmds[i].name, 3)) {
+        if (cmds[i].completer) {
+          matches = (cmds[i].completer)(text, i);
+        } else {
+          matches = default_completer(text, i);
         }
+        break;
       }
     }
   }
@@ -86,6 +139,22 @@ static char **tdl_completion(char *text, int start, int end)/*{{{*/
   return matches;
 }
 /*}}}*/
+#else
+char **complete_help(char *text, int index)/*{{{*/
+{
+  return NULL;
+}/*}}}*/
+char **complete_list(char *text, int index)/*{{{*/
+{
+  return NULL;
+}/*}}}*/
+char **complete_priority(char *text, int index)/*{{{*/
+{
+  return NULL;
+}/*}}}*/
+
+#endif
+
 static void add_null_arg(char ***av, int *max, int *n)/*{{{*/
 {
   if (*max == *n) {
@@ -185,7 +254,7 @@ static void split_line_and_dispatch(char *line)/*{{{*/
   }
 #else
   /* Now dispatch */
-  dispatch(argv, 1);
+  dispatch(argv);
 #endif
 
   /* Now free arguments */
