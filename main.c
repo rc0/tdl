@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.33 2003/04/14 22:14:33 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.34 2003/04/14 23:16:59 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -268,7 +268,7 @@ static char desc_create[] = "Create a new database in the current directory";
 static char desc_defer[] = "Put off starting some tasks until a given time";
 static char desc_delete[] = "Remove 1 or more entries from the database";
 static char desc_done[] = "Mark 1 or more entries as done";
-static char desc_edit[] = "Change the text and/or start time of an entry";
+static char desc_edit[] = "Change the text of an entry";
 static char desc_exit[] = "Exit program, saving database";
 static char desc_export[] = "Export entries to another database";
 static char desc_help[] = "Display help information";
@@ -306,7 +306,7 @@ static char synop_create[] = "";
 static char synop_defer[] = "[@]<datespec> <entry_index>{...] ...";
 static char synop_delete[] = "<entry_index>[...] ...";
 static char synop_done[] = "[@<datespec>] <entry_index>[...] ...";
-static char synop_edit[] = "[@<datespec>] <entry_index>[...] [<new_text>]";
+static char synop_edit[] = "<entry_index> [<new_text>]";
 static char synop_exit[] = "";
 static char synop_export[] = "<filename> <entry_index> ...";
 static char synop_help[] = "[<command-name>]";

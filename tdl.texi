@@ -692,53 +692,24 @@ deepest entries first to bypass this.)
 @c {{{ edit command
 @node edit command
 @subsection edit command
-The @command{edit} command is used to modify the start-time or text of an existing entry.  Its argument structure is
+The @command{edit} command is used to modify the text of an existing entry.
+Its argument structure is
 
 @example
-tdl> edit [@@<datespec>] <entry_index>[...] [<new_text>]
+tdl> edit <entry_index> [<new_text>]
 @end example
 
-If a <datespec> is provided, the start-time of the entry will be
-changed.@footnote{The @emph{start-time} of an entry is the time at which it was
-created with the @command{add} or @command{log} commands.}  If the start-time
-is set in the future, it 'defers' the entry until that time, and the entry will
-not show on the output of the @command{list} command until that time.
+A single <entry-index> must be given.  If <new-text> is provided, this replaces
+the text describing the specified entry.  If no <new-text> is provided, you
+will be prompted with the old text to edit interactively.  (This is only useful
+if the GNU readline library has been linked in.)
 
-If <new-text> is provided, this replaces the text describing the specified
-entry.
-
-A single <entry-index>, optionally followed by 3 periods, must be given.  If
-followed by 3 periods, the specified entry and all its children, their children
-and so on will have their start-times modified.  When modifying the text, the 3
-periods cannot be used; only a single entry's text can be changed in that case.
-
-Some examples follow.
-
-To change the start-time of the entry with index 1 to next Sunday,
-@example
-tdl> edit @@+sun 1
-@end example
-
-To change the start-time of the entry with index 1, and all its descendents, to
-next Sunday,
-@example
-tdl> edit @@+sun 1...
-@end example
+An examples follows.
 
 To change the text for the entry with index 1,
 @example
 tdl> edit 1 "New description"
 @end example
-
-To change the text for the entry with index 1 and change its start time to next Sunday,
-@example
-tdl> edit @@+sun 1 "New description"
-@end example
-
-A very useful form of the @command{edit} command is when no replacement text is
-specified.  In this case, the replacement text is typed in interactively by
-editing the existing entry.  (Note, this is not very useful unless GNU readline
-support is compiled in.)  Example:
 
 @example
 tdl> list
@@ -749,6 +720,10 @@ tdl> list
 1 Wash the cat
 tdl>
 @end example
+
+(Note, in earlier versions, @command{edit} could be used to change the
+start-time of one or more entries.  This is now handled by the @command{defer}
+command (@pxref{defer command}).)
 
 @c }}}
 @c {{{ exit command

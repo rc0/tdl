@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.14 2003/04/14 22:14:33 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.15 2003/04/14 23:16:59 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -286,65 +286,38 @@ int process_edit(char **x) /*{{{*/
 {
   int argc;
   struct node *n;
-  time_t new_insert_time;
-  int had_new_time;
-  int do_descendents;
 
   argc = count_args(x);
 
-  new_insert_time = time(NULL);
-  if ((argc > 1) && (x[0][0] == '@')) {
-    int error;
-    new_insert_time = parse_date(x[0]+1, new_insert_time, 1, &error);
-    if (error < 0) return error;
-    argc--;
-    x++;
-    had_new_time = 1;
-  } else {
-    had_new_time = 0;
-  }
-  
   if ((argc < 1) || (argc > 2)) {
-    fprintf(stderr, "Usage: edit [@<datespec>] <path> [<new_text>]\n");
+    fprintf(stderr, "Usage: edit <path> [<new_text>]\n");
     return -1;
   }
 
-  do_descendents = include_descendents(*x); /* May modify *x */
-  if (do_descendents && (argc == 2)) {
-    fprintf(stderr, "You can't use '...' to modify the text for >1 entry at once\n");
-    return -1;
-  }
   n = lookup_node(x[0], 0, NULL);
   if (!n) return -1;
   if (argc == 2) {
     free(n->text);
     n->text = new_string(x[1]);
   } else {
-    if (!had_new_time) {
-      /* Edit the text, if UI allows it */
-      int error;
-      int is_blank;
-      char *new_text;
-      char prompt[128];
-      char *composite_index;
+    int error;
+    int is_blank;
+    char *new_text;
+    char prompt[128];
+    char *composite_index;
 
-      composite_index = make_composite(get_narrow_prefix(), x[0]);
-      assert(composite_index);
-      sprintf(prompt, "edit (%s)> ", composite_index);
-      new_text = interactive_text(prompt, n->text, &is_blank, &error);
-      free(composite_index);
-      if (error < 0) return error;
-      if (!is_blank) {
-        free(n->text);
-        n->text = new_text; /* We own the pointer now */
-      }
+    composite_index = make_composite(get_narrow_prefix(), x[0]);
+    assert(composite_index);
+    sprintf(prompt, "edit (%s)> ", composite_index);
+    new_text = interactive_text(prompt, n->text, &is_blank, &error);
+    free(composite_index);
+    if (error < 0) return error;
+    if (!is_blank) {
+      free(n->text);
+      n->text = new_text; /* We own the pointer now */
     }
   }
 
-  if (had_new_time) {
-    n->arrived = new_insert_time;
-    if (do_descendents) modify_tree_arrival_time(n, new_insert_time);
-  }
   return 0;
 }
 /*}}}*/

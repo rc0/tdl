@@ -1,6 +1,7 @@
 NEW IN VERSION 1.4
 
 - Add "defer" command
+- Remove start-time editing from "edit" command
 
 NEW IN VERSION 1.3.1
 
@@ -92,4 +93,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.15 2003/04/14 22:14:33 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.16 2003/04/14 23:16:59 richard Exp $
