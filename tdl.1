@@ -1,4 +1,4 @@
-.TH "tdl" 1 "July 2002"
+.TH "tdl" 1 "July 2002" "1.3"
 .SH NAME
 tdl \- To do list manager
 .SH SYNOPSIS
@@ -391,6 +391,8 @@ argument has ".0" appended to it.
 .PP
 The
 .B list
+or it's synonymous
+.B ls
 command is used to display the entries in the database.  By default, only
 entries that have not been marked
 .B done
@@ -518,6 +520,38 @@ command.
 .ce 1
 --ooOOoo--
 .PP
+.B narrow
+.I new_root_index
+.br
+.PP
+The 
+.B narrow 
+command can be used to limit the effects of later commands to operate within 
+a particular sub-tree of your database. Because the indices you specify for 
+the later operations have the common prefix omitted, this can save typing if 
+you have many changes to make within the same subtree.
+.P
+If your listings are in colour, the common prefix is coloured in blue whilst 
+the paths below the root of the sub-tree are shown in the usual green. 
+(In monochrome mode, there is no distinction.)
+.P
+Whilst your view is narrowed, the index of the sub-tree root is shown in square 
+brackets between tdl and > (i.e. [2]).
+.P
+If you want to operate on the sub-tree root entry itself whilst you are 
+narrowed, you can use . to specify its index (think: current directory in Unix.)
+.P
+To reverse the effects of the narrow command, use the 
+.B widen 
+command (see widen command).
+.P
+This command is only available when tdl is being run interactively, i.e. when 
+you have a tdl prompt. It is not available directly from the shell (where it 
+wouldn't make much sense). 
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl open 
 .I index_to_reopen[...] ...
 .PP
@@ -600,6 +634,8 @@ The main use for the quit command would be to avoid damaging the database if a s
 .PP
 .B tdl remove
 .I index_to_remove ...
+.B tdl delete
+.I index_to_remove ...
 .PP
 Completely remove one or more entries from the database.  The indices are the
 same format as those shown in the output of the
@@ -646,6 +682,41 @@ child entries that haven't been completed yet.
 .ce 1
 --ooOOoo--
 .PP
+.B revert
+.PP
+The revert command discards any changes made in the session and reloads the 
+in-memory database from disc. If you have used the 
+.B save 
+command in the session, the database will revert to its state at the most 
+recent save. Otherwise it will revert to its state when tdl was initially run.
+.P
+The revert command does not take any arguments. 
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B save
+.PP
+The 
+.B save
+command can be used to write the current in-memory database out to the disc 
+database file. The behaviour is currently equivalent to the command exit 
+followed by re-running tdl from the shell.
+
+This command is useful if you tend to do long interactive tdl sessions. 
+It guards against the risks of
+.P
+1. accidentally typing quit when you meant exit
+.br
+2. machine crashes
+.br
+3. running tdl in another window and seeing a stale copy of the database file. 
+.P
+The save command does not take any arguments.
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl undo
 .I index_of_entry_to_undo ...
 .PP
@@ -679,6 +750,21 @@ Show the version number of the software.
 .B tdl which
 .PP
 Show the filename of the database that tdl accesses in the current context.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B widen
+.I n_level
+.PP
+The optional n_levels parameter tells tdl how many levels to widen the view. 
+If the parameter is not specified, it defaults to 1. If you try to widen more 
+levels than the depth of the current sub-tree root node, the widening will be 
+silently limited to its depth.
+.P
+This command is only available when tdl is being run interactively, i.e. when 
+you have a tdl prompt. It is not available directly from the shell 
+(where it wouldn't make much sense). 
 
 .SH Completion facilities
 .PP

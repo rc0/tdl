@@ -2,6 +2,7 @@ NEW IN VERSION 1.3.1
 
 - Bug fix : widen without doing narrow first segfaults
 - Spec file fix for mandir
+- Updated manpage
 
 NEW IN VERSION 1.3
 
@@ -87,4 +88,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.13 2003/04/04 21:21:19 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.14 2003/04/04 21:40:43 richard Exp $
