@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.18 2003/03/11 20:02:42 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.19 2003/03/11 22:30:08 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -123,6 +123,7 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   int is_done;
   int is_ignored;
   int is_postponed;
+  int is_deferred;
   char *p;
   int n_kids, n_open_kids;
   int show_state;
@@ -132,6 +133,7 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   is_done = (y->done > 0);
   is_ignored = (y->done == IGNORED_TIME);
   is_postponed = (y->arrived == POSTPONED_TIME);
+  is_deferred = (y->arrived > now);
   if (!options->show_all && is_done) return;
 
   do_indent(indent);
@@ -157,16 +159,13 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
     if (is_ignored) {
       if (options->monochrome) printf(" (IGNORED)");
       else                     printf(" %s(IGNORED)%s", BLUE, NORMAL);
-    }
-    if (is_done) {
+    } else if (is_done) {
       if (options->monochrome) printf(" (DONE)");
       else                     printf(" %s(DONE)%s", CYAN, NORMAL);
-    }
-    if (is_postponed) {
+    } else if (is_postponed) {
       if (options->monochrome) printf(" (POSTPONED)");
       else                     printf(" %s(POSTPONED)%s", MAGENTA, NORMAL);
-    }
-    if (y->arrived > now) {
+    } else if (is_deferred) {
       if (options->monochrome) printf(" (DEFERRED)");
       else                     printf(" %s(DEFERRED)%s", MAGENTA, NORMAL);
     }
