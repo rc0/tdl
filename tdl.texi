@@ -283,7 +283,9 @@ the database, assigning them priorities, and so on.
 @chapter Reference
 @menu
 * Start and Exit::      Starting and exiting tdl
+* Command line flags::  Flags that can be used from the shell command line
 * Command list::        Alphabetical list of all commands
+* Shortcuts::           Quick access to tdl commands from the shell
 * Location::            How tdl finds the database file to use
 * Completion::          Completion facilities
 * Datespec::            How dates are specified
@@ -337,6 +339,40 @@ does not save the modified database back to the disk.  Only use it if you want
 to discard all changes made in this tdl run.
 @end itemize
 
+@c }}}
+
+@c {{{ Command line flags
+@node Command line flags
+@section Command line flags
+@menu
+* -q::              Be quiet
+* -R::              Open the database read-only
+@end menu
+
+@c {{{ Quiet mode
+@node -q
+@subsection Quiet mode
+If the @command{-q} flag is specified, various warning and informational
+messages will be suppressed.
+
+@example
+% tdl -q list
+@end example
+@c }}}
+@c {{{ Read-only mode
+@node -R
+@subsection Read-only mode
+If the @command{-R} flag is specified, the database will be opened in read-only
+mode.  In this case, the database will not be locked, and all commands that
+modify the database will be barred.
+
+This flag can be used together with the @command{-q} flag if required.
+
+@example
+% tdl -R list
+% tdl -qR list
+@end example
+@c }}}
 @c }}}
 @c {{{ Command list
 @node Command list
@@ -1494,6 +1530,33 @@ shell (where it wouldn't make much sense).
 
 @c }}}
 @c }}}
+
+@node Shortcuts
+@section Shortcut forms of certain commands
+For convenience, several shortcut commands are provided to access the most
+common tdl operations.  (These can be used from the shell command line.)
+
+@table @samp
+@item tdla
+This is a shortcut for @command{tdl add}, e.g.
+
+@example
+% tdla "A new item"
+@end example
+
+@item tdld
+This is a shortcut for @command{tdl delete}.
+
+@item tdlg
+This is a shortcut for @command{tdl log}.
+
+@item tdll
+This is a shortcut for @command{tdl list}.
+
+@item tdls
+This is another shortcut for @command{tdl list}.
+
+@end table
 
 @c {{{ Location
 @node Location
