@@ -4,7 +4,7 @@ tdl \- To do list manager
 .SH SYNOPSIS
 tdl  [-q]
 .br
-tdl  [-q] add|edit|log
+tdl  [-q] add|edit|log|defer
 .br
 tdl  [-q] list|done|undo|report
 .br
@@ -219,6 +219,22 @@ TDL_DATABASE.
 .ce 1
 --ooOOoo--
 .PP
+.B tdl defer
+.I @datespec
+.I entry_index...
+.PP
+This command is used to modify the time at which an entry appears to have been
+submitted.  For example, if there is a task that doesn't have to be started for
+a week, it can be deferred to avoid it cluttering up the output of
+.B list
+until then.  Note that the postpone command is just an extreme version of the
+defer command.
+.P
+Deferred entries can be reactivated right away with the open command.
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl done
 .I @datespec
 .I index_of_done_entry ...
@@ -256,30 +272,12 @@ section later in this page.
 --ooOOoo--
 .PP
 .B tdl edit
-.I [@datespec]
-.I index_to_change...
+.I index_to_change
 .I [new_text]
 .PP
 This command is used to change an entry.
 .PP
-The text of an entry may be changed,
-in which case the '...' form of the index is not allowed; exactly one entry
-must be specified.
-.PP
-Also, the start time of an entry or tree of entries may be changed.  (This
-affects whether the entries are shown by the
-.B list
-command, i.e. the effect is the same as providing a future date to the
-.B add
-command.)
-.PP
-Both the start time and text of an entry may be modified at the same time.  In
-this case, only a single index may be provided (the '...' form is not allowed
-in this case.)
-.PP
-The format for the date is described in the
-.B "DATE SPECIFICATION"
-section below.
+This command allows the text of an entry to be changed,
 .P
 .ce 1
 --ooOOoo--
@@ -568,8 +566,8 @@ current time.
 .PP
 The postpone command is used to make 1 more more entries postponed. Its effect 
 is actually to set the arrival time of the entries a long way in the future 
-(i.e. it's an extreme form of the 'deferred' feature available in the add and 
-edit commands.) Postponed entries can be re-activated with the 
+(i.e. it's an extreme form of the 'deferred' feature available through the add and 
+defer commands.) Postponed entries can be re-activated with the 
 .B open 
 command. 
 .P
