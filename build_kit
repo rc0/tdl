@@ -1,0 +1,15 @@
+#!/usr/bin/env perl
+unlink "build_kit";
+
+($version = $ARGV[0]) || ($version = "UNKNOWN");
+
+open (IN, "<tdl.spec.sample");
+open (OUT, ">tdl.spec");
+while (<IN>) {
+  s/\@\@VERSION\@\@/$version/;
+  print OUT;
+}
+close (IN);
+close (OUT);
+
+unlink "tdl.spec.sample";

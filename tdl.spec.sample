@@ -1,45 +1,40 @@
 Summary: A to-do list manager
 Name: tdl
-Version: 1.2
+Version: @@VERSION@@
 Release: 1
 Copyright: GPL
+Source: tdl-%{version}.tar.gz
 Group: Applications/Utilities
-Packager: A.N.Other
-BuildRoot: /home/a.n.other/rpm/root
+Packager: Richard P. Curnow <rc@rc0.org.uk>
+BuildRoot: %{_tmppath}/%{name}-%{version}-root-%(id -u -n)
+Requires: readline
 
 %description
 tdl is a console to-do list manager.  You can run its subcommands direct from
 the command line, or enter an interactive mode which uses the readline library.
 
 %prep
-rm -rf $RPM_BUILD_DIR/tdl-1.2
-tar xzvf $RPM_SOURCE_DIR/tdl-1.2.tar.gz
+%setup -q
 
 %build
-cd tdl-1.2
-make CC=gcc CFLAGS=-O2 prefix=/usr
-make tdl.txt prefix=/usr
-make tdl.info prefix=/usr
-make tdl.html prefix=/usr
-make tdl.pdf prefix=/usr
+make %{?_smp_mflags} CC=gcc CFLAGS=-O2 prefix=%{_prefix}
+make %{?_smp_mflags} tdl.txt prefix=%{_prefix}
+make %{?_smp_mflags} tdl.info prefix=%{_prefix}
+make %{?_smp_mflags} tdl.html prefix=%{_prefix}
 
 %install
-rm -rf $RPM_BUILD_ROOT
-cd $RPM_BUILD_DIR/tdl-1.2
-make install DESTDIR=$RPM_BUILD_ROOT prefix=/usr
-mkdir -p $RPM_BUILD_ROOT/usr/share/info
-cp tdl.info* $RPM_BUILD_ROOT/usr/share/info
-cp README tdl.txt tdl.html tdl.pdf ..
+rm -rf %{buildroot}
+make install DESTDIR=%{buildroot} prefix=%{_prefix}
+mkdir -p %{buildroot}%{_infodir}
+cp tdl.info* %{buildroot}/%{_infodir}
+
+%clean
+rm -rf %{buildroot}
 
 %files
-/usr/bin/tdl
-/usr/bin/tdla
-/usr/bin/tdlg
-/usr/bin/tdld
-/usr/bin/tdll
-/usr/man/man1/tdl.1.gz
-%doc README
-%doc tdl.txt
-%doc tdl.html
-%doc tdl.pdf
+%defattr(-,root,root,-)
+%doc README tdl.txt tdl.html
+%{_bindir}/tdl*
+%{_mandir}/man[^3]/*
+%{_infodir}/*
 
