@@ -1,14 +1,18 @@
-.TH "tdl" 1 "May 2002"
+.TH "tdl" 1 "July 2002"
 .SH NAME
 tdl \- To do list manager
 .SH SYNOPSIS
-tdl [-q] add|edit|log
+tdl  [-q]
 .br
-tdl [-q] list|done|undo|report
+tdl  [-q] add|edit|log
 .br
-tdl [-q] remove|above|below|into
+tdl  [-q] list|done|undo|report
 .br
-tdl [-q] which|version|help
+tdl  [-q] remove|above|below|into|clone|copyto
+.br
+tdl  [-q] postpone|ignore|open
+.br
+tdl  [-q] which|version|help
 .br
 tdla [-q]
 .br
@@ -18,14 +22,53 @@ tdld [-q]
 .br
 tdlg [-q]
 
-.SH CAVEAT
-.B "PLEASE NOTE"
-This manpage is not being maintained.  The texinfo documentation is more
-up-to-date.
-
 .SH DESCRIPTION
-A small program for managing a to-do list.
+A program for managing a to-do list.
 .PP
+tdl has a set of functions that can be accessed in two different ways:
+
+    * Directly from the command line
+    * Interactively
+
+In the 'direct' method, the function and its arguments are provided on the 
+command line. This mode is useful if you only want to perform a single 
+operation. An example
+
+    % tdl add "A task"
+    %
+
+The 'interactive' method is entered when the tdl command is run with no 
+arguments. In this mode, many tdl operations may be performed within a 
+single run of the program. This avoids loading and saving the database 
+for each operation, which may have a small performance benefit. 
+However, if the program is compiled with the readline library, the 
+<tab> key will provide various completion functions. An example
+
+    % tdl
+    tdl> add "A task"
+    tdl> exit
+    %
+
+When in interactive mode, these methods can be used to exit and return 
+to the shell:
+
+* The 
+.B exit 
+command (see exit command)
+.br
+* Hitting <Ctrl-D> (i.e. end of file on stdin)
+.br
+* Hitting <Ctrl-C>, <Ctrl-\> etc. The associated signals are caught by 
+tdl and it will attempt to save the database. However, this method is 
+more risky than the first two.
+.br
+* The 
+.B quit 
+command (see quit command). Caution: this does not save the 
+modified database back to the disk. Only use it if you want to discard 
+all changes made in this tdl run. 
+
+.pp
 All forms may take
 .I -q
 as the first command line argument.  Currently, this suppresses the warning
@@ -132,6 +175,30 @@ appear as the first children of the parent node afterwards.
 .ce 1
 --ooOOoo--
 .PP
+.B tdl clone
+.I index_to_clone ...
+.PP
+The clone command can be used to make a deep copy of one or more entries and 
+add them as new top-level entries in the database. You might use this if you 
+have a task with a set of subtasks, and find that the same subtasks apply to 
+some new task. You could copy the first task, and edit the new top-level task 
+to change its text. 
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl copyto
+.I new_parent_index
+.I index_to_clone ...
+.PP
+The copyto command is very similar to the 
+.B clone 
+command. The difference is that copyto inserts the newly created entries as 
+children of an existing entry, rather than making them new top level entries. 
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl create
 .PP
 This command is used to create a .tdldb file in the current
@@ -217,6 +284,20 @@ section below.
 .ce 1
 --ooOOoo--
 .PP
+.B exit
+.PP
+The exit command is used to exit from tdl when it is used in interactive mode. 
+The exit command is not available in the command line mode, where it would not 
+make sense. 
+.br
+The exit command writes any pending updates to the database before exiting. 
+Compare the 
+.B quit 
+command, which loses all updates made during the current tdl run. 
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl export
 .I filename
 .I index_to_export ...
@@ -234,6 +315,30 @@ the original database.
 .B tdl help
 .PP
 This command displays a summary of use of each of the commands.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl ignore
+.I index_to_ignore ...
+.PP
+The ignore command puts one or more entries into an ignored state. It is 
+actually implemented in the same way as marking them as done, but as though 
+they were done a very long time ago. Thus, ignored entries will be deleted 
+by any subsequent purge operation.
+.br
+I added this feature because, when applying remove to several entries, I kept 
+getting tripped up by the indices changing below the entry that was removed 
+(I kept removing the wrong entries later by not using the revised indices). 
+Instead, I can ignore them and rely on a periodic purge to clean up the database.
+.br
+Another use for the ignore command would be to move moribund entries into a 
+wastebasket to stop them cluttering up the normal listing, but without removing 
+them entirely in case you need to reprieve them later. 
+.br
+If you need to un-ignore an entry, just 
+.B undo 
+it
 .P
 .ce 1
 --ooOOoo--
@@ -269,18 +374,20 @@ argument has ".0" appended to it.
 .B tdl list
 .I [-v]
 .I [-a]
+.I [-p]
 .I [-m]
 .I [-1...9]
 .I [<min-priority>]
-.I [<parent_index> ...]
+.I [<parent_index>|<search_conditions>...]
 .br
 .B tdll
 .I [-v]
 .I [-a]
+.I [-p]
 .I [-m]
 .I [-1...9]
 .I [<min-priority>]
-.I [<parent_index> ...]
+.I [<parent_index>|<search_conditions...]
 .PP
 The
 .B list
@@ -294,6 +401,10 @@ option (which means 'all').  If you want to display the dates and times when
 the entries were added and/or done, include the 
 .B -v
 option (which means 'verbose').
+The
+.B -p
+option stands for postponed. It means that tasks which are 'deferred' or 'postponed' 
+are shown as well as open tasks. 
 .PP
 By default, only entries having normal, high or urgent priority are shown.  To
 change the minimum priority shown, specify the
@@ -337,6 +448,31 @@ tdl list -2 -- -3 -2 -1
 .PP
 to show level-1 and level-2 entries within the last 3 level-1 entries in the
 list.
+.PP
+Each 
+.B search condition 
+specifies a case-insensitive substring match that is applied to all parent 
+indices further on in the arguments. (If no parent indices are given, all the 
+search conditions are and'ed together and applied to filter all the nodes that 
+would be shown according to the depth, priority etc arguments).
+.PP
+Each search condition takes one of the following forms
+.PP
+    /substring
+    /substring/1
+.PP
+In each case, an entry will match if substring is actually a substring of the 
+text of that entry. In the second form (where the number may be 0, 1, 2 or 3), 
+a match occurs if there are up to that many errors in the substring. An error 
+is a single character inserted, removed or changed.
+.PP
+This option is most useful if you have a large database and can remember you 
+have an entry somewhere containing particular word(s), but can't remember where 
+it is.
+.PP
+If you need regular expression matching, the best approach would be to run 
+tdll from the shell and pipe the output to grep. The internal matching does 
+approximate matches with keys up to 31 characters. 
 .PP
 By default, the listing is produced with colour highlighting.  The
 .B -m
@@ -382,6 +518,30 @@ command.
 .ce 1
 --ooOOoo--
 .PP
+.B tdl open 
+.I index_to_reopen[...] ...
+.PP
+The open command is used to reverse the effect of the 
+.B postpone 
+command. Its effect is actually to set the arrival time of the entries to the 
+current time. 
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl postpone
+.I index_to_postpone[...] ...
+.PP
+The postpone command is used to make 1 more more entries postponed. Its effect 
+is actually to set the arrival time of the entries a long way in the future 
+(i.e. it's an extreme form of the 'deferred' feature available in the add and 
+edit commands.) Postponed entries can be re-activated with the 
+.B open 
+command. 
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl pri
 .I new_priority
 .I index_to_change ...
@@ -418,6 +578,22 @@ Zero or more
 .B entry_indices
 may be given.  These restrict the purging to just those entries and their
 descendents.  The default is to purge the entire database.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B quit
+.PP
+The quit command is used to exit from tdl when it is used in interactive mode. 
+The quit command is not available in the command line mode, where it would not 
+make sense. 
+.P
+The quit command DOES NOT write any pending updates to the database before 
+exiting. Compare the 
+.B exit 
+command, which does write all updates made during the current tdl run.
+.P
+The main use for the quit command would be to avoid damaging the database if a serious error had been made. 
 .P
 .ce 1
 --ooOOoo--
@@ -503,6 +679,45 @@ Show the version number of the software.
 .B tdl which
 .PP
 Show the filename of the database that tdl accesses in the current context.
+
+.SH Completion facilities
+.PP
+
+When tdl has been compiled to use the readline library, the interactive mode 
+supports a number of completion functions, activated with the <tab> key.
+.P
+In particular, the following are supported:
+
+.B Command completion. 
+If <tab> is pressed when the command line is empty, a list of possible commands 
+will be shown. If <tab> is pressed when a partial command has been typed, the 
+command will be completed immediately if possible, otherwise a list of commands 
+matching the already-typed prefix will be shown.
+.P
+.B Help completion. 
+If help or usage is already in the buffer, a list of commands will be shown 
+(as above). The <tab> completion works in the same way to complete the name of 
+the command you want a help summary for.
+.P
+.B Priority completion. 
+If list or priority is at the start of the input buffer and the current word 
+starts with a letter, tdl will try to complete the name of a priority level if 
+<tab> is pressed.
+.P
+.B Open task completion. 
+If done is at the start of the input buffer, hitting <tab> will show a list of 
+task indices that are still open. If part of an index has already been typed, 
+the open task indices for which the typed characters are a prefix will be shown.
+.P
+.B Postpone completion. 
+If postpone is at the start of the input buffer, hitting <tab> will show a list 
+of tasks that may be postponed. Tasks marked done are excluded. If open is at 
+the start of the input buffer, hitting <tab> will show a list of tasks that may 
+be opened.
+.P
+.B Parameter hints. 
+If some other command is at the start of the input buffer and <tab> is pressed, 
+tdl will show a one-line summary of that command's parameters. 
 
 .SH DATE SPECIFICATIONS
 .PP
@@ -630,8 +845,6 @@ If you want to share .tdldb files between directory hierarchies in some non-stan
 cd project1
 .br
 ln -s ../project2/.tdldb .
-
-
 
 .SH BUGS
 Please report them to the author.
