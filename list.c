@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.3 2001/08/23 21:22:51 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.4 2001/08/27 22:09:48 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -61,7 +61,7 @@ void do_bullet_indent(int indent)/*{{{*/
   for (i=0; i<indent; i++) putchar((i == n) ? '-' : ' ');
 }
 /*}}}*/
-static void print_timestamp(int timestamp, char *leader, int indent)/*{{{*/
+static void print_timestamp(int timestamp, char *leader, int indent, int monochrome)/*{{{*/
 {
   char buffer[32];
   time_t now;
@@ -73,10 +73,14 @@ static void print_timestamp(int timestamp, char *leader, int indent)/*{{{*/
   strftime(buffer, sizeof(buffer), "%a %d %b %Y %H:%M", 
            localtime((time_t *)&timestamp));
   do_indent(indent+2);
-  printf("%s%s:%s %s (%ld day%s ago)\n", GREEN, leader, NORMAL, buffer, days_ago, (days_ago == 1) ? "" : "s");
+  if (monochrome) {
+    printf("%s: %s (%ld day%s ago)\n", leader, buffer, days_ago, (days_ago == 1) ? "" : "s");
+  } else {
+    printf("%s%s:%s %s (%ld day%s ago)\n", GREEN, leader, NORMAL, buffer, days_ago, (days_ago == 1) ? "" : "s");
+  }
 }
 /*}}}*/
-static void print_details(struct node *y, int indent, int verbose, int all, char *index_buffer)/*{{{*/
+static void print_details(struct node *y, int indent, int verbose, int all, int monochrome, char *index_buffer)/*{{{*/
 {
   int is_done;
   char *p;
@@ -85,29 +89,39 @@ static void print_details(struct node *y, int indent, int verbose, int all, char
   if (!all && is_done) return;
 
   do_indent(indent);
-  printf("%s%s%s %s%s", GREEN, index_buffer, NORMAL,
-         (all && !verbose && is_done) ? CYAN "(DONE) " NORMAL : "",
-         is_done ? DIMCYAN : colour_table[y->priority]);
+  if (monochrome) {
+    printf("%s %s", index_buffer,
+           (all && !verbose && is_done) ? "(DONE) : " : ": ");
+  } else {
+    printf("%s%s%s %s%s", GREEN, index_buffer, NORMAL,
+           (all && !verbose && is_done) ? CYAN "(DONE) " NORMAL : "",
+           is_done ? DIMCYAN : colour_table[y->priority]);
+  }
   for (p = y->text; *p; p++) {
     putchar(*p);
     if (*p == '\n') {
       do_indent(indent + 5);
     }
   }
-  printf("%s\n", NORMAL);
+  if (!monochrome) printf("%s", NORMAL);
+  printf("\n");
   if (verbose) {
-    print_timestamp(y->arrived, "Arrived", indent);
+    print_timestamp(y->arrived, "Arrived", indent, monochrome);
     do_indent(indent + 2);
-    printf("%sPriority: %s%s%s\n",
-           GREEN, colour_table[y->priority], priority_text[y->priority], NORMAL);
-    if (y->required_by > 0) print_timestamp(y->required_by, "Required by", indent);
-    if (y->done > 0) print_timestamp(y->done, "Completed", indent);
+    if (monochrome) {
+      printf("Priority: %s\n", priority_text[y->priority]);
+    } else {
+      printf("%sPriority: %s%s%s\n",
+          GREEN, colour_table[y->priority], priority_text[y->priority], NORMAL);
+    }
+    if (y->required_by > 0) print_timestamp(y->required_by, "Required by", indent, monochrome);
+    if (y->done > 0) print_timestamp(y->done, "Completed", indent, monochrome);
     printf("\n");
   }
 
 }
 /*}}}*/
-static void list_chain(struct links *x, int indent, int verbose, int all, char *index_buffer)/*{{{*/
+static void list_chain(struct links *x, int indent, int verbose, int all, int monochrome, char *index_buffer)/*{{{*/
 {
   struct node *y;
   int idx, is_done;
@@ -128,9 +142,9 @@ static void list_chain(struct links *x, int indent, int verbose, int all, char *
     }
     strcat(new_index_buffer, component_buffer);
 
-    print_details(y, indent, verbose, all, new_index_buffer);
+    print_details(y, indent, verbose, all, monochrome, new_index_buffer);
 
-    list_chain(&y->kids, indent + INDENT_TAB, verbose, all, new_index_buffer);
+    list_chain(&y->kids, indent + INDENT_TAB, verbose, all, monochrome, new_index_buffer);
   }
   return;
 }
@@ -140,12 +154,18 @@ void process_list(char **x)/*{{{*/
   int verbose = 0;
   int all = 0; /* Even show done nodes */
   int any_paths = 0;
+  int monochrome = 0;
   char index_buffer[64];
   char *y;
 
+  if (getenv("TDL_LIST_MONOCHROME") != 0) {
+    monochrome = 1;
+  }
+  
   while ((y = *x) != 0) {
     if (!strcmp(y, "-v")) verbose = 1;
     else if (!strcmp(y, "-a")) all = 1;
+    else if (!strcmp(y, "-m")) monochrome = 1;
     else if (isdigit(y[0]) ||
              (((y[0] == '-') || (y[0] == '+')) &&
               (isdigit(y[1])))) {
@@ -154,8 +174,8 @@ void process_list(char **x)/*{{{*/
       any_paths = 1;
       index_buffer[0] = '\0';
       strcpy(index_buffer, y);
-      print_details(n, 0, verbose, all, index_buffer);
-      list_chain(&n->kids, INDENT_TAB, verbose, all, index_buffer);
+      print_details(n, 0, verbose, all, monochrome, index_buffer);
+      list_chain(&n->kids, INDENT_TAB, verbose, all, monochrome, index_buffer);
     }
 
     x++;
@@ -163,7 +183,7 @@ void process_list(char **x)/*{{{*/
   
   if (!any_paths) {
     index_buffer[0] = 0;
-    list_chain(&top, 0, verbose, all, index_buffer);
+    list_chain(&top, 0, verbose, all, monochrome, index_buffer);
   }
 }
 /*}}}*/
