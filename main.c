@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.17 2002/05/06 23:14:44 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.18 2002/05/08 23:07:48 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -47,6 +47,8 @@ static int currently_dirty = 0;
 
 /* Whether to complain about problems with file operations */
 static int is_noisy = 1;
+
+static int is_interactive_global = 0;
 
 static void set_descendent_priority(struct node *x, enum Priority priority)/*{{{*/
 {
@@ -206,73 +208,6 @@ static void save_database(char *path)/*{{{*/
 }
 /*}}}*/
   
-static void usage(void)/*{{{*/
-{
-  fprintf(stderr,
-          "tdl, Copyright (C) 2001,2002 Richard P. Curnow\n"
-          "tdl comes with ABSOLUTELY NO WARRANTY.\n"
-          "This is free software, and you are welcome to redistribute it\n"
-          "under certain conditions; see the GNU General Public License for details.\n\n");
-
-  fprintf(stderr,
-          "tdl [-q] add [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
-          "tdla [-q]    [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
-          "   Add a new entry to the database\n\n"
-          "tdl [-q] log [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
-          "tdlg [-q]    [@<datespec>] [<parent_index>] [<priority>] <entry_text>\n"
-          "   Add a new entry to the database, mark it done as well\n\n"
-          "tdl [-q] list [-v] [-a] [-m] [-1..9] [<parent_index>...]\n"
-          "tdll [-q]     [-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>...]\n"
-          "   List entries in database (default from top node)\n"
-          "   -v : verbose (show dates, priorities etc)\n"
-          "   -a : show all entries, including 'done' ones\n"
-          "   -m : don't use colours (monochrome)\n"
-          "   -1,-2,..,-9 : summarise (and don't show) entries below this depth\n\n"
-          "tdl [-q] done [@<datespec>] <entry_index>[...] ...\n"
-          "tdld [-q]     [@<datespec>] <entry_index>[...] ...\n"
-          "   Mark 1 or more entries as done\n\n"
-          "tdl [-q] undo <entry_index>[...] ...\n"
-          "   Mark 1 or more entries as not done (cancel effect of 'done')\n\n"
-          "tdl[-q]  remove <entry_index>[...] ...\n"
-          "   Remove 1 or more entries from the database\n\n"
-          "tdl [-q] above  <index_to_insert_above> <index_to_move> ...\n"
-          "tdl [-q] before <index_to_insert_above> <index_to_move> ...\n"
-          "   Move entries above another entry\n\n"
-          "tdl [-q] below <index_to_insert_below> <index_to_move> ...\n"
-          "tdl [-q] after <index_to_insert_below> <index_to_move> ...\n"
-          "   Move entries below another entry\n\n"
-          "tdl [-q] into <new_parent_index> <index_to_move> ...\n"
-          "   Move entries to end of new parent\n\n"
-          "tdl [-q] purge <since_datespec> [<ancestor_index> ...]\n"
-          "   Remove old done entries in subtrees\n\n"
-          "tdl [-q] edit [@<datespec>] <entry_index>[...] [<new_text>]\n"
-          "   Change the text and/or start time of an entry\n\n"
-          "tdl [-q] priority <new_priority> <entry_index> ...\n"
-          "   Change the priority of 1 or more entries\n\n"
-          "tdl [-q] report <start_datespec> [<end_datespec>]\n"
-          "   Report completed tasks in interval (end defaults to now)\n\n"
-          "tdl [-q] create\n"
-          "   Create a new database in the current directory\n\n"
-          "tdl [-q] import <filename>\n"
-          "   Import entries from <filename>\n\n"
-          "tdl [-q] export <filename> <entry_index> ...\n"
-          "   Export entries to <filename>\n\n"
-          "tdl [-q] help\n"
-          "   Display this text\n\n"
-          "tdl [-q] version\n"
-          "   Display program version\n\n"
-          "tdl [-q] which\n"
-          "   Display filename of database being used\n\n"
-          "<index>    : 1, 1.1 etc (see output of 'tdl list')\n"
-          "<priority> : urgent|high|normal|low|verylow\n"
-          "<datespec> : [-|+][0-9]+[shdwmy][-hh[mm[ss]]]  OR\n"
-          "             [-|+](sun|mon|tue|wed|thu|fri|sat)[-hh[mm[ss]]] OR\n"
-          "             [[[cc]yy]mm]dd[-hh[mm[ss]]]\n"
-          "<text>     : Any text (you'll need to quote it if >1 word)\n"
-          );
-
-}
-/*}}}*/
 static char *get_version(void)/*{{{*/
 {
   static char buffer[256];
@@ -362,54 +297,104 @@ static void process_quit(char **x)/*{{{*/
 }
 /*}}}*/
 
+/* {{{ One line descriptions of the subcommands */
+static char desc_above[] = "Move entries above (before) another entry";
+static char desc_add[] = "Add a new entry to the database";
+static char desc_after[] = "Move entries after (below) another entry";
+static char desc_before[] = "Move entries before (above) another entry";
+static char desc_below[] = "Move entries below (after) another entry";
+static char desc_create[] = "Create a new database in the current directory";
+static char desc_done[] = "Mark 1 or more entries as done";
+static char desc_edit[] = "Change the text and/or start time of an entry";
+static char desc_exit[] = "Exit program, saving database";
+static char desc_export[] = "Export entries to another database";
+static char desc_help[] = "Display help information";
+static char desc_import[] = "Import entries from another database";
+static char desc_into[] = "Move entries to end of new parent";
+static char desc_list[] = "List entries in database (default from top node)";
+static char desc_log[] = "Add a new entry to the database, mark it done as well";
+static char desc_priority[] = "Change the priority of 1 or more entries";
+static char desc_purge[] = "Remove old done entries in subtrees";
+static char desc_quit[] = "Exit program, NOT saving database";
+static char desc_remove[] = "Remove 1 or more entries from the database";
+static char desc_report[] = "Report completed tasks in interval";
+static char desc_undo[] = "Mark 1 or more entries as not done (cancel effect of 'done')";
+static char desc_usage[] = "Display help information";
+static char desc_version[] = "Display program version";
+static char desc_which[] = "Display filename of database being used";
+
+/* }}} */
+/* {{{ Synopsis of each subcommand */
+static char synop_above[] = "<index_to_insert_above> <index_to_move> ...";
+static char synop_add[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_text>";
+static char synop_after[] = "<index_to_insert_below> <index_to_move> ...";
+static char synop_before[] = "<index_to_insert_above> <index_to_move> ...";
+static char synop_below[] = "<index_to_insert_below> <index_to_move> ...";
+static char synop_create[] = "";
+static char synop_done[] = "[@<datespec>] <entry_index>[...] ...";
+static char synop_edit[] = "[@<datespec>] <entry_index>[...] [<new_text>]";
+static char synop_exit[] = "";
+static char synop_export[] = "<filename> <entry_index> ...";
+static char synop_help[] = "[<command-name>]";
+static char synop_import[] = "<filename>";
+static char synop_into[] = "<new_parent_index> <index_to_move> ...";
+static char synop_list[] = "[-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>...]\n"
+                           "-v : verbose (show dates, priorities etc)\n"
+                           "-a : show all entries, including 'done' ones\n"
+                           "-m : don't use colours (monochrome)\n"
+                           "-1,-2,..,-9 : summarise (and don't show) entries below this depth";
+static char synop_log[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_text>";
+static char synop_priority[] = "<new_priority> <entry_index> ...";
+static char synop_purge[] = "<since_datespec> [<ancestor_index> ...]";
+static char synop_quit[] = "";
+static char synop_remove[] = "<entry_index>[...] ...";
+static char synop_report[] = "<start_datespec> [<end_datespec>]\n"
+                             "(end defaults to now)";
+static char synop_undo[] = "<entry_index>[...] ...";
+static char synop_usage[] = "[<command-name>]";
+static char synop_version[] = "";
+static char synop_which[] = "";
+/* }}} */
+
 /* All the main processing functions take an argv array and 0,1 or 2 integer
  * args */ 
 typedef void (*fun2)(char **, int, int);
 typedef void (*fun1)(char **, int);
 typedef void (*fun0)(char **);
 
-struct command {/*{{{*/
-  char *name; /* add, remove etc */
-  char *shortcut; /* tdla etc */
-  void *func; /* function pointer */
-  unsigned char  dirty; /* 1 if operation can dirty the database, 0 if read-only */
-  unsigned char  nextra; /* how many integer args */
-  unsigned char  i1;
-  unsigned char  i2;    /* the integer args */
-  unsigned char  load_db; /* 1 if cmd requires current database to be loaded first */
-  unsigned char  interactive_ok; /* 1 if OK to use interactively. */
-  unsigned char  non_interactive_ok; /* 1 if OK to use from command line */
-};
-/*}}}*/
+/* Forward prototype */
+static void usage(char **x);
+
 struct command cmds[] = {/*{{{*/
-  {"--help",   NULL,   (void *) usage,            0, 0, 0, 0, 0, 0, 1},
-  {"-h",       NULL,   (void *) usage,            0, 0, 0, 0, 0, 0, 1},
-  {"-V",       NULL,   (void *) process_version,  0, 0, 0, 0, 0, 0, 1},
-  {"above",    NULL,   (void *) process_move,     1, 2, 0, 0, 1, 1, 1},
-  {"add",      "tdla", (void *) process_add,      1, 1, 0, 0, 1, 1, 1},
-  {"after",    NULL,   (void *) process_move,     1, 2, 1, 0, 1, 1, 1},
-  {"below",    NULL,   (void *) process_move,     1, 2, 1, 0, 1, 1, 1},
-  {"before",   NULL,   (void *) process_move,     1, 2, 0, 0, 1, 1, 1},
-  {"create",   NULL,   (void *) process_create,   1, 0, 0, 0, 0, 0, 1},
-  {"done",     "tdld", (void *) process_done,     1, 0, 0, 0, 1, 1, 1},
-  {"edit",     NULL,   (void *) process_edit,     1, 0, 0, 0, 1, 1, 1},
-  {"exit",     NULL,   (void *) process_exit,     0, 0, 0, 0, 0, 1, 0},
-  {"export",   NULL,   (void *) process_export,   0, 0, 0, 0, 1, 1, 1},
-  {"help",     NULL,   (void *) usage,            0, 0, 0, 0, 0, 1, 1},
-  {"import",   NULL,   (void *) process_import,   1, 0, 0, 0, 1, 1, 1},
-  {"into",     NULL,   (void *) process_move,     1, 2, 0, 1, 1, 1, 1},
-  {"list",     "tdll", (void *) process_list,     0, 0, 0, 0, 1, 1, 1},
-  {"log",      "tdlg", (void *) process_add,      1, 1, 1, 0, 1, 1, 1},
-  {"priority", NULL,   (void *) process_priority, 1, 0, 0, 0, 1, 1, 1},
-  {"purge",    NULL,   (void *) process_purge,    1, 0, 0, 0, 1, 1, 1},
-  {"quit",     NULL,   (void *) process_quit,     0, 0, 0, 0, 0, 1, 0},
-  {"remove",   NULL,   (void *) process_remove,   1, 0, 0, 0, 1, 1, 1},
-  {"report",   NULL,   (void *) process_report,   0, 0, 0, 0, 1, 1, 1},
-  {"undo",     NULL,   (void *) process_undo,     1, 0, 0, 0, 1, 1, 1},
-  {"usage",    NULL,   (void *) usage,            0, 0, 0, 0, 0, 1, 1},
-  {"version",  NULL,   (void *) process_version,  0, 0, 0, 0, 0, 1, 1},
-  {"which",    NULL,   (void *) process_which,    0, 0, 0, 0, 0, 1, 1} /* FIXME */
+  {"--help",   NULL,   (void *) usage,            desc_help,    NULL,          0, 0, 0, 0, 0, 0, 1},
+  {"-h",       NULL,   (void *) usage,            desc_help,    NULL,          0, 0, 0, 0, 0, 0, 1},
+  {"-V",       NULL,   (void *) process_version,  desc_version, NULL,          0, 0, 0, 0, 0, 0, 1},
+  {"above",    NULL,   (void *) process_move,     desc_above,   synop_above,   1, 2, 0, 0, 1, 1, 1},
+  {"add",      "tdla", (void *) process_add,      desc_add,     synop_add,     1, 1, 0, 0, 1, 1, 1},
+  {"after",    NULL,   (void *) process_move,     desc_after,   synop_after,   1, 2, 1, 0, 1, 1, 1},
+  {"below",    NULL,   (void *) process_move,     desc_below,   synop_below,   1, 2, 1, 0, 1, 1, 1},
+  {"before",   NULL,   (void *) process_move,     desc_before,  synop_before,  1, 2, 0, 0, 1, 1, 1},
+  {"create",   NULL,   (void *) process_create,   desc_create,  synop_create,  1, 0, 0, 0, 0, 0, 1},
+  {"done",     "tdld", (void *) process_done,     desc_done,    synop_done,    1, 0, 0, 0, 1, 1, 1},
+  {"edit",     NULL,   (void *) process_edit,     desc_edit,    synop_edit,    1, 0, 0, 0, 1, 1, 1},
+  {"exit",     NULL,   (void *) process_exit,     desc_exit,    synop_exit,    0, 0, 0, 0, 0, 1, 0},
+  {"export",   NULL,   (void *) process_export,   desc_export,  synop_export,  0, 0, 0, 0, 1, 1, 1},
+  {"help",     NULL,   (void *) usage,            desc_help,    synop_help,    0, 0, 0, 0, 0, 1, 1},
+  {"import",   NULL,   (void *) process_import,   desc_import,  synop_import,  1, 0, 0, 0, 1, 1, 1},
+  {"into",     NULL,   (void *) process_move,     desc_into,    synop_into,    1, 2, 0, 1, 1, 1, 1},
+  {"list",     "tdll", (void *) process_list,     desc_list,    synop_list,    0, 0, 0, 0, 1, 1, 1},
+  {"log",      "tdlg", (void *) process_add,      desc_log,     synop_log,     1, 1, 1, 0, 1, 1, 1},
+  {"priority", NULL,   (void *) process_priority, desc_priority,synop_priority,1, 0, 0, 0, 1, 1, 1},
+  {"purge",    NULL,   (void *) process_purge,    desc_purge,   synop_purge,   1, 0, 0, 0, 1, 1, 1},
+  {"quit",     NULL,   (void *) process_quit,     desc_quit,    synop_quit,    0, 0, 0, 0, 0, 1, 0},
+  {"remove",   NULL,   (void *) process_remove,   desc_remove,  synop_remove,  1, 0, 0, 0, 1, 1, 1},
+  {"report",   NULL,   (void *) process_report,   desc_report,  synop_report,  0, 0, 0, 0, 1, 1, 1},
+  {"undo",     NULL,   (void *) process_undo,     desc_undo,    synop_undo,    1, 0, 0, 0, 1, 1, 1},
+  {"usage",    NULL,   (void *) usage,            desc_usage,   synop_usage,   0, 0, 0, 0, 0, 1, 1},
+  {"version",  NULL,   (void *) process_version,  desc_version, synop_version, 0, 0, 0, 0, 0, 1, 1},
+  {"which",    NULL,   (void *) process_which,    desc_which,   synop_which,   0, 0, 0, 0, 0, 1, 1}
 };/*}}}*/
+int n_cmds = 0;
 
 #define N(x) (sizeof(x) / sizeof(x[0]))
 
@@ -449,15 +434,24 @@ static void setup_signals(void)/*{{{*/
   return;
 }
 /*}}}*/
+static void print_copyright(void)/*{{{*/
+{
+  fprintf(stderr,
+          "tdl, Copyright (C) 2001,2002 Richard P. Curnow\n"
+          "tdl comes with ABSOLUTELY NO WARRANTY.\n"
+          "This is free software, and you are welcome to redistribute it\n"
+          "under certain conditions; see the GNU General Public License for details.\n\n");
+}
+/*}}}*/
 void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
 {
-  int i, n, index=-1;
+  int i, index=-1;
   fun0 f0;
   fun1 f1;
   fun2 f2;
   char *executable;
   int is_tdl;
-  char **p;
+  char **p, **pp;
 
   if (was_signalled) {
     save_database(current_database_path);
@@ -475,14 +469,15 @@ void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
     /* If no arguments, go into interactive mode, but only if we didn't come from there (!) */
     if (!is_interactive) {
       setup_signals();
+      print_copyright();
+      is_interactive_global = 1;
       interactive();
     }
     return;
   }
-  
-  n = N(cmds);
+
   if (is_tdl) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<n_cmds; i++) {
       /* This is a crock - eventually, replace by a search that can hit at the shortest unambiguous substring */
       if ((is_interactive ? cmds[i].interactive_ok : cmds[i].non_interactive_ok) &&
           !strncmp(cmds[i].name, *p, 3)) {
@@ -491,7 +486,7 @@ void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
       }
     }
   } else {
-    for (i=0; i<n; i++) {
+    for (i=0; i<n_cmds; i++) {
       /* This is a crock - eventually, replace by a search that can hit at the shortest unambiguous substring */
       if (cmds[i].shortcut && !strcmp(cmds[i].shortcut, executable)) {
         index = i;
@@ -507,18 +502,20 @@ void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
       load_database(current_database_path);
     }
 
+    pp = is_tdl ? (p + 1) : p;
+    
     switch (cmds[index].nextra) {
       case 0:
         f0 = (fun0) cmds[index].func;
-        (*f0) (p + 1);
+        (*f0) (pp);
         break;
       case 1:
         f1 = (fun1) cmds[index].func;
-        (*f1) (p + 1, cmds[index].i1);
+        (*f1) (pp, cmds[index].i1);
         break;
       case 2:
         f2 = (fun2) cmds[index].func;
-        (*f2) (p + 1, cmds[index].i1, cmds[index].i2);
+        (*f2) (pp, cmds[index].i1, cmds[index].i2);
         break;
     }
     if (cmds[index].dirty) {
@@ -538,10 +535,75 @@ void dispatch(char **argv, int is_interactive) /* and other args *//*{{{*/
   
 }
 /*}}}*/
+static void usage(char **x)/*{{{*/
+{
+  int i, index;
+  char *cmd = *x;
+
+  if (cmd) {
+    /* Detailed help for the one command */
+    index = -1;
+    for (i=0; i<n_cmds; i++) {
+      if (!strncmp(cmds[i].name, cmd, 3) &&
+          (is_interactive_global ? cmds[i].interactive_ok : cmds[i].non_interactive_ok)) {
+        index = i;
+        break;
+      }
+    }
+    if (index >= 0) {
+      fprintf(stderr, "Description\n  %s\n\n", cmds[i].descrip);
+      fprintf(stderr, "Synopsis\n");
+      
+      if (is_interactive_global) {
+        fprintf(stderr, "  %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
+      } else {
+        fprintf(stderr, "  tdl  [-q] %s %s\n", cmds[i].name, cmds[i].synopsis ? cmds[i].synopsis : "");
+        if (cmds[i].shortcut) {
+          fprintf(stderr, "  %s [-q] %s\n", cmds[i].shortcut, cmds[i].synopsis ? cmds[i].synopsis : "");
+        }
+      }
+
+      fprintf(stderr,
+              "\n"
+              "<index>    : 1, 1.1 etc (see output of 'tdl list')\n"
+              "<priority> : urgent|high|normal|low|verylow\n"
+              "<datespec> : [-|+][0-9]+[shdwmy][-hh[mm[ss]]]  OR\n"
+              "             [-|+](sun|mon|tue|wed|thu|fri|sat)[-hh[mm[ss]]] OR\n"
+              "             [[[cc]yy]mm]dd[-hh[mm[ss]]]\n"
+              "<text>     : Any text (you'll need to quote it if >1 word)\n"
+              );
+
+    } else {
+      fprintf(stderr, "Unrecognized command <%s>, no help available\n", cmd);
+    }
+        
+  } else {
+    for (i=0; i<n_cmds; i++) {
+      if (is_interactive_global) {
+        if (cmds[i].interactive_ok) {
+          fprintf(stderr, "%-8s : %s\n", cmds[i].name, cmds[i].descrip);
+        }
+      } else {
+        if (cmds[i].non_interactive_ok) {
+          fprintf(stderr, "tdl  [-q] %-8s : %s\n", cmds[i].name, cmds[i].descrip);
+          if (cmds[i].shortcut) {
+            fprintf(stderr, "%s [-q]          : %s\n", cmds[i].shortcut, cmds[i].descrip);
+          }
+        }
+      }
+    }
+  }
+
+  fprintf(stderr, "\n");
+}
+/*}}}*/
 
 /*{{{  int main (int argc, char **argv)*/
 int main (int argc, char **argv)
 {
+  n_cmds = N(cmds);
+  is_interactive_global = 0;
+  
   /* Initialise database */
   top.prev = (struct node *) &top;
   top.next = (struct node *) &top;

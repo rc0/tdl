@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.1 2002/05/06 23:14:44 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.2 2002/05/08 23:07:48 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -31,6 +31,61 @@
 #include <readline/history.h>
 #endif
 
+static int completion_entry_function(void)/*{{{*/
+{
+  return 0;
+}
+/*}}}*/
+static char *generate_a_completion(char *text, int state)/*{{{*/
+{
+  static int list_index, len;
+  char *name;
+
+  if (!state) {
+    list_index = 0;
+    len = strlen(text);
+  }
+
+  while (list_index < n_cmds) {
+    int inter_ok = cmds[list_index].interactive_ok;
+    name = cmds[list_index].name;
+    list_index++;
+    if (inter_ok && !strncmp(name, text, len)) {
+      return new_string(name);
+    }
+  }
+
+  return NULL; /* For no matches */
+}
+/*}}}*/
+static char **tdl_completion(char *text, int start, int end)/*{{{*/
+{
+  char **matches = NULL;
+  if (start == 0) {
+    matches = completion_matches(text, generate_a_completion);
+  } else {
+    int i;
+  
+    if (!strncmp(rl_line_buffer, "usage", 5) ||
+        !strncmp(rl_line_buffer, "help", 4)) {
+
+      matches = completion_matches(text, generate_a_completion);
+      
+    } else {
+      for (i=0; i<n_cmds; i++) {
+        if (!strncmp(rl_line_buffer, cmds[i].name, 3)) {
+          if (cmds[i].synopsis) {
+            fprintf(stderr, "\n%s %s\n", cmds[i].name, cmds[i].synopsis);
+            rl_on_new_line();
+          }
+        }
+      }
+    }
+  }
+
+  return matches;
+}
+/*}}}*/
 static void add_null_arg(char ***av, int *max, int *n)/*{{{*/
 {
   if (*max == *n) {
@@ -149,7 +204,7 @@ static void interactive_readline(void)/*{{{*/
   int had_char;
   
   do {
-    cmd = readline("tdl>");
+    cmd = readline("tdl> ");
 
     /* At end of file (e.g. input is a script, or user hits ^D, or stdin (file 
        #0) is closed by the signal handler) */
@@ -214,6 +269,8 @@ void interactive(void)/*{{{*/
   /* Main interactive function */
 #ifdef USE_READLINE
   if (isatty(0)) {
+    rl_completion_entry_function = completion_entry_function;
+    rl_attempted_completion_function = (CPPFunction *) tdl_completion;
     interactive_readline();
   } else {
     /* In case someone wants to drive tdl from a script, by redirecting stdin to it. */

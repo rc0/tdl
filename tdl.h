@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.9 2002/05/06 23:14:44 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.10 2002/05/08 23:07:48 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -65,6 +65,26 @@ extern struct links top;
 #define new(T) (T *) malloc(sizeof(T))
 #define new_array(T, n) (T *) malloc(sizeof(T) * (n))
 #define grow_array(T, n, oldX) (T *) ((oldX) ? realloc(oldX, (sizeof(T) * (n))) : malloc(sizeof(T) * (n)))
+
+/* Command table (shared between dispatcher and readline completer) */
+struct command {/*{{{*/
+  char *name; /* add, remove etc */
+  char *shortcut; /* tdla etc */
+  void *func; /* function pointer */
+  char *descrip; /* One line description */
+  char *synopsis; /* Description of parameters */
+  unsigned char  dirty; /* 1 if operation can dirty the database, 0 if read-only */
+  unsigned char  nextra; /* how many integer args */
+  unsigned char  i1;
+  unsigned char  i2;    /* the integer args */
+  unsigned char  load_db; /* 1 if cmd requires current database to be loaded first */
+  unsigned char  interactive_ok; /* 1 if OK to use interactively. */
+  unsigned char  non_interactive_ok; /* 1 if OK to use from command line */
+};
+/*}}}*/
+
+extern struct command cmds[];
+extern int n_cmds;
 
 /* Function prototypes. */
 
