@@ -2,6 +2,7 @@ NEW IN VERSION 1.3
 
 - Added "save" command
 - Added "delete", "ls" and "revert" commands.
+- Added "narrow" and "widen" commands
 
 NEW IN VERSION 1.2
 
@@ -80,4 +81,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.9 2003/03/06 22:53:24 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.10 2003/03/11 20:03:37 richard Exp $
