@@ -1,6 +1,7 @@
 NEW IN VERSION 1.95.2
 
 - Nodes can be given symbolic names (new commands 'name' and 'anon').
+- Use dotlocking to protect database from concurrent updates.
 
 NEW IN VERSION 1.95.1
 
@@ -117,4 +118,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.24 2003/08/06 23:25:17 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.25 2003/08/18 23:02:55 richard Exp $
