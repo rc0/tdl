@@ -284,6 +284,7 @@ the database, assigning them priorities, and so on.
 @menu
 * Start and Exit::      Starting and exiting tdl
 * Command line flags::  Flags that can be used from the shell command line
+* Node specification::  How to reference existing nodes
 * Command list::        Alphabetical list of all commands
 * Shortcuts::           Quick access to tdl commands from the shell
 * Interrupting::        How to make tdl stop whilst it is running
@@ -388,6 +389,73 @@ live process, otherwise updates could be lost by one or other of the processes.
 % tdl -u list
 @end example
 @c }}}
+@c }}}
+@c {{{ Node specification
+@node Node specification
+@section Node specification
+Many commands in tdl require you to refer to an existing entry, for example
+@itemize @bullet
+@item to add a child entry to an existing entry
+@item to mark an entry as being done
+@item and so on
+@end itemize
+
+There are two ways you can refer to existing nodes
+@itemize @bullet
+@item by the numeric path (as shown by @command{tdl list}).
+@item by negative numeric path (which is used to refer to a node counted from
+the end of its parent)
+@item by the start of the node's text, as long as enough is specified to
+identify the node unambiguously amongst its peers.  In this case, the node must
+be preceded by a single '.' for many commands.
+@end itemize
+
+For example, if the database contains
+@example
+tdl> list
+1 foo
+   1.1 aaa
+   1.2 bbb
+2 fee
+   2.1 ccc
+   2.2 ddd
+3 bar
+   3.1 eee
+   3.2 fff
+@end example
+
+then @samp{tdl list 1} will show
+
+@example
+tdl> list
+1 foo
+   1.1 aaa
+   1.2 bbb
+@end example
+
+and @samp{tdl list .fe} will show
+@example
+.fe fee
+   .fe.1 ccc
+   .fe.2 ddd
+@end example
+
+@samp{tdl list .f} will fail since it is ambiguous which node (1 or 2) is being referenced.
+
+@samp{tdl list -- -1} will show
+@example
+-1 bar
+   -1.1 eee
+   -1.2 fff
+@end example
+
+(note that @samp{tdl list -1} has a different meaning (show 1 level and summarise subordinate levels), and shows
+@example
+1 [2/2] foo
+2 [2/2] fee
+3 [2/2] bar
+@end example
+
 @c }}}
 @c {{{ Command list
 @node Command list

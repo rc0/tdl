@@ -126,6 +126,7 @@ static int could_be_index(char *x)/*{{{*/
 {
   enum {AFTER_DIGIT, AFTER_PERIOD, AFTER_MINUS} state;
   char *p;
+  if (x[0] == '.') return 1; /* To handle alphabetical matching */
   state = AFTER_PERIOD;
   for (p=x; *p; p++) {
     switch (state) {
@@ -188,7 +189,7 @@ static int process_add_internal(char **x, int set_done)/*{{{*/
     case 2:
       text = x[1];
       x0 = x[0];
-      if (isdigit(x0[0]) || (x0[0] == '-') || (x0[0] == '+')) {
+      if (isdigit(x0[0]) || (x0[0] == '.') || (x0[0] == '-') || (x0[0] == '+')) {
         parent_path = x[0];
       } else {
         priority = parse_priority(x0, &error);

@@ -47,10 +47,22 @@ int include_descendents(char *x)/*{{{*/
   return result;
 }
 /*}}}*/
+static char *ordinal(int n)/*{{{*/
+{
+  int nn;
+  nn = n % 10;
+  switch (nn) {
+    case 1:  return "st";
+    case 2:  return "nd";
+    case 3:  return "rd";
+    default: return "th";
+  }
+}
+/*}}}*/
 struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)/*{{{*/
 {
   char *p = path;
-  int n, nc, idx, tidx, aidx, ncomp, comp10;
+  int n, nc, idx, tidx, aidx, ncomp;
   int direction;
   struct links *x;
   struct node *y = NULL;
@@ -72,57 +84,89 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
   ncomp = 1;
   if (parent) *parent = NULL;
 
+  /* Skip leading '.', if any. */
+  if (*p == '.') p++;
+
   while (*p) {
-    n = sscanf(p, "%d%n", &idx, &nc);
-    if (n != 1) {
-      fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
-      return NULL;
-    }
-    p += nc;
-    
-    if (idx > 0) {
-      direction = 1;
-      aidx = idx;
-    } else if (idx < 0) {
-      direction = 0;
-      aidx = -idx;
-    } else {
-      if (allow_zero_index) {
-        if (*p) {
-          fprintf(stderr, "Zero index only allowed as last component\n");
-          return NULL;
-        } else {
-          /* This is a special cheat to allow inserting entries at
-             the start or end of a chain for the 'above' and
-             'below' commands */
-          return (struct node *) x;
-        }
+    if ((p[0] == '-') || isdigit(p[0])) {
+      n = sscanf(p, "%d%n", &idx, &nc);
+      if (n != 1) {
+        fprintf(stderr, "Bad path expression found, starting [%s]\n", p);
+        return NULL;
+      }
+      p += nc;
+
+      if (idx > 0) {
+        direction = 1;
+        aidx = idx;
+      } else if (idx < 0) {
+        direction = 0;
+        aidx = -idx;
       } else {
-        fprintf(stderr, "Zero in index not allowed\n");
+        if (allow_zero_index) {
+          if (*p) {
+            fprintf(stderr, "Zero index only allowed as last component\n");
+            return NULL;
+          } else {
+            /* This is a special cheat to allow inserting entries at
+               the start or end of a chain for the 'above' and
+               'below' commands */
+            return (struct node *) x;
+          }
+        } else {
+          fprintf(stderr, "Zero in index not allowed\n");
+          return NULL;
+        }
+      }
+
+      if (x->next == (struct node *) x) {
+        fprintf(stderr, "Path [%s] doesn't exist - tree not that deep\n", path);
         return NULL;
       }
-    }
-      
-    if (x->next == (struct node *) x) {
-      fprintf(stderr, "Path [%s] doesn't exist - tree not that deep\n", path);
-      return NULL;
-    }
 
-    comp10 = ncomp % 10;
+      for (y = direction ? x->next : x->prev, tidx = aidx; --tidx;) {
 
-    for (y = direction ? x->next : x->prev, tidx = aidx; --tidx;) {
-      
-      y = direction ? y->chain.next : y->chain.prev;
+        y = direction ? y->chain.next : y->chain.prev;
 
-      if (y == (struct node *) x) {
-        fprintf(stderr, "Can't find entry %d for %d%s component of path %s\n",
-                idx, ncomp,
-                (comp10 == 1) ? "st" :
-                (comp10 == 2) ? "nd" : 
-                (comp10 == 3) ? "rd" : "th",
-                path);
-        return NULL;
+        if (y == (struct node *) x) {
+          fprintf(stderr, "Can't find entry %d for %d%s component of path %s\n",
+              idx, ncomp, ordinal(ncomp), path);
+          return NULL;
+        }
       }
+    } else {
+      /* Lookup by start of node text. */
+      char *dot;
+      int len;
+      struct node *match;
+      dot = strchr(p, '.');
+      if (!dot) { /* final component. */
+        len = strlen(p);
+      } else {
+        len = dot - p;
+      }
+      match = NULL;
+      for (y = x->next; y != (struct node *) x; y = y->chain.next) {
+        if (!strncasecmp(y->text, p, len)) {
+          if (match) {
+            fprintf(stderr, "Ambiguous match for %d%s component (",
+                ncomp, ordinal(ncomp));
+            fwrite(p, 1, len, stderr);
+            fprintf(stderr, ") of path %s\n", path);
+            return NULL;
+          }
+          match = y;
+        }
+      }
+      if (!match) {
+        fprintf(stderr, "Can't find entry for %d%s component (",
+            ncomp, ordinal(ncomp));
+        fwrite(p, 1, len, stderr);
+        fprintf(stderr, ") of path %s\n", path);
+      }
+
+      y = match;
+      p += len;
     }
 
     if (*p == '.') {

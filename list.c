@@ -501,6 +501,7 @@ int process_list(char **x)/*{{{*/
     /* An argument starting '1' or '+1' or '+-1' (or '-1' after '--') is
      * treated as the path of the top node to show */
     if (isdigit(y[0]) ||
+        (y[0] == '.') ||
         (options_done && (y[0] == '-') && isdigit(y[1])) ||
         ((y[0] == '+') &&
          (isdigit(y[1]) ||

@@ -692,10 +692,12 @@ static void setup_signals(void)/*{{{*/
   }
   sa.sa_handler = handle_signal;
   sa.sa_flags = 0;
+#if 0
   guarded_sigaction(SIGHUP, &sa);
   guarded_sigaction(SIGINT, &sa);
   guarded_sigaction(SIGQUIT, &sa);
   guarded_sigaction(SIGTERM, &sa);
+#endif
 
   return;
 }
