@@ -1,11 +1,30 @@
 NEW IN VERSION 1.1
 
+- Add 'interactive' mode to complement command line mode of v1.0.  If built
+  with GNU realine, the new mode has better help, completion facilities etc.
+
+- Add postpone and (re-)open commands (long-term deferral of tasks)
+
+- Add clone and copyto commands (deep copy parts of the tree)
+
 - For 'report', enclose text for parent entries in [[,]] brackets if the parent
   it not itself 'done'.
 
-- For 'list', allow single digit options to restrict the depth of entries that
-  are shown.  (Entries thus hidden are shown by summary totals in their
-  parent.)
+- Extensions to 'list' command:
+  * single digit options to set max depth of entries that are shown
+  * substring search for text in entries
+  * -p option to show postponed & deferred entries
+
+- Fix various memory leaks
+
+- Main documentation now supplied in texinfo format.  Manpage is not maintained
+  any longer.
+
+- Revamp of internal help system
+
+- Various bug fixes
+
+- Update contact details
 
 NEW IN VERSION 1.0
 
@@ -48,4 +67,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.5 2002/04/29 21:55:57 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.6 2002/07/21 22:45:56 richard Exp $
