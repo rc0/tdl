@@ -71,6 +71,9 @@ priority level.
 @item the start time for tasks can be set, to allow for 'deferred' tasks with
 start times in the future.  Such tasks are excluded from the default listing.
 
+@item tasks can be marked 'postponed' to avoid them cluttering up the normal
+listing.
+
 @item track date added and date completed for each task
 
 @item generate report of tasks completed in a given earlier time period (useful
@@ -81,7 +84,8 @@ if you have to produce a weekly summary of your work done, for example)
 @item written in C
 
 @item runs on a Linux console or in a terminal window.  It currently generates
-a coloured listing, so a colour xterm or rxvt is preferred.
+a coloured listing (monochrome is an option), so a colour xterm or rxvt is
+preferred.
 
 @item tdl can run a single sub-command direct from the command line, or it can
 run in an interactive mode where several sub-commands can be used within a
@@ -686,7 +690,8 @@ tdl> edit @@+sun 1 "New description"
 
 A very useful form of the @command{edit} command is when no replacement text is
 specified.  In this case, the replacement text is typed in interactively by
-editing the existing entry.  Example:
+editing the existing entry.  (Note, this is not very useful unless GNU readline
+support is compiled in.)  Example:
 
 @example
 tdl> list
@@ -697,7 +702,6 @@ tdl> list
 1 Wash the cat
 tdl>
 @end example
-
 
 @c }}}
 @c {{{ exit command
@@ -905,12 +909,14 @@ tdl> before N.0 <indices> ...
 The @command{list} command is used to display the tasks in the database.  Its argument structure is:
 
 @example
-list [-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>|<search_condition>...]
+list [-v] [-a] [-m] [-p] [-1..9]
+     [<min-priority>]
+     [<parent_index>|<search_condition>...]
 @end example
 
 When run with no arguments, the list contains all tasks that are
 @itemize @bullet
-@item not marked 'done',
+@item not marked 'done', 'ignored', 'deferred' or 'postponed',
 @item at any levels of the database (i.e. any number of components in the task's index), and
 @item of priority normal or higher.
 @end itemize
@@ -923,8 +929,11 @@ This stands for @emph{verbose}.  It means that more information will be shown
 for each task.
 @item -a
 This stands for @emph{all}.  It means that tasks which are 'done', or which are
-'deferred' (by having arrival times in the future), will be shown as well as
-open tasks.
+'deferred' or 'postponed' (by having arrival times in the future), will be
+shown as well as open tasks.
+@item -p
+This stands for @emph{postponed}.  It means that tasks which are 'deferred' or
+'postponed' are shown as well as open tasks.
 @item -m
 This stands for @emph{monochrome}.  Normally, ANSI escape sequences are
 inserted to show the list with colour coding.  This flag stops these sequences
@@ -1230,6 +1239,10 @@ tdl> remove 1.5.4 19... 20
 will remove entries 1.5.4 and 20, as well as everything whose index starts with
 19.
 
+The @command{remove} command acts immediately to remove the specified entries
+from the database.  A less aggressive command with similar effects is
+@command{ignore} (@pxref{ignore command}).
+
 @c }}}
 @c {{{ report command
 @node report command
@@ -1449,7 +1462,7 @@ In the 'relative' format, when a time is included as well, the procedure is as
 follows.  First the time is determined which is the given number of hours, days
 etc away from the current time.  Then the specified time on that day is used.
 The main use for this is to specify times like '8am yesterday'.  Obviously some
-of the more uses of this mode are rather far-fetched.
+of the possible uses of this mode are rather far-fetched.
 
 For the weekday and relative formats, the sign is actually optional.  The
 default sign (implying past (-) or future (+)) will then be assumed depending on
@@ -1479,7 +1492,20 @@ manually rename @file{.tdldb.bak} to @file{.tdldb}.
 @c {{{ Index specification
 @node Index specification
 @section Index specification
-Mention negative indices and effect on list command.
+Indices may usually be specified as negative values.  This counts from the end of the list.  The commonest use for this is to add children to an entry you've just typed, e.g.
+
+@example
+tdl> add "Parent entry"
+tdl> add -1 "Child entry"
+tdl> add -1 "Child entry"
+tdl> add -1.-1 "Grandchild entry"
+@end example
+
+There is one example where negative indices are not handled in the usual way.
+This is with the @command{list} command (@pxref{list command}).  Here, a
+negative index could be misinterpreted as a depth option.  If you really want
+negative indices for the @command{list} command, terminate the options with
+@samp{--} before providing indices and search patterns.
 @c }}}
 
 @bye
