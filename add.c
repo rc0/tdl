@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.7 2002/05/10 22:22:23 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.8 2002/05/19 22:45:28 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include "tdl.h"
 
-int process_add(char **x, int set_done)/*{{{*/
+static int process_add_internal(char **x, int set_done)/*{{{*/
 {
   /* Expect 1 argument, the string to add.  Need other options at some point. */
   time_t insert_time;
@@ -40,7 +40,10 @@ int process_add(char **x, int set_done)/*{{{*/
 
   if ((argc > 1) && (x[0][0] == '@')) {
     int error;
-    insert_time = parse_date(x[0]+1, insert_time, 1, &error);
+    /* For 'add', want date to be in the future.
+     * For 'log', want date to be in the past, as for 'done' */
+    int default_positive = set_done ? 0 : 1;
+    insert_time = parse_date(x[0]+1, insert_time, default_positive, &error);
     if (error < 0) return error;
     argc--;
     x++;
@@ -103,6 +106,16 @@ int process_add(char **x, int set_done)/*{{{*/
   }
   
   return 0;
+}
+/*}}}*/
+int process_add(char **x)/*{{{*/
+{
+  return process_add_internal(x, 0);
+}
+/*}}}*/
+int process_log(char **x)/*{{{*/
+{
+  return process_add_internal(x, 1);
 }
 /*}}}*/
 static void modify_tree_arrival_time(struct node *y, time_t new_time)/*{{{*/
