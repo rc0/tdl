@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.7 2001/10/20 22:06:01 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.8 2001/11/11 22:34:03 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -174,7 +174,7 @@ void process_list(char **x)/*{{{*/
   int monochrome = 0;
   char index_buffer[64];
   char *y;
-  enum Priority prio = PRI_NORMAL, prio_to_use;
+  enum Priority prio = PRI_NORMAL, prio_to_use, node_prio;
   int prio_set = 0;
   time_t now = time(NULL);
 
@@ -195,7 +195,12 @@ void process_list(char **x)/*{{{*/
       index_buffer[0] = '\0';
       strcpy(index_buffer, y);
       print_details(n, 0, verbose, all, monochrome, index_buffer, now);
-      prio_to_use = (prio_set) ? prio : n->priority;
+      node_prio = n->priority;
+
+      /* If the priority has been set on the cmd line, always use that.
+       * Otherwise, use the priority from the specified node, _except_ when
+       * that is higher than normal, in which case use normal. */
+      prio_to_use = (prio_set) ? prio : ((node_prio > prio) ? prio : node_prio);
       list_chain(&n->kids, INDENT_TAB, verbose, all, monochrome, index_buffer, prio_to_use, now);
     } else {
       prio = parse_priority(y);
