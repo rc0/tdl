@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Makefile.in,v 1.7 2003/06/01 22:21:25 richard Exp $
+#  $Header: /cvs/src/tdl/Makefile.in,v 1.7.2.1 2004/01/07 00:02:26 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -23,7 +23,7 @@
 #######################################################################
 # Select C compiler and compile options
 CC=@cc@
-CFLAGS=@cflags@
+CFLAGS=@cflags@ @defines@
 READLINE_DEFINE=@readline_define@
 INC_READLINE=@inc_readline@
 LIB_READLINE=@lib_readline@

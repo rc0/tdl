@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.39.2.2 2003/10/14 22:03:01 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.39.2.3 2004/01/07 00:02:26 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -30,6 +30,11 @@
 #include <unistd.h>
 #include <signal.h>
 
+#ifdef USE_DOTLOCK
+#include <sys/utsname.h>
+#include <pwd.h>
+#endif
+
 /* The name of the database file (in whichever directory it may be) */
 #define DBNAME ".tdldb"
 
@@ -41,6 +46,10 @@ struct links top;
 
 /* Flag for whether data is actually loaded yet */
 static int is_loaded = 0;
+
+#ifdef USE_DOTLOCK
+static char *lock_file_name = NULL;
+#endif
 
 /* Flag if currently loaded database has been changed and needs writing back to
  * the filesystem */
@@ -63,6 +72,91 @@ static void set_descendent_priority(struct node *x, enum Priority priority)/*{{{
 
 /* This will be variable eventually */
 static char default_database_path[] = "./" DBNAME;
+
+#ifdef USE_DOTLOCK
+static void unlock_database(void)/*{{{*/
+{
+  if (lock_file_name) unlink(lock_file_name);
+  return;
+}
+/*}}}*/
+static volatile void unlock_and_exit(int code)/*{{{*/
+{
+  unlock_database();
+  exit(code);
+}
+/*}}}*/
+static void lock_database(char *path)/*{{{*/
+{
+  struct utsname uu;
+  struct passwd *pw;
+  int pid;
+  int len;
+  char *tname;
+  struct stat sb;
+  FILE *out;
+  
+  if (uname(&uu) < 0) {
+    perror("uname");
+    exit(1);
+  }
+  pw = getpwuid(getuid());
+  if (!pw) {
+    perror("getpwuid");
+    exit(1);
+  }
+  pid = getpid();
+  len = 1 + strlen(path) + 5;
+  lock_file_name = new_array(char, len);
+  sprintf(lock_file_name, "%s.lock", path);
+  len += strlen(uu.nodename) + 6;
+  tname = new_array(char, len);
+  sprintf(tname, "%s.%d.%s", lock_file_name, pid, uu.nodename);
+  out = fopen(tname, "w");
+  if (!out) {
+    fprintf(stderr, "Cannot open lock file %s for writing\n", tname);
+    exit(1);
+  }
+  fprintf(out, "%d,%s,%s\n", pid, uu.nodename, pw->pw_name);
+  fclose(out);
+
+  if (link(tname, lock_file_name) < 0) {
+    /* check if link count==2 */
+    if (stat(tname, &sb) < 0) {
+      fprintf(stderr, "Could not stat the lock file\n");
+      unlink(tname);
+      exit(1);
+    } else {
+      if (sb.st_nlink != 2) {
+        FILE *in;
+        in = fopen(lock_file_name, "r");
+        if (in) {
+          char line[2048];
+          fgets(line, sizeof(line), in);
+          line[strlen(line)-1] = 0; /* strip trailing newline */
+          fprintf(stderr, "Database %s appears to be locked by (pid,node,user)=(%s)\n", path, line);
+          unlink(tname);
+          exit(1);
+        }
+      } else {
+        /* lock succeeded apparently */
+      }
+    }
+  } else {
+    /* lock succeeded apparently */
+  }
+  unlink(tname);
+  free(tname);
+  return;
+}
+/*}}}*/
+#else
+static volatile void unlock_and_exit(int code)/*{{{*/
+{
+  exit(code);
+}
+/*}}}*/
+#endif /* USE_DOTLOCK */
 
 static char *get_database_path(int traverse_up)/*{{{*/
 {
@@ -90,7 +184,7 @@ static char *get_database_path(int traverse_up)/*{{{*/
           orig_cwd = grow_array(char, orig_size, orig_cwd);
         } else {
           fprintf(stderr, "Unexpected error reading current directory\n");
-          exit(1);
+          unlock_and_exit(1);
         }
       }
     } while (!result);
@@ -174,6 +268,9 @@ static void load_database(char *path) /*{{{*/
 {
   FILE *in;
   currently_dirty = 0;
+#ifdef USE_DOTLOCK
+  lock_database(path);
+#endif
   in = fopen(path, "rb");
   if (in) {
     /* Database may not exist, e.g. if the program has never been run before.
@@ -234,14 +331,14 @@ static void save_database(char *path)/*{{{*/
     if (out_fd < 0) {
       fprintf(stderr, "Could not open new database %s for writing : %s\n",
               path, strerror(errno));
-      exit(1);
+      unlock_and_exit(1);
     } else {
       /* Normal case */
       out = fdopen(out_fd, "wb");
     }
     if (!out) {
       fprintf(stderr, "Cannot open database %s for writing\n", path);
-      exit(1);
+      unlock_and_exit(1);
     }
     write_database(out, &top);
     fclose(out);
@@ -438,7 +535,8 @@ static int process_exit(char **x)/*{{{*/
 {
   save_database(current_database_path);
   free_database(&top);
-  exit(0);
+  unlock_and_exit(0);
+  return 0; /* moot */
 }
 /*}}}*/
 static int process_quit(char **x)/*{{{*/
@@ -456,7 +554,8 @@ static int process_quit(char **x)/*{{{*/
     }
   }
   free_database(&top);
-  exit(0);
+  unlock_and_exit(0);
+  return 0; /* moot */
 }
 /*}}}*/
 static int process_save(char **x)/*{{{*/
@@ -542,7 +641,7 @@ static void guarded_sigaction(int signum, struct sigaction *sa)/*{{{*/
 {
   if (sigaction(signum, sa, NULL) < 0) {
     perror("sigaction");
-    exit(1);
+    unlock_and_exit(1);
   }
 }
 /*}}}*/
@@ -551,7 +650,7 @@ static void setup_signals(void)/*{{{*/
   struct sigaction sa;
   if (sigemptyset(&sa.sa_mask) < 0) {
     perror("sigemptyset");
-    exit(1);
+    unlock_and_exit(1);
   }
   sa.sa_handler = handle_signal;
   sa.sa_flags = 0;
@@ -582,7 +681,7 @@ void dispatch(char **argv) /* and other args *//*{{{*/
 
   if (was_signalled) {
     save_database(current_database_path);
-    exit(0);
+    unlock_and_exit(0);
   }
 
   executable = executable_name(argv[0]);
@@ -635,7 +734,7 @@ void dispatch(char **argv) /* and other args *//*{{{*/
     /* Check for failure */
     if (result < 0) {
       if (!is_interactive) {
-        exit(-result);
+        unlock_and_exit(-result);
       }
 
       /* If interactive, the handling function has emitted its error message.
@@ -651,12 +750,14 @@ void dispatch(char **argv) /* and other args *//*{{{*/
     is_processing = 0;
     if (was_signalled) {
       save_database(current_database_path);
-      exit(0);
+      unlock_and_exit(0);
     }
     
   } else {
     fprintf(stderr, "Unknown command <%s>\n", argv[1]);
-    if (!is_interactive) exit(1);
+    if (!is_interactive) {
+      unlock_and_exit(1);
+    }
   }
   
 }
@@ -759,7 +860,8 @@ int main (int argc, char **argv)
 
   save_database(current_database_path);
   free_database(&top);
-  return 0;
+  unlock_and_exit(0);
+  return 0; /* moot */
 }
 /*}}}*/
 

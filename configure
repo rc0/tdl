@@ -1,7 +1,7 @@
 #!/bin/sh
 #########################################################################
 #
-# $Id: configure,v 1.5 2003/05/16 21:44:53 richard Exp $
+# $Id: configure,v 1.5.2.1 2004/01/07 00:02:26 richard Exp $
 #
 # =======================================================================
 #
@@ -308,6 +308,7 @@ PREFIX=/usr/local
 
 use_readline=yes
 bad_options=no
+use_dotlock=yes
 
 # Parse options to configure
 for option
@@ -337,6 +338,9 @@ do
     ;;
   --readline-lib-dir=* )
     readline_lib_dir=`echo $option | sed -e 's/[^=]*=//;'`
+    ;;
+  --disable-dotlock )
+    use_dotlock=no
     ;;
   -h | --help )
     usage
@@ -400,6 +404,16 @@ case "${use_readline}-${has_rl_completion_matches}-${has_completion_matches}" in
     printf "Not using readline\n";
 esac
 
+case "${use_dotlock}" in
+  yes )
+    DOTLOCK_DEFINE="-DUSE_DOTLOCK=1"
+    ;;
+  no )
+    DOTLOCK_DEFINE=""
+    ;;
+esac
+
+DEFINES=${DOTLOCK_DEFINE}
 
 if [ "x" = "x${BINDIR}" ]; then BINDIR=${PREFIX}/bin ; fi
 if [ "x" = "x${MANDIR}" ]; then MANDIR=${PREFIX}/man ; fi
@@ -417,6 +431,7 @@ sed -e "s%@cc@%${MYCC}%; \
         s%@mandir@%${MANDIR}%; \
         s%@infodir@%${INFODIR}%; \
         s%@readline_define@%${READLINE_DEFINE}%; \
+        s%@defines@%${DEFINES}%; \
         s%@inc_readline@%${readline_inc_arg}%; \
         s%@lib_readline@%${lib_readline}%; \
        " < Makefile.in > Makefile
