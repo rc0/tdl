@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/narrow.c,v 1.1 2003/03/10 22:00:50 richard Exp $
+   $Header: /cvs/src/tdl/narrow.c,v 1.2 2003/04/04 06:55:48 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -126,6 +126,8 @@ int process_widen(char **x)/*{{{*/
   }
 
   new_narrow_top = narrow_top;
+  if (!new_narrow_top) goto widen_to_top;
+
   for (i=0; i<n_levels; i++) {
     new_narrow_top = new_narrow_top->parent;
     if (!new_narrow_top) goto widen_to_top;
