@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.24 2002/07/17 23:35:39 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.25 2002/07/18 21:06:13 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -371,11 +371,12 @@ static char synop_export[] = "<filename> <entry_index> ...";
 static char synop_help[] = "[<command-name>]";
 static char synop_import[] = "<filename>";
 static char synop_into[] = "<new_parent_index> <index_to_move> ...";
-static char synop_list[] = "[-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>...]\n"
-                           "-v : verbose (show dates, priorities etc)\n"
-                           "-a : show all entries, including 'done' ones\n"
-                           "-m : don't use colours (monochrome)\n"
-                           "-1,-2,..,-9 : summarise (and don't show) entries below this depth";
+static char synop_list[] = "[-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>|/<search_condition>...]\n"
+                           "-v                 : verbose (show dates, priorities etc)\n"
+                           "-a                 : show all entries, including 'done' ones\n"
+                           "-m                 : don't use colours (monochrome)\n"
+                           "-1,-2,..,-9        : summarise (and don't show) entries below this depth\n"
+                           "<search_condition> : word to match on";
 static char synop_log[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_text>";
 static char synop_priority[] = "<new_priority> <entry_index>[...] ...";
 static char synop_purge[] = "<since_datespec> [<ancestor_index> ...]";
