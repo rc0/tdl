@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.12 2003/03/10 00:35:14 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.13 2003/03/11 22:00:43 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -19,6 +19,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
    */
 
+#include <assert.h>
 #include <ctype.h>
 #include "tdl.h"
 
@@ -69,9 +70,11 @@ static char *make_composite(char *prefix, char *suffix)/*{{{*/
   int plen, slen;
   int tlen;
   char *result;
+  int suffix_is_dot;
   
   plen = prefix ? strlen(prefix) : 0;
   slen = suffix ? strlen(suffix) : 0;
+  suffix_is_dot = slen ? (!strcmp(suffix,".")) : 0;
   tlen = plen + slen;
   if (plen && slen) ++tlen; /* for internal '.' */
   if (!plen && !slen) return NULL;
@@ -79,9 +82,9 @@ static char *make_composite(char *prefix, char *suffix)/*{{{*/
   result[0] = '\0';
   if (plen) {
     strcat(result, prefix);
-    if (slen) strcat(result, ".");
+    if (slen && !suffix_is_dot) strcat(result, ".");
   }
-  if (slen) strcat(result, suffix);
+  if (slen && !suffix_is_dot) strcat(result, suffix);
   return result;
 }
 /*}}}*/
@@ -302,8 +305,13 @@ int process_edit(char **x) /*{{{*/
       int is_blank;
       char *new_text;
       char prompt[128];
-      sprintf(prompt, "edit (%s)> ", x[0]);
+      char *composite_index;
+
+      composite_index = make_composite(get_narrow_prefix(), x[0]);
+      assert(composite_index);
+      sprintf(prompt, "edit (%s)> ", composite_index);
       new_text = interactive_text(prompt, n->text, &is_blank, &error);
+      free(composite_index);
       if (error < 0) return error;
       if (!is_blank) {
         free(n->text);
