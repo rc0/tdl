@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.34 2003/04/14 23:16:59 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.35 2003/04/17 21:56:03 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -642,7 +642,9 @@ static int usage(char **x)/*{{{*/
 
       fprintf(stderr,
               "\n"
-              "<index>    : 1, 1.1 etc (see output of 'tdl list')\n"
+              "General notes (where they apply to a command):\n"
+              "\n"
+              "<*_index>  : 1, 1.1 etc (see output of 'tdl list')\n"
               "<priority> : urgent|high|normal|low|verylow\n"
               "<datespec> : [-|+][0-9]+[shdwmy][-hh[mm[ss]]]  OR\n"
               "             [-|+](sun|mon|tue|wed|thu|fri|sat)[-hh[mm[ss]]] OR\n"
