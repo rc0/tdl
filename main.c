@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.39 2003/05/14 23:33:37 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.39.2.1 2003/06/12 21:43:16 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -260,7 +260,7 @@ void free_database(struct links *x)/*{{{*/
     next = y->chain.next;
     free(y);
   }
-  x->next = x->prev = (struct node *) &x;
+  x->next = x->prev = (struct node *) x;
 }
 /*}}}*/
 static char *get_version(void)/*{{{*/
