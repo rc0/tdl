@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.27 2002/07/18 23:32:57 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.28 2002/07/19 23:29:38 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -375,9 +375,10 @@ static char synop_help[] = "[<command-name>]";
 static char synop_ignore[] = "<entry_index>[...] ...";
 static char synop_import[] = "<filename>";
 static char synop_into[] = "<new_parent_index> <index_to_move> ...";
-static char synop_list[] = "[-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>|/<search_condition>...]\n"
+static char synop_list[] = "[-v] [-a] [-p] [-m] [-1..9] [<min-priority>] [<parent_index>|/<search_condition>...]\n"
                            "-v                 : verbose (show dates, priorities etc)\n"
                            "-a                 : show all entries, including 'done' ones\n"
+                           "-p                 : show deferred and postponed entries\n"
                            "-m                 : don't use colours (monochrome)\n"
                            "-1,-2,..,-9        : summarise (and don't show) entries below this depth\n"
                            "<search_condition> : word to match on";

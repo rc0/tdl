@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.15 2002/07/18 23:32:57 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.16 2002/07/19 23:29:38 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -28,6 +28,7 @@
 struct list_options {
   unsigned monochrome:1;
   unsigned show_all:1;
+  unsigned show_postponed:1;
   unsigned verbose:1;
   unsigned set_depth:1;
   int depth;
@@ -124,6 +125,7 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
   int is_postponed;
   char *p;
   int n_kids, n_open_kids;
+  int show_state;
 
   is_done = (y->done > 0);
   is_ignored = (y->done == IGNORED_TIME);
@@ -132,35 +134,36 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
 
   do_indent(indent);
   count_kids(&y->kids, &n_kids, NULL, &n_open_kids);
+  show_state = options->show_all || options->show_postponed;
   if (summarise_kids && (n_kids > 0)) {
     if (options->monochrome) {
       printf("%s [%d/%d] %s", index_buffer, n_open_kids, n_kids,
-             (options->show_all && !options->verbose && is_ignored) ? "(IGNORED) : " : 
-             (options->show_all && !options->verbose && is_done) ? "(DONE) : " : 
-             (options->show_all && !options->verbose && is_done) ? "(DONE) : " : 
-             (options->show_all && !options->verbose && (y->arrived > now)) ? "(DEFERRED) : " : ": ");
+             (show_state && !options->verbose && is_ignored) ? "(IGNORED) : " : 
+             (show_state && !options->verbose && is_done) ? "(DONE) : " : 
+             (show_state && !options->verbose && is_done) ? "(DONE) : " : 
+             (show_state && !options->verbose && (y->arrived > now)) ? "(DEFERRED) : " : ": ");
     } else {
       printf("%s%s %s[%d/%d]%s %s%s", GREEN, index_buffer, CYAN, n_open_kids, n_kids, NORMAL,
-             (options->show_all && !options->verbose && is_ignored) ? BLUE "(IGNORED) " NORMAL :
-             (options->show_all && !options->verbose && is_done) ? CYAN "(DONE) " NORMAL :
-             (options->show_all && !options->verbose && is_postponed) ? MAGENTA "(" BLUE "POSTPONED" MAGENTA ") " :
-             (options->show_all && !options->verbose && (y->arrived > now)) ? MAGENTA "(DEFERRED) " : "",
-             is_done ? DIMCYAN : colour_table[y->priority]);
+             (show_state && !options->verbose && is_ignored) ? BLUE "(IGNORED) " NORMAL :
+             (show_state && !options->verbose && is_done) ? CYAN "(DONE) " NORMAL :
+             (show_state && !options->verbose && is_postponed) ? MAGENTA "(POSTPONED) " :
+             (show_state && !options->verbose && (y->arrived > now)) ? MAGENTA "(DEFERRED) " : "",
+             is_done ? CYAN : is_postponed ? MAGENTA : colour_table[y->priority]);
     }
   } else {
     if (options->monochrome) {
       printf("%s %s", index_buffer,
-             (options->show_all && !options->verbose && is_ignored) ? "(IGNORED) : " : 
-             (options->show_all && !options->verbose && is_done) ? "(DONE) : " : 
-             (options->show_all && !options->verbose && is_postponed) ? "(POSTPONED) : " :
-             (options->show_all && !options->verbose && (y->arrived > now)) ? "(DEFERRED) : " : ": ");
+             (show_state && !options->verbose && is_ignored) ? "(IGNORED) : " : 
+             (show_state && !options->verbose && is_done) ? "(DONE) : " : 
+             (show_state && !options->verbose && is_postponed) ? "(POSTPONED) : " :
+             (show_state && !options->verbose && (y->arrived > now)) ? "(DEFERRED) : " : ": ");
     } else {
       printf("%s%s%s %s%s", GREEN, index_buffer, NORMAL,
-             (options->show_all && !options->verbose && is_ignored) ? BLUE "(IGNORED) " NORMAL :
-             (options->show_all && !options->verbose && is_done) ? CYAN "(DONE) " NORMAL :
-             (options->show_all && !options->verbose && is_postponed) ? MAGENTA "(" BLUE "POSTPONED" MAGENTA ") " :
-             (options->show_all && !options->verbose && (y->arrived > now)) ? MAGENTA "(DEFERRED) " : "",
-             is_done ? DIMCYAN : colour_table[y->priority]);
+             (show_state && !options->verbose && is_ignored) ? BLUE "(IGNORED) " NORMAL :
+             (show_state && !options->verbose && is_done) ? CYAN "(DONE) " NORMAL :
+             (show_state && !options->verbose && is_postponed) ? MAGENTA "(POSTPONED) " :
+             (show_state && !options->verbose && (y->arrived > now)) ? MAGENTA "(DEFERRED) " : "",
+             is_done ? CYAN : is_postponed ? MAGENTA : colour_table[y->priority]);
     }
   }
   for (p = y->text; *p; p++) {
@@ -190,7 +193,8 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
 static void list_chain(struct links *x, int indent, int depth, const struct list_options *options, char *index_buffer, enum Priority prio, time_t now, unsigned char *hits)/*{{{*/
 {
   struct node *y;
-  int idx, is_done;
+  int idx, is_done, is_deferred, is_postponed;
+  int show_node;
   char component_buffer[8];
   char new_index_buffer[64];
   
@@ -199,9 +203,12 @@ static void list_chain(struct links *x, int indent, int depth, const struct list
        y = y->chain.next, ++idx) {
     
     is_done = (y->done > 0);
-    /* Normally, don't show entries that have been done, or whose start time
-     * has been deferred */
-    if (!options->show_all && (is_done || (y->arrived > now))) continue;
+    is_postponed = (y->arrived == POSTPONED_TIME);
+    is_deferred = (y->arrived > now);
+    show_node = options->show_all 
+             || (options->show_postponed && !is_done)
+             || (!is_deferred && !is_postponed);
+    if (!show_node) continue;
 
     sprintf(component_buffer, "%d", idx);
     strcpy(new_index_buffer, index_buffer);
@@ -428,6 +435,7 @@ int process_list(char **x)/*{{{*/
 
   options.monochrome = 0;
   options.show_all = 0;
+  options.show_postponed = 0;
   options.verbose = 0;
   options.set_depth = 0;
   
@@ -484,6 +492,9 @@ int process_list(char **x)/*{{{*/
             break;
           case 'm':
             options.monochrome = 1;
+            break;
+          case 'p':
+            options.show_postponed = 1;
             break;
           case '1': case '2': case '3':
           case '4': case '5': case '6': 
