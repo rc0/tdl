@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.9 2002/04/28 23:21:03 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.10 2002/05/06 23:14:27 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -133,7 +133,7 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
              (options->show_all && !options->verbose && is_done) ? "(DONE) : " : 
              (options->show_all && !options->verbose && (y->arrived > now)) ? "(DEFERRED) : " : ": ");
     } else {
-      printf("%s%s %s[%d/%d]%s %s%s", GREEN, index_buffer, YELLOW, n_open_kids, n_kids, NORMAL,
+      printf("%s%s %s[%d/%d]%s %s%s", GREEN, index_buffer, CYAN, n_open_kids, n_kids, NORMAL,
              (options->show_all && !options->verbose && is_done) ? CYAN "(DONE) " NORMAL :
              (options->show_all && !options->verbose && (y->arrived > now)) ? MAGENTA "(DEFERRED) " : "",
              is_done ? DIMCYAN : colour_table[y->priority]);
