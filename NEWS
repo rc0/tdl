@@ -1,3 +1,7 @@
+NEW IN VERSION 1.5.1
+
+- bug fix : string for forming lock file name was undersized by 1 byte
+
 NEW IN VERSION 1.5
 
 - bug fix : trying to move a node above/below/before/after itself corrupted the
@@ -120,4 +124,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.22.2.3 2004/01/07 00:02:26 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.22.2.4 2004/01/07 23:30:52 richard Exp $
