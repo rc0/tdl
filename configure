@@ -400,7 +400,7 @@ case "${use_readline}-${has_rl_completion_matches}-${has_completion_matches}" in
     exit 1
     ;;
   no-* )
-    READLINE_DEFINE="-DUSE_READLINE=0"
+    READLINE_DEFINE="-UUSE_READLINE"
     printf "Not using readline\n";
 esac
 
@@ -419,7 +419,11 @@ if [ "x" = "x${BINDIR}" ]; then BINDIR=${PREFIX}/bin ; fi
 if [ "x" = "x${MANDIR}" ]; then MANDIR=${PREFIX}/man ; fi
 if [ "x" = "x${INFODIR}" ]; then INFODIR=${PREFIX}/info ; fi
 
-lib_readline="${readline_lib_arg} -lreadline ${extra_readline_libs}"
+if [ "x${use_readline}" = "xno" ]; then
+  lib_readline=""
+else
+  lib_readline="${readline_lib_arg} -lreadline ${extra_readline_libs}"
+fi
 
 echo "Generating Makefile"
 

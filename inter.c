@@ -358,7 +358,7 @@ char **complete_priority(char *text, int index)/*{{{*/
 {
   return NULL;
 }/*}}}*/
-char **complete_postponed(char *text, int index)/*{{{*/
+char **complete_postpone(char *text, int index)/*{{{*/
 {
   return NULL;
 }
