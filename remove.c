@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/remove.c,v 1.2 2001/08/21 22:43:24 richard Exp $
+   $Header: /cvs/src/tdl/remove.c,v 1.3 2001/10/07 22:44:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -52,12 +52,17 @@ static void delete_from_bottom_up(struct links *x)/*{{{*/
 void process_remove(char **x)/*{{{*/
 {
   struct node *n;
+  int do_descendents;
 
   clear_flags(&top);
 
   while (*x) {
+    do_descendents = include_descendents(*x); /* May modify *x */
     n = lookup_node(*x, 0, NULL);
     n->flag = 1;
+    if (do_descendents) {
+      mark_all_descendents(n);
+    }
     n->scratch = *x; /* *x has long lifetime => OK to alias */
     ++x;
   }

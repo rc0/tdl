@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.3 2001/08/21 22:43:24 richard Exp $
+#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.4 2001/10/07 22:44:45 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -26,7 +26,9 @@ CC=gcc
 #CFLAGS=-g -Wall
 CFLAGS=-O2 -Wall
 OBJ = main.o io.o add.o done.o remove.o move.o list.o \
-      report.o purge.o util.o
+      report.o purge.o util.o impexp.o
+
+all : tdl
 
 tdl : $(OBJ)
 	$(CC) $(CFLAGS) -o tdl $(OBJ)
@@ -51,6 +53,7 @@ install:
 	ln -s $(bindir)/tdl $(bindir)/tdla
 	ln -s $(bindir)/tdl $(bindir)/tdll
 	ln -s $(bindir)/tdl $(bindir)/tdld
+	ln -s $(bindir)/tdl $(bindir)/tdlg
 	cp tdl.1 $(man1dir)/tdl.1
 	chmod 444 $(man1dir)/tdl.1
 

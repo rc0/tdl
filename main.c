@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.7 2001/08/27 22:09:23 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.8 2001/10/07 22:44:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -48,14 +48,28 @@ static void process_create(char **x)/*{{{*/
 
 }
 /*}}}*/
+static void set_descendent_priority(struct node *x, enum Priority priority)/*{{{*/
+{
+  struct node *y;
+  for (y = x->kids.next; y != (struct node *) &x->kids; y = y->chain.next) {
+    y->priority = priority;
+    set_descendent_priority(y, priority);
+  }
+}
+/*}}}*/
 static void process_priority(char **x)/*{{{*/
 {
   enum Priority priority = parse_priority(*x);
   struct node *n;
+  int do_descendents;
  
   while (*++x) {
+    do_descendents = include_descendents(*x); /* May modify *x */
     n = lookup_node(*x, 0, NULL);
     n->priority = priority;
+    if (do_descendents) {
+      set_descendent_priority(n, priority);
+    }
   }
 }/*}}}*/
 
@@ -172,20 +186,23 @@ static void usage(void)/*{{{*/
           "tdla    [<parent_index>] [<priority>] <entry_text>\n"
           "   Add a new entry to the database\n\n"
           "tdl log [<parent_index>] [<priority>] <entry_text>\n"
+          "tdlg [<parent_index>] [<priority>] <entry_text>\n"
           "   Add a new entry to the database, mark it done as well\n\n"
           "tdl list [-v] [-a] [<parent_index>...]\n"
-          "tdll     [-v] [-a] [<parent_index>...]\n"
+          "tdll     [-v] [-a] [<min-priority>] [<parent_index>...]\n"
           "   List entries in database (default from top node)\n"
           "   -v : verbose (show dates, priorities etc)\n"
           "   -a : show all entries, including 'done' ones\n\n"
-          "tdl done <entry_index> ...\n"
-          "tdld     <entry_index> ...\n"
+          "tdl done <entry_index>[...] ...\n"
+          "tdld     <entry_index>[...] ...\n"
           "   Mark 1 or more entries as done\n\n"
-          "tdl remove <entry_index> ...\n"
+          "tdl remove <entry_index>[...] ...\n"
           "   Remove 1 or more entries from the database\n\n"
-          "tdl above <index_to_insert_above> <index_to_move> ...\n"
+          "tdl above  <index_to_insert_above> <index_to_move> ...\n"
+          "tdl before <index_to_insert_above> <index_to_move> ...\n"
           "   Move entries above another entry\n\n"
           "tdl below <index_to_insert_below> <index_to_move> ...\n"
+          "tdl after <index_to_insert_below> <index_to_move> ...\n"
           "   Move entries below another entry\n\n"
           "tdl into <new_parent_index> <index_to_move> ...\n"
           "   Move entries to end of new parent\n\n"
@@ -199,6 +216,10 @@ static void usage(void)/*{{{*/
           "   Report completed tasks in interval (end defaults to now)\n\n"
           "tdl create\n"
           "   Create a new database in the current directory\n\n"
+          "tdl import <filename>\n"
+          "   Import entries from <filename>\n\n"
+          "tdl export <filename> <entry_index> ...\n"
+          "   Export entries to <filename>\n\n"
           "tdl help\n"
           "   Display this text\n\n"
           "tdl version\n"
@@ -271,7 +292,7 @@ int main (int argc, char **argv)
   if (in) {
     /* Database may not exist, e.g. if the program has never been run before.
        */
-    read_database(in);
+    read_database(in, &top);
     fclose(in);
   } else {
     no_database_here = 1;
@@ -296,10 +317,10 @@ int main (int argc, char **argv)
     } else if (!strcmp(argv[1], "remove")) {
       process_remove(argv + 2);
       dirty = 1;
-    } else if (!strcmp(argv[1], "below")) {
+    } else if (!strcmp(argv[1], "below") || !strcmp(argv[1], "after")) {
       process_move(argv + 2, 1, 0);
       dirty = 1;
-    } else if (!strcmp(argv[1], "above")) {
+    } else if (!strcmp(argv[1], "above") || !strcmp(argv[1], "before")) {
       process_move(argv + 2, 0, 0);
       dirty = 1;
     } else if (!strcmp(argv[1], "into")) {
@@ -318,6 +339,11 @@ int main (int argc, char **argv)
       process_report(argv + 2);
     } else if (!strncmp(argv[1], "pri", 3)) {
       process_priority(argv + 2);
+      dirty = 1;
+    } else if (!strcmp(argv[1], "export")) {
+      process_export(argv + 2);
+    } else if (!strcmp(argv[1], "import")) {
+      process_import(argv + 2);
       dirty = 1;
     } else if (!strcmp(argv[1], "help") ||
                !strcmp(argv[1], "usage") ||
@@ -342,6 +368,9 @@ int main (int argc, char **argv)
     } else if (!strcmp(executable, "tdld")) {
       process_done(argv + 1);
       dirty = 1;
+    } else if (!strcmp(executable, "tdlg")) {
+      process_add(argv + 1, 1);
+      dirty = 1;
     }
   }
 
@@ -355,7 +384,7 @@ int main (int argc, char **argv)
       exit(1);
     }
 
-    write_database(out);
+    write_database(out, &top);
     fclose(out);
   }
   /*}}}*/

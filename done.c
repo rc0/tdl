@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/done.c,v 1.3 2001/08/23 21:23:31 richard Exp $
+   $Header: /cvs/src/tdl/done.c,v 1.4 2001/10/07 22:44:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -60,12 +60,17 @@ static void mark_done_from_bottom_up(struct links *x)/*{{{*/
 void process_done(char **x)/*{{{*/
 {
   struct node *n;
+  int do_descendents;
 
   clear_flags(&top);
 
   while (*x) {
+    do_descendents = include_descendents(*x); /* May modify *x */
     n = lookup_node(*x, 0, NULL);
     n->flag = 1;
+    if (do_descendents) {
+      mark_all_descendents(n);
+    }
     n->scratch = *x; /* Safe to alias, *x has long lifetime */
     x++;
   }

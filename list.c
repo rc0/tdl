@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.4 2001/08/27 22:09:48 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.5 2001/10/07 22:44:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -121,7 +121,7 @@ static void print_details(struct node *y, int indent, int verbose, int all, int 
 
 }
 /*}}}*/
-static void list_chain(struct links *x, int indent, int verbose, int all, int monochrome, char *index_buffer)/*{{{*/
+static void list_chain(struct links *x, int indent, int verbose, int all, int monochrome, char *index_buffer, enum Priority prio)/*{{{*/
 {
   struct node *y;
   int idx, is_done;
@@ -142,9 +142,13 @@ static void list_chain(struct links *x, int indent, int verbose, int all, int mo
     }
     strcat(new_index_buffer, component_buffer);
 
-    print_details(y, indent, verbose, all, monochrome, new_index_buffer);
+    if (y->priority >= prio) {
+      print_details(y, indent, verbose, all, monochrome, new_index_buffer);
+    }
 
-    list_chain(&y->kids, indent + INDENT_TAB, verbose, all, monochrome, new_index_buffer);
+    /* Maybe list children regardless of priority assigned to parent. */
+    list_chain(&y->kids, indent + INDENT_TAB, verbose, all, monochrome, new_index_buffer, prio);
+
   }
   return;
 }
@@ -157,6 +161,7 @@ void process_list(char **x)/*{{{*/
   int monochrome = 0;
   char index_buffer[64];
   char *y;
+  enum Priority prio = PRI_NORMAL;
 
   if (getenv("TDL_LIST_MONOCHROME") != 0) {
     monochrome = 1;
@@ -175,7 +180,9 @@ void process_list(char **x)/*{{{*/
       index_buffer[0] = '\0';
       strcpy(index_buffer, y);
       print_details(n, 0, verbose, all, monochrome, index_buffer);
-      list_chain(&n->kids, INDENT_TAB, verbose, all, monochrome, index_buffer);
+      list_chain(&n->kids, INDENT_TAB, verbose, all, monochrome, index_buffer, prio);
+    } else {
+      prio = parse_priority(y);
     }
 
     x++;
@@ -183,7 +190,7 @@ void process_list(char **x)/*{{{*/
   
   if (!any_paths) {
     index_buffer[0] = 0;
-    list_chain(&top, 0, verbose, all, monochrome, index_buffer);
+    list_chain(&top, 0, verbose, all, monochrome, index_buffer, prio);
   }
 }
 /*}}}*/

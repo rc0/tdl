@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.2 2001/08/21 22:43:25 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.3 2001/10/07 22:44:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -29,6 +29,21 @@ int count_args(char **x)/*{{{*/
     x++;
   }
   return n;
+}
+/*}}}*/
+int include_descendents(char *x)/*{{{*/
+{
+  /* Check if string ends in ... . If it does, truncate that off. */
+  int len;
+  int result = 0;
+  len = strlen(x);
+  if (len >= 4) {
+    if (!strcmp(x + (len-3), "...")) {
+      result = 1;
+      x[len-3] = 0;
+    }
+  }
+  return result;
 }
 /*}}}*/
 struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)/*{{{*/
@@ -110,18 +125,19 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
 enum Priority parse_priority(char *priority)/*{{{*/
 {
   enum Priority result;
-  if (!strcmp(priority, "urgent") || (atoi(priority) >= PRI_URGENT)) {
+  int len = strlen(priority);
+  if (!strncmp(priority, "urgent", len) || (atoi(priority) >= PRI_URGENT)) {
     result = PRI_URGENT;
-  } else if (!strcmp(priority, "high") || (atoi(priority) == PRI_HIGH)) {
+  } else if (!strncmp(priority, "high", len) || (atoi(priority) == PRI_HIGH)) {
     result = PRI_HIGH;
-  } else if (!strcmp(priority, "normal") || (atoi(priority) == PRI_NORMAL)) {
+  } else if (!strncmp(priority, "normal", len) || (atoi(priority) == PRI_NORMAL)) {
     result = PRI_NORMAL;
-  } else if (!strcmp(priority, "low") || (atoi(priority) == PRI_LOW)) {
+  } else if (!strncmp(priority, "low", len) || (atoi(priority) == PRI_LOW)) {
     result = PRI_LOW;
-  } else if (!strcmp(priority, "verylow") || (atoi(priority) <= PRI_VERYLOW)) {
+  } else if (!strncmp(priority, "verylow", len) || (atoi(priority) <= PRI_VERYLOW)) {
     result = PRI_VERYLOW;
   } else {
-    fprintf(stderr, "Can't parse new priority '%s'\n", priority);
+    fprintf(stderr, "Can't parse priority '%s'\n", priority);
     exit(1);
   }
   
@@ -135,6 +151,17 @@ void clear_flags(struct links *x)/*{{{*/
     y->flag = 0;
     if (has_kids(y)) {
       clear_flags(&y->kids);
+    }
+  }
+}
+/*}}}*/
+void mark_all_descendents(struct node *n)/*{{{*/
+{
+  struct node *y;
+  for (y = n->kids.next; y != (struct node *) &n->kids; y = y->chain.next) {
+    y->flag = 1;
+    if (has_kids(y)) {
+      mark_all_descendents(y);
     }
   }
 }

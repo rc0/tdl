@@ -22,6 +22,10 @@ A small program for managing a to-do list.
 .B tdl above
 .I index_to_insert_above
 .I index_to_move ...
+.br
+.B tdl before
+.I index_to_insert_above
+.I index_to_move ...
 .PP
 This command moves one or more entries to a new location in the tree.  The
 first index specifies the entry which will end up immediately below the moved
@@ -47,7 +51,8 @@ The
 command is used to add a new entry to the database.
 .PP
 .B parent_index
-is the index of the parent node (e.g. 1 or 2.4).  This defaults to the root node if missing, i.e. a new top-level entry is created.
+is the index of the parent node (e.g. 1 or 2.4).  This defaults to the root
+node if missing, i.e. a new top-level entry is created.
 .PP
 .B priority is one of
 .IR urgent ,
@@ -55,7 +60,8 @@ is the index of the parent node (e.g. 1 or 2.4).  This defaults to the root node
 .IR normal ,
 .IR low " or"
 .IR verylow .
-Normal is the default if this argument is not specified.
+Normal is the default if this argument is not specified.  Priorities may be
+abbreviated (even to just the first letter.)
 .PP
 .B text_for_node
 is the text describing the task for this entry.  If this is more than a single
@@ -73,6 +79,10 @@ environment is set, in which case this specifies the path to use).
 --ooOOoo--
 .PP
 .B tdl below
+.I index_to_insert_below
+.I index_to_move ...
+.br
+.B tdl after
 .I index_to_insert_below
 .I index_to_move ...
 .PP
@@ -100,6 +110,10 @@ The entries no longer appear on the default listing (tdl list / tdll)
 The entries are eligible to appear on the report list (tdl report)
 .IP o
 The entries are eligible for removal by the purge command (tdl purge.)
+.PP
+If the string "..." is appended to an index, it means that entry and all its
+descendents.  This provides a quick way to mark a whole sub-tree of tasks as
+being completed.
 .P
 .ce 1
 --ooOOoo--
@@ -113,9 +127,37 @@ This command is used to change the text of an entry.
 .ce 1
 --ooOOoo--
 .PP
+.B tdl export
+.I filename
+.I index_to_export ...
+.PP
+This command is used to create a new TDL database (whose name is given by the
+.I filename
+argument).  The initial contents of the new database are the entries specified
+by the list of indices following the filename, in that order.  Each index
+becomes a top-level entry of the new database.  The operation is read-only on
+the original database.
+.P
+.ce 1
+--ooOOoo--
+.PP
 .B tdl help
 .PP
 This command displays a summary of use of each of the commands.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl import
+.I filename
+.PP
+This command is used to merge entries from the TDL database
+.I filename
+into the default TDL database (i.e. the one that most of the other commands
+would be accessing).
+.PP
+You might use this command if you had a number of separate TDL databases, and
+wanted to merge their entries to form one combo database.
 .P
 .ce 1
 --ooOOoo--
@@ -138,12 +180,14 @@ argument has ".0" appended to it.
 .I [-v]
 .I [-a]
 .I [-m]
+.I [<min-priority>]
 .I [<parent_index> ...]
 .br
 .B tdll
 .I [-v]
 .I [-a]
 .I [-m]
+.I [<min-priority>]
 .I [<parent_index> ...]
 .PP
 The
@@ -157,6 +201,12 @@ option (which means 'all').  If you want to display the dates and times when
 the entries were added and/or done, include the 
 .B -v
 option (which means 'verbose').
+.PP
+By default, only entries having normal, high or urgent priority are shown.  To
+change the minimum priority shown, specify the
+.B min-priority
+argument.  For example, 'tdll h' will only show entries with priority high or
+urgent.
 .PP
 By default, the whole database is scanned.  If you only want to show part(s) of
 the database, additional arguments can be given.  These are the indices of the
@@ -194,6 +244,8 @@ _
 --ooOOoo--
 .PP
 .B tdl log
+.br
+.B tdlg
 .PP
 This command is used to add a new entry and mark it done immediately.  It is
 most useful in conjunction with the
@@ -255,8 +307,11 @@ descendents.  The default is to purge the entire database.
 .PP
 Completely remove one or more entries from the database.  The indices are the
 same format as those shown in the output of the
-.B list
+.B done
 command.
+.PP
+If the string "..." is appended to an index, it means that entry and all its
+descendents.  This provides a quick way to remove a whole sub-tree of tasks.
 .P
 .ce 1
 --ooOOoo--

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/io.c,v 1.3 2001/08/21 22:43:24 richard Exp $
+   $Header: /cvs/src/tdl/io.c,v 1.4 2001/10/07 22:44:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -22,7 +22,7 @@
 #include <string.h>
 #include "tdl.h"
 
-#define MAGIC1 0x99bb0001UL
+#define MAGIC1 0x99bb0001L
 
 static unsigned int count_length(struct links *x)/*{{{*/
 {
@@ -86,16 +86,16 @@ static void write_node(struct node *x, FILE *out)/*{{{*/
   }
 }
 /*}}}*/
-void write_database(FILE *out)/*{{{*/
+void write_database(FILE *out, struct links *from)/*{{{*/
 {
   int n_kids;
   struct node *kid;
 
-  n_kids = count_length(&top);
+  n_kids = count_length(from);
   
   write_int(MAGIC1, out);
   write_int(n_kids, out);
-  for (kid = top.next; kid != (struct node *) &top; kid = kid->chain.next)
+  for (kid = from->next; kid != (struct node *) from; kid = kid->chain.next)
   {
     write_node(kid, out);
   }
@@ -132,7 +132,7 @@ static struct node *read_node(FILE *in)
 
 /*}}}*/
 /*{{{  void read_database(FILE *in)*/
-void read_database(FILE *in)
+void read_database(FILE *in, struct links *to)
 {
   int n_kids, i;
   unsigned int magic;
@@ -141,8 +141,8 @@ void read_database(FILE *in)
    * won't happen (only one load per invocation), and even later, we might just
    * take the memory leak. But for safety, ... */
 
-  top.prev = (struct node *) &top;
-  top.next = (struct node *) &top;
+  to->prev = (struct node *) to;
+  to->next = (struct node *) to;
   
 
   if (feof(in)) {
@@ -159,7 +159,7 @@ void read_database(FILE *in)
   for (i=0; i<n_kids; i++) {
     struct node *nn;
     nn = read_node(in);
-    prepend_child(nn, NULL);
+    prepend_node(nn, to);
   }
 }
 

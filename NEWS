@@ -1,0 +1,18 @@
+NEW IN VERSION 0.7
+
+- New before and after commands with identical operation to above and below.
+
+- List command now shows only items of at least normal priority by default, and
+  can take a priority argument.
+
+- New import and export commands
+
+- The remove, done and priority commands can take indices of the form 1... to
+  mean entry 1 and everything underneath it.
+
+- Priorities can be specified by just their initial letter (or any bigger
+  substring)
+
+- Add tdlg to do log as a single command name.
+
+$Header: /cvs/src/tdl/NEWS,v 1.1 2001/10/07 22:44:46 richard Exp $

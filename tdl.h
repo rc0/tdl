@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.5 2001/08/23 21:23:31 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.6 2001/10/07 22:44:46 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 enum Priority {
@@ -68,8 +69,8 @@ extern struct links top;
 /* Function prototypes. */
 
 /* In io.c */
-void read_database(FILE *in);
-void write_database(FILE *out);
+void read_database(FILE *in, struct links *to);
+void write_database(FILE *out, struct links *from);
 struct node *new_node(void);
 void append_node(struct node *n, struct links *l);
 void append_child(struct node *child, struct node *parent);
@@ -87,9 +88,11 @@ long read_interval(char *xx);
 
 /* In util.c */
 int count_args(char **x);
+int include_descendents(char *x);
 struct node *lookup_node(char *path, int allow_zero_index, struct node **parent);
 enum Priority parse_priority(char *priority);
 void clear_flags(struct links *x);
+void mark_all_descendents(struct node *n);
 int has_kids(struct node *x);
 struct node *new_node(void);
 void free_node(struct node *x);
@@ -113,6 +116,10 @@ void process_purge(char **x);
 
 /* In move.c */
 void process_move(char **x, int below_not_above, int into_parent);
+
+/* In impexp.c */
+void process_export(char **x);
+void process_import(char **x);
 
 #endif /* TDL_H */
           

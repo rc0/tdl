@@ -15,10 +15,12 @@ It supports the following features :
   these can be shown too if desired).  The listing is in colour by default, with
   monochrome output as an option.
 - allows entries to be prioritised (priorities shown in different colours on
-  listing)
+  listing).  The listing can selectively show only entries at or above a given
+  priority level.
 - track date added and date completed for each task
 - generate report of tasks completed in a given earlier time period (useful if
   you have to produce a weekly summary of your work done, for example)
+- import and export entries, to allow splitting and merging of databases.
 - written in C
 - runs on a Linux console or in a terminal window.  It currently generates a
   coloured listing, so a colour xterm or rxvt is preferred.
@@ -36,5 +38,5 @@ CONTACT
     rpc@myself.com
     richard.curnow@go.to
    
-$Header: /cvs/src/tdl/README,v 1.2 2001/08/27 22:10:03 richard Exp $
+$Header: /cvs/src/tdl/README,v 1.3 2001/10/07 22:44:46 richard Exp $
 
