@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.3 2001/08/23 21:23:31 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.4 2001/08/29 05:50:23 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -93,15 +93,15 @@ void process_move(char **x, int below_not_above, int into_parent)/*{{{*/
     if (below_not_above) insert_point = &table[i]->chain;
     /* if inserting above something, the insertion point stays fixed */
     
-  }
-
-  /* Clear done status of insertion point and its ancestors */
-  if (table[i]->done == 0) {
-    parent = insert_parent;
-    while (parent) {
-      parent->done = 0;
-      parent = parent->parent;
+    /* Clear done status of insertion point and its ancestors */
+    if (table[i]->done == 0) {
+      parent = insert_parent;
+      while (parent) {
+        parent->done = 0;
+        parent = parent->parent;
+      }
     }
   }
+
 }
 /*}}}*/
