@@ -1,8 +1,21 @@
-.TH "tdl" 1L "August 2001"
+.TH "tdl" 1 "August 2001"
 .SH NAME
 tdl \- To do list manager
 .SH SYNOPSIS
-tdl add|log|report|done|remove|list
+tdl add|edit|log
+.br
+tdl list|done|report
+.br
+tdl remove|above|below|into
+.br
+tdl version|help
+.br
+tdla
+.br
+tdll
+.br
+tdld
+
 .SH DESCRIPTION
 A small program for managing a to-do list.
 .PP
@@ -18,8 +31,16 @@ first index specifies the entry which will end up immediately below the moved
 entries after the operation.  As a special case, you can specify the final
 component of the first argument as zero.  In this case, the moved entries
 appear as the last children of the parent node afterwards.
+.P
+.ce 1
+--ooOOoo--
 .PP
 .B tdl add
+.I [parent_index]
+.I [priority]
+.I text_for_node
+.br
+.B tdla
 .I [parent_index]
 .I [priority]
 .I text_for_node
@@ -27,10 +48,298 @@ appear as the last children of the parent node afterwards.
 The
 .B add
 command is used to add a new entry to the database.
+.PP
+.B parent_index
+is the index of the parent node (e.g. 1 or 2.4).  This defaults to the root node if missing, i.e. a new top-level entry is created.
+.PP
+.B priority is one of
+.IR urgent ,
+.IR high ,
+.IR normal ,
+.IR low " or"
+.IR verylow .
+Normal is the default if this argument is not specified.
+.PP
+.B text_for_node
+is the text describing the task for this entry.  If this is more than a single
+word, you will need to quote it to make the shell keep it as a single argument
+to tdl.  The text may span multiple lines (i.e. if you hit return whilst the
+quotation marks are still open in the shell.)
+.PP
+If no database exists, the
+.B add
+command will create it automatically (in the current directory, unless the
+.B TDL_DATABASE
+environment is set, in which case this specifies the path to use).
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl below
+.I index_to_insert_below
+.I index_to_move ...
+.PP
+This command moves one or more entries to a new location in the tree.  The
+first index specifies the entry which will end up immediately above the moved
+entries after the operation.  As a special case, you can specify the final
+component of the first argument as zero.  In this case, the moved entries
+appear as the first children of the parent node afterwards.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl done
+.I index_of_done_entry ...
+.PP
+.B tdld
+.I index_of_done_entry ...
+.PP
+The
+.B done
+command is used to mark one or more tasks as completed.  The effects are as follows:
+.IP o
+The entries no longer appear on the default listing (tdl list / tdll)
+.IP o
+The entries are eligible to appear on the report list (tdl report)
+.IP o
+The entries are eligible for removal by the purge command (tdl purge.)
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl edit
+.I index_to_change
+.I new_text
+.PP
+This command is used to change the text of an entry.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl help
+.PP
+This command displays a summary of use of each of the commands.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl into
+.I new_parent_index
+.I indices_to_move ...
+.PP
+This command moves one or more entries under a new parent entry.  It is
+equivalent to the
+.B above
+command when the
+.B new_parent_index
+argument has ".0" appended to it.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl list
+.I [-v]
+.I [-a]
+.I [-m]
+.I [<parent_index> ...]
+.br
+.B tdll
+.I [-v]
+.I [-a]
+.I [-m]
+.I [<parent_index> ...]
+.PP
+The
+.B list
+command is used to display the entries in the database.  By default, only
+entries that have not been marked
+.B done
+are shown.  If you want to display all entries, include the
+.B -a
+option (which means 'all').  If you want to display the dates and times when
+the entries were added and/or done, include the 
+.B -v
+option (which means 'verbose').
+.PP
+By default, the whole database is scanned.  If you only want to show part(s) of
+the database, additional arguments can be given.  These are the indices of the
+top node of each part of the database you want to show.  So if your database
+contains entries with indices 1, 2, 2.1, 2.2, 2.2.1, 3 and 4, the command
+.PP
+tdl list -a 2
+.PP
+will show all entries 2, 2.1, 2.2 and 2.2.1, whether or not they are completed.
+.PP
+By default, the listing is produced with colour highlighting.  The
+.B -m
+option can be used to produce a monochrome listing instead.  Alternatively, the
+.B TDL_LIST_MONOCHROME
+enviroment variable can be set (to any value) to achieve the same effect.
+.PP
+The colours are assigned as follows:
+.PP
+.TS
+tab(&);
+l | l.
+_
+Colour & Meaning
+_
+Red & Urgent task
+Yellow & High priority task
+White & Normal priority task
+Cyan & Low priority task, done task
+Blue & Very low priority task
+Green & Captions
+_
+.TE
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl log
+.PP
+This command is used to add a new entry and mark it done immediately.  It is
+most useful in conjunction with the
+.B report
+command, to record unexpected extra tasks you had to do.
+.PP
+The arguments for the
+.B log
+command are the same as those for the
+.B add
+command.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl pri
+.I new_priority
+.I index_to_change ...
+.PP
+This command changes the priority of one or more entries.  The indices are in
+the same format as those in the output of the
+.B list
+command.  The
+.B new_priority
+argument takes the same possible values as for the
+.B add
+command.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl purge
+.I since_epoch
+.I [entry_index...]
+.PP
+This command is used to remove old done entries from the database.  It is much more convenient than repeated
+.B remove
+commands.
+.PP
+The
+.B since_epoch
+argument specifies a time in the past.  The time is specified as an interval
+before the current time, in the same way as the
+.B report
+command uses.  Entries that were marked done (using the
+.B done
+command) before that epoch will be purged.
+.PP
+Zero or more
+.B entry_indices
+may be given.  These restrict the purging to just those entries and their
+descendents.  The default is to purge the entire database.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl remove
+.I index_to_remove ...
+.PP
+Completely remove one or more entries from the database.  The indices are the
+same format as those shown in the output of the
+.B list
+command.
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl report
+.I start_time_ago
+.I [end_time_ago]
+.PP
+The
+.B report
+command produces a report (in bulleted list format) of tasks completed in a
+certain time period.  This is useful if (for example) you have to write a
+weekly summary of the work you've done.
+.PP
+The default for the end of the time period is the current time, if the
+.B end_time_ago
+argument is not present.  The start of the period to report on must always be
+specified.  The format is a number of time units in the past relative to the
+current time.  Examples :
+.PP
+tdl report 1w
+.PP
+will list all tasks completed in the previous week, whereas
+.PP
+tdl report 2w 1w
+.PP
+will list all tasks completed between 2 and 1 weeks ago.
+.PP
+The times can be specified in any of the following formats : 1y (1 year), 2m (2
+months), 3w (3 weeks), 4d (4 days), 5h (5 hours), 6 (6 seconds). 
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl usage
+.PP
+Same as
+.B tdl help
+(q.v.)
+.P
+.ce 1
+--ooOOoo--
+.PP
+.B tdl version
+.PP
+Show the version number of the software.
 
-.SH OPTIONS
-.SH SEE ALSO
-.SH FILES
+.SH AUTHOR
+.PP
+I am Richard P. Curnow.  My email address is <richard@rrbcurnow.freeuk.com>.
+If that fails to get through, try <rpc@myself.com> or <richard.curnow@go.to>.
+
+.SH ACKNOWLEDGEMENTS
+.PP
+I got the idea from a program called devtodo.  I liked what that program did
+and the command line approach to using it, but I ran into lots of compilation
+problems with it on older C++ installations.  I decided the solution was to
+hack up a pure C program to do a similar job.
+
 .SH ENVIRONMENT
+.TP
+TDL_DATABASE
+If this variable is set, it defines the name of the file to use for holding the
+database of tasks.  If the variable is not set, the search approach described
+in the FILES section is used.
+.TP
+TDL_LIST_MONOCHROME
+If this variable is set, the output from the
+.B list
+command is produced in monochrome instead of colour (the default).
+.SH FILES
+.TP
+ ./.tdldb, ../.tdldb, ../../.tdldb, ...
+If the TDL_DATABASE environment variable is not present, the file .tdldb in the
+current directory is used, if that is present.  If not, the same file in the
+parent directory is used, and so on, until the root directory of the filesystem
+is reached.  If the database is still not found, a new one will be created in
+the current directory (except for options that don't modify the database, such
+as list, help and version.)
+
 .SH BUGS
-.SH REFERENCES
+Please report them to the author.  None are known of at the moment.
+
