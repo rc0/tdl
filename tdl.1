@@ -1,10 +1,10 @@
-.TH "tdl" 1 "July 2002" "1.3"
+.TH "tdl" 1 "May 2003" "1.4"
 .SH NAME
 tdl \- To do list manager
 .SH SYNOPSIS
 tdl  [-q]
 .br
-tdl  [-q] add|edit|log|defer
+tdl  [-q] add|edit|defer|log
 .br
 tdl  [-q] list|done|undo|report
 .br
@@ -220,17 +220,26 @@ TDL_DATABASE.
 --ooOOoo--
 .PP
 .B tdl defer
-.I @datespec
-.I entry_index...
+.I [@datespec]
+.I index_to_change...
 .PP
-This command is used to modify the time at which an entry appears to have been
-submitted.  For example, if there is a task that doesn't have to be started for
-a week, it can be deferred to avoid it cluttering up the output of
-.B list
-until then.  Note that the postpone command is just an extreme version of the
-defer command.
+The defer command is used to modify the start-time of one or more existing entries, 
+where the @ on the datespec is optional because the argument is required, although 
+the @ can be included for consistency with other commands where a datespec is optional. 
+.PP
+An example of use is 
 .P
-Deferred entries can be reactivated right away with the open command.
+	tdl> defer @+fri 1 2.1... 5
+.P
+which defers entries 1, 2.1 and all its children, and 5 until the following Friday. 
+To list deferred entries, use 
+.I list -p
+, to defer entries indefinitely, see 
+.I postpone 
+command. 
+To re-activate deferred or postponed entries, see 
+.I open 
+command. 
 .P
 .ce 1
 --ooOOoo--
@@ -238,7 +247,7 @@ Deferred entries can be reactivated right away with the open command.
 .B tdl done
 .I @datespec
 .I index_of_done_entry ...
-.PP
+.br
 .B tdld
 .I @datespec
 .I index_of_done_entry ...
@@ -275,9 +284,14 @@ section later in this page.
 .I index_to_change
 .I [new_text]
 .PP
-This command is used to change an entry.
+This command is used to change the text of an entry.  If no [new-text] is
+provided, you will be prompted with the old text to edit interactively. (This
+is only useful if the GNU readline library has been linked in.)
 .PP
-This command allows the text of an entry to be changed,
+Note, in earlier versions, edit could be used to change the start-time of one 
+or more entries. This is now handled by the 
+.B defer 
+command.
 .P
 .ce 1
 --ooOOoo--
@@ -632,6 +646,7 @@ The main use for the quit command would be to avoid damaging the database if a s
 .PP
 .B tdl remove
 .I index_to_remove ...
+.br
 .B tdl delete
 .I index_to_remove ...
 .PP
@@ -932,4 +947,12 @@ ln -s ../project2/.tdldb .
 
 .SH BUGS
 Please report them to the author.
+
+.SH SEE ALSO
+The full documentation for tdl is maintained as a Texinfo manual. If the info and tdl
+programs are properly installed at your site, the command
+.IP
+info tdl
+.PP
+should give you access to the complete manual.
 
