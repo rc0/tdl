@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.28 2002/07/19 23:29:38 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.29 2002/07/22 20:38:11 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -256,76 +256,6 @@ static char *get_version(void)/*{{{*/
 }
 /*}}}*/
 
-static int process_create(char **x)/*{{{*/
-{
-  char *dbpath = get_database_path(0);
-  struct stat sb;
-  int result;
-
-  result = stat(dbpath, &sb);
-  if (result >= 0) {
-    fprintf(stderr, "Can't create database <%s>, it already exists!\n", dbpath);
-    return -1;
-  } else {
-    /* Should have an empty database, and the dirty flag will be set */
-    current_database_path = dbpath;
-    /* don't emit complaint about not being able to move database to its backup */
-    is_noisy = 0;
-    /* Force empty database to be written out */
-    is_loaded = currently_dirty = 1;
-    return 0;
-  }
-}
-/*}}}*/
-static int process_priority(char **x)/*{{{*/
-{
-  int error;
-  enum Priority priority;
-  struct node *n;
-  int do_descendents;
- 
-  priority = parse_priority(*x, &error);
-  if (error < 0) return error;
-
-  while (*++x) {
-    do_descendents = include_descendents(*x); /* May modify *x */
-    n = lookup_node(*x, 0, NULL);
-    if (!n) return -1;
-    n->priority = priority;
-    if (do_descendents) {
-      set_descendent_priority(n, priority);
-    }
-  }
-
-  return 0;
-}/*}}}*/
-static int process_which(char **argv)/*{{{*/
-{
-  printf("%s\n", current_database_path);
-  return 0;
-}
-/*}}}*/
-static int process_version(char **x)/*{{{*/
-{
-  fprintf(stderr, "tdl %s\n", get_version());
-  return 0;
-}
-/*}}}*/
-static int process_exit(char **x)/*{{{*/
-{
-  save_database(current_database_path);
-  free_database(&top);
-  exit(0);
-}
-/*}}}*/
-static int process_quit(char **x)/*{{{*/
-{
-  /* Just get out quick, don't write the database back */
-  free_database(&top);
-  exit(0);
-}
-/*}}}*/
-
 /* {{{ One line descriptions of the subcommands */
 static char desc_above[] = "Move entries above (before) another entry";
 static char desc_add[] = "Add a new entry to the database";
@@ -396,6 +326,79 @@ static char synop_usage[] = "[<command-name>]";
 static char synop_version[] = "";
 static char synop_which[] = "";
 /* }}} */
+
+static int process_create(char **x)/*{{{*/
+{
+  char *dbpath = get_database_path(0);
+  struct stat sb;
+  int result;
+
+  result = stat(dbpath, &sb);
+  if (result >= 0) {
+    fprintf(stderr, "Can't create database <%s>, it already exists!\n", dbpath);
+    return -1;
+  } else {
+    /* Should have an empty database, and the dirty flag will be set */
+    current_database_path = dbpath;
+    /* don't emit complaint about not being able to move database to its backup */
+    is_noisy = 0;
+    /* Force empty database to be written out */
+    is_loaded = currently_dirty = 1;
+    return 0;
+  }
+}
+/*}}}*/
+static int process_priority(char **x)/*{{{*/
+{
+  int error;
+  enum Priority priority;
+  struct node *n;
+  int do_descendents;
+ 
+  priority = parse_priority(*x, &error);
+  if (error < 0) {
+    fprintf(stderr, "usage: priority %s\n", synop_priority);
+    return error;
+  }
+
+  while (*++x) {
+    do_descendents = include_descendents(*x); /* May modify *x */
+    n = lookup_node(*x, 0, NULL);
+    if (!n) return -1;
+    n->priority = priority;
+    if (do_descendents) {
+      set_descendent_priority(n, priority);
+    }
+  }
+
+  return 0;
+}/*}}}*/
+static int process_which(char **argv)/*{{{*/
+{
+  printf("%s\n", current_database_path);
+  return 0;
+}
+/*}}}*/
+static int process_version(char **x)/*{{{*/
+{
+  fprintf(stderr, "tdl %s\n", get_version());
+  return 0;
+}
+/*}}}*/
+static int process_exit(char **x)/*{{{*/
+{
+  save_database(current_database_path);
+  free_database(&top);
+  exit(0);
+}
+/*}}}*/
+static int process_quit(char **x)/*{{{*/
+{
+  /* Just get out quick, don't write the database back */
+  free_database(&top);
+  exit(0);
+}
+/*}}}*/
 
 /* Forward prototype */
 static int usage(char **x);

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/util.c,v 1.6 2002/05/10 22:22:41 richard Exp $
+   $Header: /cvs/src/tdl/util.c,v 1.7 2002/07/22 20:38:11 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -126,32 +126,39 @@ struct node *lookup_node(char *path, int allow_zero_index, struct node **parent)
 enum Priority parse_priority(char *priority, int *error)/*{{{*/
 {
   enum Priority result;
-  int is_digit = isdigit(priority[0]);
-
-  if (is_digit) {
-    int value = atoi(priority);
-    result = (value >= PRI_URGENT) ? PRI_URGENT :
-             (value <= PRI_VERYLOW) ? PRI_VERYLOW :
-             (enum Priority) value;
+  int is_digit;
+  
+  if (!priority) {
+  	*error = -1;
+    return PRI_UNKNOWN;
   } else {
-    int len = strlen(priority);
-    if (!strncmp(priority, "urgent", len)) {
-      result = PRI_URGENT;
-    } else if (!strncmp(priority, "high", len)) {
-      result = PRI_HIGH;
-    } else if (!strncmp(priority, "normal", len)) {
-      result = PRI_NORMAL;
-    } else if (!strncmp(priority, "low", len)) {
-      result = PRI_LOW;
-    } else if (!strncmp(priority, "verylow", len)) {
-      result = PRI_VERYLOW;
-    } else {
-      fprintf(stderr, "Can't parse priority '%s'\n", priority);
-      *error = -1;
-      return PRI_UNKNOWN; /* bogus */
-    }
+  
+  	is_digit = isdigit(priority[0]);
+  
+  	if (is_digit) {
+    	int value = atoi(priority);
+    	result = (value >= PRI_URGENT) ? PRI_URGENT :
+             	 (value <= PRI_VERYLOW) ? PRI_VERYLOW :
+             	 (enum Priority) value;
+  	} else {
+      int len = strlen(priority);
+    	if (!strncmp(priority, "urgent", len)) {
+        result = PRI_URGENT;
+    	} else if (!strncmp(priority, "high", len)) {
+    		result = PRI_HIGH;
+    	} else if (!strncmp(priority, "normal", len)) {
+    	 	result = PRI_NORMAL;
+    	} else if (!strncmp(priority, "low", len)) {
+    		result = PRI_LOW;
+    	} else if (!strncmp(priority, "verylow", len)) {
+        result = PRI_VERYLOW;
+    	} else {
+        fprintf(stderr, "Can't parse priority '%s'\n", priority);
+        *error = -1;
+     	 	return PRI_UNKNOWN; /* bogus */
+    	}
+  	}
   }
-
   *error = 0;
   return result;
 }
