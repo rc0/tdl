@@ -10,8 +10,10 @@ It supports the following features :
 - add a new entry and immediately mark it done (e.g. to log tasks you did which
   you tackled immediately you got them.)
 - organise the entries in a tree structure (sub-tasks of other tasks etc)
+- move the tasks around and re-organise the hierarchy.
 - list the tasks in the database (default listing excludes 'done' tasks, but
-  these can be shown too if desired)
+  these can be shown too if desired).  The listing is in colour by default, with
+  monochrome output as an option.
 - allows entries to be prioritised (priorities shown in different colours on
   listing)
 - track date added and date completed for each task
@@ -34,5 +36,5 @@ CONTACT
     rpc@myself.com
     richard.curnow@go.to
    
-$Header: /cvs/src/tdl/README,v 1.1 2001/08/19 22:09:24 richard Exp $
+$Header: /cvs/src/tdl/README,v 1.2 2001/08/27 22:10:03 richard Exp $
 
