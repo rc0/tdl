@@ -1,0 +1,26 @@
+tdl does not use autoconf.
+
+Edit the supplied Makefile and change
+
+prefix : where you want the program & manpage to be installed
+CC, CFLAGS : the C compiler and options you want to use
+
+Then just type
+
+    make
+    make install
+
+To get started,
+
+    tdl create
+    tdl add "Some task I have to do"
+    tdl list
+
+It's suggested that you try
+
+    man tdl
+
+as well.
+
+$Header: /cvs/src/tdl/INSTALL,v 1.1 2001/08/19 22:09:24 richard Exp $
+

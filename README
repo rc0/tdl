@@ -1,0 +1,38 @@
+INTRODUCTION
+tdl is a lightweight program for managing a 'to-do' list of pending jobs that
+you have.
+    
+It supports the following features :
+- 1 database per directory, or per tree of directories (tdl searches up through
+  parent directories to find the database, so you can have one per project, for
+  example.)
+- add new entries, mark them done, edit the text of entries
+- add a new entry and immediately mark it done (e.g. to log tasks you did which
+  you tackled immediately you got them.)
+- organise the entries in a tree structure (sub-tasks of other tasks etc)
+- list the tasks in the database (default listing excludes 'done' tasks, but
+  these can be shown too if desired)
+- allows entries to be prioritised (priorities shown in different colours on
+  listing)
+- track date added and date completed for each task
+- generate report of tasks completed in a given earlier time period (useful if
+  you have to produce a weekly summary of your work done, for example)
+- written in C
+- runs on a Linux console or in a terminal window.  It currently generates a
+  coloured listing, so a colour xterm or rxvt is preferred.
+
+The functionality and interface are heavily inspired by the program devtodo.
+
+LICENCE
+    The software is licensed under the GPL.
+
+CONTACT
+    The author is Richard P. Curnow.
+    He can be contacted at
+
+    richard@rrbcurnow.freeuk.com
+    rpc@myself.com
+    richard.curnow@go.to
+   
+$Header: /cvs/src/tdl/README,v 1.1 2001/08/19 22:09:24 richard Exp $
+
