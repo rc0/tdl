@@ -1,3 +1,14 @@
+NEW IN VERSION 0.8
+
+- Fix: don't complain if the links tdla, tdll etc already exist when installing.
+
+- Add -q option to suppress "no database" warning.
+
+- Fix: initialise 'parent' properly when creating nodes
+
+- Allow dates to be specified for 'add' and 'done'.  'list' ignores entries
+  added 'in the future', except with -a.  Not documented, still part complete.
+
 NEW IN VERSION 0.7
 
 - New before and after commands with identical operation to above and below.
@@ -15,4 +26,4 @@ NEW IN VERSION 0.7
 
 - Add tdlg to do log as a single command name.
 
-$Header: /cvs/src/tdl/NEWS,v 1.1 2001/10/07 22:44:46 richard Exp $
+$Header: /cvs/src/tdl/NEWS,v 1.2 2001/10/14 22:08:51 richard Exp $
