@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.12 2003/05/05 22:05:41 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.13 2003/05/14 23:31:51 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -46,11 +46,6 @@
 
 
 #ifdef USE_READLINE
-static int completion_entry_function(void)/*{{{*/
-{
-  return 0;
-}
-/*}}}*/
 static char *generate_a_command_completion(const char *text, int state)/*{{{*/
 {
   static int list_index, len;
