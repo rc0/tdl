@@ -1,0 +1,788 @@
+\input texinfo
+@c {{{ Main header stuff
+@afourwide
+@paragraphindent 0
+@setfilename tdl.info
+@settitle User guide for the tdl program
+@c @setchapternewpage off
+
+@ifinfo
+@dircategory Utilities
+@direntry
+* tdl: (tdl).			To-do-list management utility
+@end direntry
+@end ifinfo
+
+@titlepage
+@sp 10
+@title The tdl program
+@subtitle This manual describes how to use
+@subtitle the tdl program for managing to-do-lists.
+@author Richard P. Curnow
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2001, 2002 Richard P. Curnow
+@end titlepage
+
+@contents
+@c }}}
+
+@ifnottex
+@node Top
+@top
+@menu
+* Introduction::    What the tdl program does
+* Installation::    Compiling and installing the software
+* Usage::           Quickstart guide and examples of use
+* Reference::       Reference section
+@end menu
+@end ifnottex
+
+
+@c {{{ Introduction
+@node Introduction
+@chapter Introduction
+tdl is a lightweight program for managing a 'to-do' list of pending jobs that
+you have.
+    
+It supports the following features :
+@itemize @bullet
+@item 1 database per directory, or per tree of directories (tdl searches up
+through parent directories to find the database, so you can have one per
+project, for example.)
+
+@item add new entries, mark them done, edit the text of entries
+
+@item add a new entry and immediately mark it done (e.g. to log tasks you did
+which you tackled immediately you got them.)
+
+@item organise the entries in a tree structure (sub-tasks of other tasks etc)
+
+@item move the tasks around and re-organise the hierarchy.
+
+@item list the tasks in the database (default listing excludes 'done' tasks,
+but these can be shown too if desired).  The listing is in colour by default,
+with monochrome output as an option.
+
+@item allows entries to be prioritised (priorities shown in different colours
+on listing).  The listing can selectively show only entries at or above a given
+priority level.
+
+@item the start time for tasks can be set, to allow for 'deferred' tasks with
+start times in the future.  Such tasks are excluded from the default listing.
+
+@item track date added and date completed for each task
+
+@item generate report of tasks completed in a given earlier time period (useful
+if you have to produce a weekly summary of your work done, for example)
+
+@item import and export entries, to allow splitting and merging of databases.
+
+@item written in C
+
+@item runs on a Linux console or in a terminal window.  It currently generates
+a coloured listing, so a colour xterm or rxvt is preferred.
+
+@item tdl can run a single sub-command direct from the command line, or it can
+run in an interactive mode where several sub-commands can be used within a
+single run.  If the GNU readline library is available at compile time, the
+interactive mode features command line editing and various completion and usage
+hint facilities.
+@end itemize
+@c }}}
+@c {{{ Installation
+@node Installation
+@chapter Installation
+This section discusses installation
+
+@menu
+* Build from source:: Installing tdl from source code
+* Packaging::         Notes for package builders
+@end menu
+
+@c {{{ Build from source
+@node Build from source
+@section Installing tdl from source code
+The procedure for installing tdl from source code is as follows:
+
+@enumerate
+@item @strong{Unpack the sources}
+@example
+gunzip < tdl-1.0.tar.gz | tar xvf -
+cd tdl-1.0
+@end example
+
+@item @strong{Configure the makefile}
+
+tdl does not use a @code{./configure} mechanism (yet!) to configure options.
+You have to manually edit @file{Makefile}.  The variables you may want to edit
+
+@item @strong{Compile the sources}
+@example
+make
+@end example
+
+@item @strong{Install the software}
+@example
+make install
+@end example
+
+@item (Optional) @strong{Build the documentation}
+
+This assumes you have the @file{makeinfo} and @file{tex} tools on your path.
+@example
+make docs
+@end example
+
+@item (Optional) @strong{Install the documentation}
+
+Currently, there are no Makefile targets for this.  Pick the documentation
+formats you want to keep and install them manually to the appropriate places.
+@c }}}
+@c {{{ Packaging
+@node Packaging
+@section Notes for package builders
+For building a Slackware package, you could follow the steps above except for
+the installation
+
+@example
+vi Makefile
+make
+make docs
+mkdir pkg
+make install DESTDIR=./pkg
+(copy appropriate docs into subdirectories of pkg)
+cd pkg
+makepkg tdl.tgz
+@end example
+
+Packagers for other distributions may be able to adapt this.  (The point the
+example is making is that @file{Makefile} contains support for using a variable
+@var{DESTDIR} in this way.)
+@c }}}
+
+@c }}}
+
+@c {{{ Usage
+@node Usage
+@chapter Usage
+This section contains examples of using tdl.
+
+@menu
+* Getting started::   Getting started with tdl
+@end menu
+
+@c {{{ Getting started
+@node Getting started
+@section Getting started
+This section shows how you can get started with tdl.
+
+Let's assume you have a working directory for a project, and you want to
+maintain a to-do list for things you need to do on that project.  Let's assume
+the working directory for the project is @file{/home/foobar/myproject}.  Then
+you'd start by entering the following commands into your shell:
+
+@example
+% cd /home/foobar/myproject
+% tdl create
+@end example
+
+Now, lets say you have some tasks to keep track of:
+
+@example
+% tdl
+tdl> add "Write user guide"
+tdl> add "Write release notes"
+tdl> add "Fix bug where empty data file causes core dump"
+tdl> exit
+%
+@end example
+
+The above sequence will add 3 tasks to your newly created database.  A few days
+later, you might come back to the project and think "Hmmm.  What did I need to
+do next?"  You can enter
+
+@example
+% tdl list
+1 Write user guide
+2 Write release notes
+3 Fix bug where empty data file causes core dump
+%
+@end example
+
+This shows another feature of tdl.  If you pass a sub-command (and its
+arguments, if any) on the tdl command line, tdl will execute just that command,
+and return you to your shell prompt.  However, if you run tdl with no
+arguments, it will go into its interactive mode.  For a single command like
+@command{list} in this situation, you'd probably find the direct method
+quicker.
+
+Suppose you fix the bug.  Then you could enter
+
+@example
+% tdl done 3
+@end example
+
+after which the list command would only show the first two tasks as still being
+open, like this:
+
+@example
+% tdl list
+1 Write user guide
+2 Write release notes
+%
+@end example
+
+The @command{add}, @command{list} and @command{done} commands may be all that
+you need in some cases.  However, another useful command is @command{report},
+which will summarise all the tasks you completed in a given period.  For
+example, you could list everything you completed in the last 7 days like this
+
+@example
+% tdl report 7d
+- Fix bug where empty data file causes core dump
+%
+@end example
+
+The other commands in tdl are mostly to do with changing the order of tasks in
+the database, assigning them priorities, and so on.
+@c }}}
+
+@c }}}
+
+@node Reference
+@chapter Reference
+@menu
+* Start and Exit::  Starting and exiting tdl
+* Command list::    Alphabetical list of all commands
+* Completion::      Completion facilities
+* Datespec::        How dates are specified
+* Backup file::     How tdl saves a backup copy of the database
+@end menu
+
+@c {{{ Start and Exit
+@node Start and Exit
+@section Starting and exiting tdl
+tdl has a set of functions that can be accessed in two different ways:
+
+@itemize @bullet
+@item Directly from the command line
+@item Interactively
+@end itemize
+
+In the 'direct' method, the function and its arguments are provided on the
+command line.  This mode is useful if you only want to perform a single
+operation.  An example
+
+@example
+% tdl add "A task"
+%
+@end example
+
+The 'interactive' method is entered when the tdl command is run with no
+arguments.  In this mode, many tdl operations may be performed within a single
+run of the program.  This avoids loading and saving the database for each
+operation, which may have a small performance benefit.  However, if the program
+is compiled with the readline library, the @key{tab} key will provide various
+completion functions.  An example
+
+@example
+% tdl
+tdl> add "A task"
+tdl> exit
+%
+@end example
+
+When in interactive mode, these methods can be used to exit and return to the shell:
+
+@itemize @bullet
+@item The @command{exit} command (@pxref{exit command})
+@item Hitting @key{Ctrl-D} (i.e. end of file on stdin)
+@item Hitting @key{Ctrl-C}, @key{Ctrl-\} etc.  The associated signals are
+caught by tdl and it will attempt to save the database.  However, this method
+is more risky than the first two.
+@item The @command{quit} command (@pxref{quit command}).  @strong{Caution:} this
+does not save the modified database back to the disk.  Only use it if you want
+to discard all changes made in this tdl run.
+@end itemize
+
+@c }}}
+@c {{{ Command list
+@node Command list
+@section Alphabetical list of all commands
+This section describes each of the tdl subcommands.
+@menu
+* above command::   Move entries above (before) another entry
+* add command::     Add a new entry to the database
+* after command::   Move entries after (below) another entry
+* before command::  Move entries before (above) another entry
+* below command::   Move entries below (after) another entry
+* create command::  Create a new database in the current directory
+* done command::    Mark 1 or more entries as done
+* edit command::    Change the text and/or start time of an entry
+* exit command::    Exit program, saving database
+* export command::  Export entries to another database
+* help command::    Display help information
+* import command::  Import entries from another database
+* into command::    Move entries to end of new parent
+* list command::    List entries in database (default from top node)
+* log command::     Add a new entry to the database, mark it done as well
+* priority command::Change the priority of 1 or more entries
+* purge command::   Remove old done entries in subtrees
+* quit command::    Exit program, NOT saving database
+* remove command::  Remove 1 or more entries from the database
+* report command::  Report completed tasks in interval
+* undo command::    Mark 1 or more entries as not done (cancel effect of 'done')
+* usage command::   Display help information
+* version command:: Display program version
+* which command::   Display filename of database being used
+@end menu
+@c }}}
+@c {{{ <--COMMANDS-->
+@c {{{ above command
+@node above command
+@subsection above command
+The @command{above} command is one of the commands used for re-ordering the
+entries in the database.  The @command{above} and @command{before} commands are
+synonymous.
+
+The arguments of the @command{above} comamnd are:
+
+@example
+tdl> above <index_to_insert_above> <index_to_move> ...
+@end example
+
+The first argument is the index of the entry above which the other entries are
+to be moved.  The entries corresponding the 2nd index onwards will be placed in
+argument order above the first entry.
+
+An example:
+@example
+tdl> list
+1 Task A
+2 Task B
+3 Task C
+4 Task D
+tdl> above 1 2 4 3
+tdl> list
+1 Task B
+2 Task D
+3 Task C
+4 Task A
+tdl>
+@end example
+
+You can move entries between levels in the hierarchy, with the restriction that
+you cannot move a node so that its new parent would be a descendent of itself.
+
+If you want to move entries to the end of the list (i.e. above the bottom of
+the list), you can use a zero as the index of the reference entry, for example
+
+@example
+tdl> list
+1 Task A
+   1.1 Task A_A
+   1.2 Task A_B
+2 Task B
+3 Task C
+tdl> above 1.0 3 2
+tdl> list
+1 Task A
+   1.1 Task A_A
+   1.2 Task A_A
+   1.3 Task C
+   1.4 Task B
+tdl>
+@end example
+
+@c }}}
+@c {{{ add command
+@node add command
+@subsection add command
+The @command{add} command is run as follows
+
+@example
+tdl> add [@@datespec] [parent-index] [priority] "Text for node"
+@end example
+
+In the simplest case of adding a new top-level entry to the database, with
+normal priority, starting now, this could be
+
+@example
+tdl> add "Wash the dog"
+@end example
+
+In a more complex case, to add a high priority entry underneath entry index 1,
+with the new entry coming live at 11a.m. next Friday, this would be
+
+@example
+tdl> add @@+fri-11 1 hi "Wash the dog"
+@end example
+@c }}}
+@c {{{ after command
+@node after command
+@subsection after command
+@c }}}
+@c {{{ before command
+@node before command
+@subsection before command
+The @command{above} and @command{before} commands are synonymous.  See the
+description of @command{above} (@pxref{above command}).
+@c }}}
+@c {{{ below command
+@node below command
+@subsection below command
+@c }}}
+@c {{{ create command
+@node create command
+@subsection create command
+The @command{create} command can only be used direct from the shell command
+line.  It is @strong{not} supported when tdl is used in its interactive
+mode.@footnote{This is to avoid confusion over which database file is being
+accessed if @command{create} were used after other commands had already
+been used in the same session.}
+
+Usually, the @command{create} command will create a new @file{.tdldb} file in
+the current directory.  However, if the @var{TDL_DATABASE} environment
+variable is set when tdl is run, the path specified by that variable
+will be used instead and the database will be created there.  In both
+cases, the @command{create} command will refuse to over-write an
+existing database; an error message will be generated if that is
+attempted.
+
+@example
+% tdl create
+@end example
+@c }}}
+@c {{{ done command
+@node done command
+@subsection done command
+@c }}}
+@c {{{ edit command
+@node edit command
+@subsection edit command
+The @command{edit} command is used to modify the start-time or text of an existing entry.  Its argument structure is
+
+@example
+tdl> edit [@@<datespec>] <entry_index>[...] [<new_text>]
+@end example
+
+If a <datespec> is provided, the start-time of the entry will be
+changed.@footnote{The @emph{start-time} of an entry is the time at which it was
+created with the @command{add} or @command{log} commands.}  If the start-time
+is set in the future, it 'defers' the entry until that time, and the entry will
+not show on the output of the @command{list} command until that time.
+
+If <new-text> is provided, this replaces the text describing the specified
+entry.
+
+A single <entry-index>, optionally followed by 3 periods, must be given.  If
+followed by 3 periods, the specified entry and all its children, their children
+and so on will have their start-times modified.  When modifying the text, the 3
+periods cannot be used; only a single entry's text can be changed in that case.
+
+Some examples follow.
+
+To change the start-time of the entry with index 1 to next Sunday,
+@example
+tdl> edit @@+sun 1
+@end example
+
+To change the start-time of the entry with index 1, and all its descendents, to
+next Sunday,
+@example
+tdl> edit @@+sun 1...
+@end example
+
+To change the text for the entry with index 1,
+@example
+tdl> edit 1 "New description"
+@end example
+
+To change the text for the entry with index 1 and change its start time to next Sunday,
+@example
+tdl> edit @@+sun 1 "New description"
+@end example
+@c }}}
+@c {{{ exit command
+@node exit command
+@subsection exit command
+The @command{exit} command is used to exit from tdl when it is used in
+interactive mode.  The @command{exit} command is not available in the command
+line mode, where it would not make sense.  An example:
+
+@example
+tdl> exit
+%
+@end example
+
+The @command{exit} command writes any pending updates to the database before
+exiting.  (Compare the @command{quit} command (@pxref{quit command}), which
+@strong{loses} all updates made during the current tdl run.)
+@c }}}
+@c {{{ export command
+@node export command
+@subsection export command
+@c }}}
+@c {{{ help command
+@node help command
+@subsection help command
+The @command{help} command displays help information.  When run without
+arguments, a list of valid commands is produced.  Note, this list is slightly
+different depending on whether the @command{help} command is used through the
+interactive readline interface or straight from the shell.
+
+@example
+tdl> help
+tdl, Copyright (C) 2001,2002 Richard P. Curnow
+tdl comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions; see the GNU General Public License for details.
+
+above    : Move entries above (before) another entry
+add      : Add a new entry to the database
+after    : Move entries after (below) another entry
+below    : Move entries below (after) another entry
+before   : Move entries before (above) another entry
+done     : Mark 1 or more entries as done
+edit     : Change the text and/or start time of an entry
+exit     : Exit program, saving database
+export   : Export entries to another database
+help     : Display help information
+import   : Import entries from another database
+into     : Move entries to end of new parent
+list     : List entries in database (default from top node)
+log      : Add a new entry to the database, mark it done as well
+priority : Change the priority of 1 or more entries
+purge    : Remove old done entries in subtrees
+quit     : Exit program, NOT saving database
+remove   : Remove 1 or more entries from the database
+report   : Report completed tasks in interval
+undo     : Mark 1 or more entries as not done (cancel effect of 'done')
+usage    : Display help information
+version  : Display program version
+which    : Display filename of database being used
+
+Enter 'help <command-name>' for more help on a particular command
+
+tdl>
+@end example
+
+If the @command{help} command is passed the name of a sub-command, it shows help for that command.
+
+@example
+tdl> help add
+Description
+  Add a new entry to the database
+
+Synopsis
+  add [@@<datespec>] [<parent_index>] [<priority>] <entry_text>
+
+<index>    : 1, 1.1 etc (see output of 'tdl list')
+<priority> : urgent|high|normal|low|verylow
+<datespec> : [-|+][0-9]+[shdwmy][-hh[mm[ss]]]  OR
+             [-|+](sun|mon|tue|wed|thu|fri|sat)[-hh[mm[ss]]] OR
+             [[[cc]yy]mm]dd[-hh[mm[ss]]]
+<text>     : Any text (you'll need to quote it if >1 word)
+
+tdl>
+@end example
+
+The @command{help} command is synonymous with the @command{usage} command.
+
+@c }}}
+@c {{{ import command
+@node import command
+@subsection import command
+@c }}}
+@c {{{ into command
+@node into command
+@subsection into command
+@c }}}
+@c {{{ list command
+@node list command
+@subsection list command
+@c }}}
+@c {{{ log command
+@node log command
+@subsection log command
+@c }}}
+@c {{{ priority command
+@node priority command
+@subsection priority command
+@c }}}
+@c {{{ purge command
+@node purge command
+@subsection purge command
+@c }}}
+@c {{{ quit command
+@node quit command
+@subsection quit command
+The @command{quit} command is used to exit from tdl when it is used in
+interactive mode.  The @command{quit} command is not available in the command
+line mode, where it would not make sense.  An example
+
+@example
+tdl> quit
+%
+@end example
+
+The @command{quit} command @strong{DOES NOT} write any pending updates to the database before
+exiting.  (Compare the @command{exit} command (@pxref{exit command}), which
+does write all updates made during the current tdl run.)
+
+The main use for the @command{quit} command would be to avoid damaging the
+database if a serious error had been made.
+@c }}}
+@c {{{ remove command
+@node remove command
+@subsection remove command
+@c }}}
+@c {{{ report command
+@node report command
+@subsection report command
+@c }}}
+@c {{{ undo command
+@node undo command
+@subsection undo command
+@c }}}
+@c {{{ usage command
+@node usage command
+@subsection usage command
+The @command{usage} command is synonymous with the @command{help} command.
+@xref{help command}.
+@c }}}
+@c {{{ version command
+@node version command
+@subsection version command
+The @command{version} command shows the program version.
+
+@example
+tdl> version
+tdl V1.1
+tdl>
+@end example
+@c }}}
+@c {{{ which command
+@node which command
+@subsection which command
+@c }}}
+@c }}}
+
+@c {{{ Completion
+@node Completion
+@section Completion facilities
+When tdl has been compiled to use the @emph{readline} library, the interactive
+mode supports a number of completion functions, activated with the @key{tab}
+key.
+
+In particular, the following are supported:
+
+@itemize @bullet
+
+@item @strong{Command completion}.  If @key{tab} is pressed when the command
+line is empty, a list of possible commands will be shown.  If @key{tab} is
+pressed when a partial command has been typed, the command will be completed
+immediately if possible, otherwise a list of commands matching the
+already-typed prefix will be shown.
+
+@item @strong{Help completion}.  If @command{help} or @command{usage} is
+already in the buffer, a list of commands will be shown(as above).  The
+@key{tab} completion works in the same way to complete the name of the command
+you want a help summary for.
+
+@item @strong{Priority completion}.  If @command{list} or @command{priority} is
+at the start of the input buffer and the current word starts with a letter, tdl
+will try to complete the name of a priority level if @key{tab} is pressed.
+
+@item @strong{Open task completion}.  If @command{done} is at the start of the
+input buffer, hitting @key{tab} will show a list of task indices that are still
+open.  If part of an index has already been typed, the open task indices for
+which the typed characters are a prefix will be shown.
+
+@item @strong{Parameter hints}.  If some other command is at the start of the
+input buffer and @key{tab} is pressed, tdl will show a one-line summary of that
+command's parameters.
+
+@end itemize
+
+
+@c }}}
+@c {{{ Datespec
+@node Datespec
+@section How dates are specified
+@multitable @columnfractions .33 .66
+@item @strong{Date specification} @tab @strong{Meaning}
+@item -1h @tab exactly 1 hour ago
+@item -2d @tab exactly 2 days ago
+@item +1w @tab exactly 1 week in the future
+@item +1m @tab exactly 1 month (30 days) in the future
+@item +2y @tab exactly 2 years in the future
+@item -1d-0815 @tab 08:15am yesterday
+@item +1d-08 @tab 8am tomorrow
+@item +1w-08 @tab 8am on the same day as today next week
+@item +6h-08 @tab 8am on the day containing the time 6 hours ahead of now
+@item .-08 @tab 8am today
+@item .-20 @tab 8pm today
+@item 20011020 @tab absolute : 12 noon on 20th October 2001
+@item 011020 @tab absolute : 12 noon on 20th October 2001 (current century)
+@item 1020 @tab absolute : 12 noon on 20th October 2001 (current century and year)
+@item 20 @tab absolute : 12 noon on 20th October 2001 (current century, year and month)
+@item 20011020-081500 @tab absolute : 08:15am on 20th October 2001
+@item 20011020-0815 @tab absolute : 08:15am on 20th October 2001 (seconds=0)
+@item 20011020-08 @tab absolute : 08:00am on 20th October 2001 (minutes=seconds=0)
+@item 011020-08 @tab absolute : 08:00am on 20th October 2001 (minutes=seconds=0, current century)
+@item etc @tab (see below)
+@item -sun @tab 12 noon on the previous Sunday
+@item +sat @tab 12 noon on the following Saturday
+@item +sat-08 @tab 8am on the following Saturday
+@item -tue-0815 @tab 08:15am on the previous Tuesday
+@item etc @tab (see below)
+@end multitable
+
+In the 'all-numeric' format, the rule is that dates can have fields omitted
+from the start (assumed to be the current value), and times can have fields
+omitted from the end (assumed to be zero, except if the hours figure is missing
+it is assumed to be 12, since most work is done in the day.)
+
+In the 'weekday and time' format, the time rule is the same: missing minutes
+and seconds are taken as zero and missing hours as 12.  If the weekday is the
+same as today, the offset is always 7 days in the required direction.  If the
+weekday is not the same as today, the offset will always be less than 7 days in
+the required direction.
+
+In the 'relative' format, when a time is included as well, the procedure is as
+follows.  First the time is determined which is the given number of hours, days
+etc away from the current time.  Then the specified time on that day is used.
+The main use for this is to specify times like '8am yesterday'.  Obviously some
+of the more uses of this mode are rather far-fetched.
+
+For the weekday and relative formats, the sign is actually optional.  The
+default sign (implying past (-) or future (+)) will then be assumed depending on
+the command as shown below:
+
+@multitable @columnfractions .2 .2 .6
+@item @strong{Command} @tab @strong{Default} @tab @strong{Reason}
+@item add @tab + @tab Add entries with deferred start times
+@item edit @tab + @tab Add entries with deferred start times
+@item done @tab - @tab Entries have been completed at some time in the past
+@item log @tab - @tab Entries have been completed at some time in the past
+@item report @tab - @tab Reporting on earlier completed tasks not future ones
+@item purge @tab - @tab Tasks won't be completed in the future, so no need to purge future ones
+@end multitable
+@c }}}
+@c {{{ Backup file
+@node Backup file
+@section How tdl saves a backup copy of the database
+Whenever tdl writes a modified database to disk, it renames the previous
+database by adding @file{.bak} on the end of the filename.  Thus @file{.tdldb}
+is renamed to @file{.tdldb.bak}.
+
+If you need to restore the previous @file{.tdldb} for any reason (e.g. a gross
+mistake during editing, or if a bug causes it to be corrupted), you can
+manually rename @file{.tdldb.bak} to @file{.tdldb}.
+@c }}}
+
+@bye
+@c vim:cms=@c\ %s:fdm=marker:fdc=5:syntax=off
+
