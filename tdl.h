@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.19 2002/07/18 23:32:58 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.20 2003/03/06 22:53:24 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -83,7 +83,7 @@ struct command {/*{{{*/
   char *descrip; /* One line description */
   char *synopsis; /* Description of parameters */
   char ** (*completer)(char *, int); /* Function to generate completions */
-  unsigned char  dirty; /* 1 if operation can dirty the database, 0 if read-only */
+  unsigned char  dirty; /* 1 if operation can dirty the database, 0 if it leaves it clean */
   unsigned char  load_db; /* 1 if cmd requires current database to be loaded first */
   unsigned char  matchlen; /* number of characters to make command unambiguous */
   unsigned char  interactive_ok; /* 1 if OK to use interactively. */

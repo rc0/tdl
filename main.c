@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.30 2003/03/04 20:47:12 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.31 2003/03/06 22:53:24 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -265,6 +265,7 @@ static char desc_below[] = "Move entries below (after) another entry";
 static char desc_clone[] = "Make deep copy of one or more entries";
 static char desc_copyto[] = "Insert deep copy of one or more entries under another entry";
 static char desc_create[] = "Create a new database in the current directory";
+static char desc_delete[] = "Remove 1 or more entries from the database";
 static char desc_done[] = "Mark 1 or more entries as done";
 static char desc_edit[] = "Change the text and/or start time of an entry";
 static char desc_exit[] = "Exit program, saving database";
@@ -282,6 +283,7 @@ static char desc_purge[] = "Remove old done entries in subtrees";
 static char desc_quit[] = "Exit program, NOT saving database";
 static char desc_remove[] = "Remove 1 or more entries from the database";
 static char desc_report[] = "Report completed tasks in interval";
+static char desc_revert[] = "Discard changes and reload previous database from disc";
 static char desc_save[] = "Save the database back to disc and keep working";
 static char desc_undo[] = "Mark 1 or more entries as not done (cancel effect of 'done')";
 static char desc_usage[] = "Display help information";
@@ -298,6 +300,7 @@ static char synop_below[] = "<index_to_insert_below> <index_to_move> ...";
 static char synop_clone[] = "<index_to_clone> ...";
 static char synop_copyto[] = "<parent_index> <index_to_clone> ...";
 static char synop_create[] = "";
+static char synop_delete[] = "<entry_index>[...] ...";
 static char synop_done[] = "[@<datespec>] <entry_index>[...] ...";
 static char synop_edit[] = "[@<datespec>] <entry_index>[...] [<new_text>]";
 static char synop_exit[] = "";
@@ -322,6 +325,7 @@ static char synop_quit[] = "";
 static char synop_remove[] = "<entry_index>[...] ...";
 static char synop_report[] = "<start_datespec> [<end_datespec>]\n"
                              "(end defaults to now)";
+static char synop_revert[] = "";
 static char synop_save[] = "";
 static char synop_undo[] = "<entry_index>[...] ...";
 static char synop_usage[] = "[<command-name>]";
@@ -411,6 +415,15 @@ static int process_save(char **x)/*{{{*/
   return 0;
 }
 /*}}}*/
+static int process_revert(char **x)/*{{{*/
+{
+  if (is_loaded) {
+    free_database(&top);
+  }
+  is_loaded = currently_dirty = 0;
+  return 0;
+}
+/*}}}*/
 /* Forward prototype */
 static int usage(char **x);
 
@@ -426,6 +439,7 @@ struct command cmds[] = {/*{{{*/
   {"clone",    NULL,   process_clone,    desc_clone,   synop_clone,   NULL,              1, 1, 2, 1, 1}, 
   {"copyto",   NULL,   process_copyto,   desc_copyto,  synop_copyto,  NULL,              1, 1, 2, 1, 1}, 
   {"create",   NULL,   process_create,   desc_create,  synop_create,  NULL,              1, 0, 2, 0, 1},
+  {"delete",   NULL,   process_remove,   desc_delete,  synop_delete,  NULL,              1, 1, 3, 1, 1},
   {"done",     "tdld", process_done,     desc_done,    synop_done,    complete_done,     1, 1, 1, 1, 1},
   {"edit",     NULL,   process_edit,     desc_edit,    synop_edit,    NULL,              1, 1, 2, 1, 1},
   {"exit",     NULL,   process_exit,     desc_exit,    synop_exit,    NULL,              0, 0, 3, 1, 0},
@@ -435,6 +449,7 @@ struct command cmds[] = {/*{{{*/
   {"import",   NULL,   process_import,   desc_import,  synop_import,  NULL,              1, 1, 2, 1, 1},
   {"into",     NULL,   process_into,     desc_into,    synop_into,    NULL,              1, 1, 2, 1, 1},
   {"list",     "tdll", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
+  {"ls",       NULL,   process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
   {"log",      "tdlg", process_log,      desc_log,     synop_log,     NULL,              1, 1, 2, 1, 1},
   {"open",     NULL,   process_open,     desc_open,    synop_open,    complete_open,     1, 1, 1, 1, 1},
   {"postpone", NULL,   process_postpone, desc_postpone,synop_postpone,complete_postpone, 1, 1, 2, 1, 1},
@@ -443,6 +458,7 @@ struct command cmds[] = {/*{{{*/
   {"quit",     NULL,   process_quit,     desc_quit,    synop_quit,    NULL,              0, 0, 1, 1, 0},
   {"remove",   NULL,   process_remove,   desc_remove,  synop_remove,  NULL,              1, 1, 3, 1, 1},
   {"report",   NULL,   process_report,   desc_report,  synop_report,  NULL,              0, 1, 3, 1, 1},
+  {"revert",   NULL,   process_revert,   desc_revert,  synop_revert,  NULL,              0, 0, 3, 1, 0},
   {"save",     NULL,   process_save,     desc_save,    synop_save,    NULL,              0, 1, 1, 1, 0},
   {"undo",     NULL,   process_undo,     desc_undo,    synop_undo,    NULL,              1, 1, 2, 1, 1},
   {"usage",    NULL,   usage,            desc_usage,   synop_usage,   complete_help,     0, 0, 2, 1, 1},

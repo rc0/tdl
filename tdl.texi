@@ -351,6 +351,7 @@ This section describes each of the tdl subcommands.
 * clone command::   Make a deep copy of one or more entries
 * copyto command::  Insert a deep copy of one or more entries into an existing entry
 * create command::  Create a new database in the current directory
+* delete command::  Remove 1 or more entries from the database
 * done command::    Mark 1 or more entries as done
 * edit command::    Change the text and/or start time of an entry
 * exit command::    Exit program, saving database
@@ -360,6 +361,7 @@ This section describes each of the tdl subcommands.
 * import command::  Import entries from another database
 * into command::    Move entries to end of new parent
 * list command::    List entries in database (default from top node)
+* ls command::      List entries in database (default from top node)
 * log command::     Add a new entry to the database, mark it done as well
 * open command::    Move 1 or more entries out of postponed state
 * postpone command::Make 1 or more entries postponed
@@ -368,6 +370,7 @@ This section describes each of the tdl subcommands.
 * quit command::    Exit program, NOT saving database
 * remove command::  Remove 1 or more entries from the database
 * report command::  Report completed tasks in interval
+* revert command::  Discard changes and reload previous database from disc
 * save command::    Save the database to disc and continue working
 * undo command::    Mark 1 or more entries as not done (cancel effect of 'done')
 * usage command::   Display help information
@@ -608,6 +611,17 @@ attempted.
 @example
 % tdl create
 @end example
+@c }}}
+@c {{{ delete command
+@node delete command
+@subsection delete command
+This command is synonymous with the @command{remove} command (@pxref{remove command}).
+
+The argument structure is
+@example
+delete <entry_index>[...] ...
+@end example
+
 @c }}}
 @c {{{ done command
 @node done command
@@ -1064,6 +1078,12 @@ tdl>
 text.  In the second case, the string @samp{wu} in @samp{wubble} matches
 @samp{ww} with a single error so a match occurs.)
 @c }}}
+@c {{{ ls command
+@node ls command
+@subsection ls command
+This is synonymous with the @command{list} command (@pxref{list command}).  It
+is provided for people who are too used to typing @command{ls} in their shell.
+@c }}}
 @c {{{ log command
 @node log command
 @subsection log command
@@ -1244,6 +1264,9 @@ The @command{remove} command acts immediately to remove the specified entries
 from the database.  A less aggressive command with similar effects is
 @command{ignore} (@pxref{ignore command}).
 
+The @command{delete} command (@pxref{delete command}) is provided as a synonmym
+for the @command{remove} command.
+
 @c }}}
 @c {{{ report command
 @node report command
@@ -1294,6 +1317,17 @@ from the shell prompt line, you can redirect the output to a file,
 @end example
 
 @c }}}
+@c {{{ revert command
+@node revert command
+@subsection revert command
+The @command{revert} command discards any changes made in the session and
+reloads the in-memory database from disc.  If you have used the @command{save}
+command (@pxref{save command}) in the session, the database will revert to its
+state at the most recent @command{save}.  Otherwise it will revert to its state
+when @command{tdl} was initially run.
+
+The @command{revert} command does not take any arguments.
+@c }}}
 @c {{{ save command
 @node save command
 @subsection save command
@@ -1308,6 +1342,8 @@ This command is useful if you tend to do long interactive tdl sessions.  It guar
 @item machine crashes
 @item running @samp{tdl} in another window and seeing a stale copy of the database file.
 @end enumerate
+
+The @command{save} command does not take any arguments.
 @c }}}
 @c {{{ undo command
 @node undo command
