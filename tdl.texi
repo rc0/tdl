@@ -357,6 +357,8 @@ This section describes each of the tdl subcommands.
 * into command::    Move entries to end of new parent
 * list command::    List entries in database (default from top node)
 * log command::     Add a new entry to the database, mark it done as well
+* open command::    Move 1 or more entries out of postponed state
+* postpone command::Make 1 or more entries postponed
 * priority command::Change the priority of 1 or more entries
 * purge command::   Remove old done entries in subtrees
 * quit command::    Exit program, NOT saving database
@@ -820,10 +822,12 @@ ignored entries will be deleted by any subsequent purge operation.
 I added this feature because, when applying @command{remove} to several
 entries, I kept getting tripped up by the indices changing below the entry that
 was removed (I kept removing the wrong entries later by not using the revised
-indices).
+indices).  Instead, I can @command{ignore} them and rely on a periodic
+@command{purge} to clean up the database.
 
-Another use for the @emph{ignore} command would be to postpone entries to stop
-them cluttering up the normal listing, but without removing them entirely.
+Another use for the @emph{ignore} command would be to move moribund entries
+into a @emph{wastebasket} to stop them cluttering up the normal listing, but
+without removing them entirely in case you need to reprieve them later.
 
 The @command{ignore} command is run as follows
 
@@ -835,6 +839,10 @@ An example is
 @example
 ignore 20 21.6.3 25... 28.1
 @end example
+
+If you need to @emph{un-ignore} an entry, just @command{undo} it (@pxref{undo
+command}).
+
 @c }}}
 @c {{{ import command
 @node import command
@@ -1085,6 +1093,43 @@ process):
 @samp{log}.  The shortcut @samp{tdll} was already allocated for the
 @command{list} subcommand.)
 
+@c }}}
+@c {{{ open command
+@node open command
+@subsection open command
+The @command{open} command is used to reverse the effect of the
+@command{postpone} command (@pxref{postpone command}).  Its effect is
+actually to set the arrival time of the entries to the current time.
+
+The @command{open} command is used as follows
+@example
+open <index_to_reopen>[...] ...
+@end example
+
+An example is
+@example
+open 20 21... 25.2
+@end example
+
+@c }}}
+@c {{{ postpone command
+@node postpone command
+@subsection postpone command
+The @command{postpone} command is used to make 1 more more entries postponed.  Its
+effect is actually to set the arrival time of the entries a long way in the
+future (i.e. it's an extreme form of the 'deferred' feature available in the
+@command{add} and @command{edit} commands.) Postponed entries can be
+re-activated with the @command{open} command (@pxref{open command}).
+
+The @command{postpone} command is used as follows
+@example
+postpone <index_to_postpone>[...] ...
+@end example
+
+An example is
+@example
+postpone 20 21... 25.2
+@end example
 @c }}}
 @c {{{ priority command
 @node priority command
@@ -1342,6 +1387,12 @@ will try to complete the name of a priority level if @key{tab} is pressed.
 input buffer, hitting @key{tab} will show a list of task indices that are still
 open.  If part of an index has already been typed, the open task indices for
 which the typed characters are a prefix will be shown.
+
+@item @strong{Postpone completion}.  If @command{postpone} is at the start of
+the input buffer, hitting @key{tab} will show a list of tasks that may be
+postponed.  Tasks marked @emph{done} are excluded.  If @command{open} is at the
+start of the input buffer, hitting @key{tab} will show a list of tasks that may
+be opened.
 
 @item @strong{Parameter hints}.  If some other command is at the start of the
 input buffer and @key{tab} is pressed, tdl will show a one-line summary of that

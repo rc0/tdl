@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.18 2002/07/18 22:13:58 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.19 2002/07/18 23:32:58 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 
 enum Priority {
   PRI_UNKNOWN = 0,
@@ -38,6 +39,8 @@ enum Priority {
 
 /* Magic time_t value used in the 'done' field to signify an ignored item */
 #define IGNORED_TIME 1
+
+#define POSTPONED_TIME LONG_MAX
 
 struct node;
 
@@ -135,6 +138,8 @@ int process_undo(char **x);
 int process_add(char **x);
 int process_log(char **x);
 int process_edit(char **x);
+int process_postpone(char **x);
+int process_open(char **x);
 
 /* In remove.c */
 int process_remove(char **x);
@@ -167,6 +172,8 @@ char *interactive_text(char *prompt, char *initval, int *is_blank, int *error);
 char **complete_help(char *, int);
 char **complete_list(char *, int);
 char **complete_priority(char *, int);
+char **complete_postpone(char *, int);
+char **complete_open(char *, int);
 char **complete_done(char *, int);
 
 #endif /* TDL_H */

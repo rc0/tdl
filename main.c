@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.26 2002/07/18 22:13:58 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.27 2002/07/18 23:32:57 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -345,6 +345,8 @@ static char desc_ignore[] = "Postpone or partially remove 1 or more entries";
 static char desc_into[] = "Move entries to end of new parent";
 static char desc_list[] = "List entries in database (default from top node)";
 static char desc_log[] = "Add a new entry to the database, mark it done as well";
+static char desc_open[] = "Move one or more entries out of postponed state";
+static char desc_postpone[] = "Make one or more entries postponed";
 static char desc_priority[] = "Change the priority of 1 or more entries";
 static char desc_purge[] = "Remove old done entries in subtrees";
 static char desc_quit[] = "Exit program, NOT saving database";
@@ -380,6 +382,8 @@ static char synop_list[] = "[-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_ind
                            "-1,-2,..,-9        : summarise (and don't show) entries below this depth\n"
                            "<search_condition> : word to match on";
 static char synop_log[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_text>";
+static char synop_open[] = "<entry_index>[...] ...";
+static char synop_postpone[] = "<entry_index>[...] ...";
 static char synop_priority[] = "<new_priority> <entry_index>[...] ...";
 static char synop_purge[] = "<since_datespec> [<ancestor_index> ...]";
 static char synop_quit[] = "";
@@ -417,6 +421,8 @@ struct command cmds[] = {/*{{{*/
   {"into",     NULL,   process_into,     desc_into,    synop_into,    NULL,              1, 1, 2, 1, 1},
   {"list",     "tdll", process_list,     desc_list,    synop_list,    complete_list,     0, 1, 2, 1, 1},
   {"log",      "tdlg", process_log,      desc_log,     synop_log,     NULL,              1, 1, 2, 1, 1},
+  {"open",     NULL,   process_open,     desc_open,    synop_open,    complete_open,     1, 1, 1, 1, 1},
+  {"postpone", NULL,   process_postpone, desc_postpone,synop_postpone,complete_postpone, 1, 1, 2, 1, 1},
   {"priority", NULL,   process_priority, desc_priority,synop_priority,complete_priority, 1, 1, 2, 1, 1},
   {"purge",    NULL,   process_purge,    desc_purge,   synop_purge,   NULL,              1, 1, 2, 1, 1},
   {"quit",     NULL,   process_quit,     desc_quit,    synop_quit,    NULL,              0, 0, 1, 1, 0},

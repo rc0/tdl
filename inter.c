@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.8 2002/07/17 23:34:40 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.9 2002/07/18 23:32:57 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -216,6 +216,39 @@ static char *generate_a_done_completion(char *text, int state)/*{{{*/
 }
 /*}}}*/
 
+/* Can't pass extra args thru to completers :-( */
+static int want_postponed_entries = 0;
+
+static char *generate_a_postpone_completion(char *text, int state)/*{{{*/
+{
+  static struct node_chain *chain = NULL;
+  struct node *node;
+  char *buf;
+  int len;
+
+  load_database_if_not_loaded();
+
+  if (!state) {
+    /* Re-initialise the node chain */
+    if (chain) cleanup_chain(chain);
+    chain = start_chain(&top, NULL);
+  }
+
+  len = strlen(text);
+  while ((node = advance_chain(&chain, &buf))) {
+    int is_done = (node->done > 0);
+    int not_postponed = (node->arrived != POSTPONED_TIME);
+    if (!is_done && (not_postponed ^ want_postponed_entries) && !strncmp(text, buf, len)) {
+      return buf;
+    } else {
+      /* Avoid gross memory leak */
+      free(buf);
+    }
+  }
+  return NULL;
+}
+/*}}}*/
+
 char **complete_help(char *text, int index)/*{{{*/
 {
   char **matches;
@@ -247,6 +280,22 @@ char **complete_list(char *text, int index)/*{{{*/
 char **complete_priority(char *text, int index)/*{{{*/
 {
   return complete_list(text, index);
+}
+/*}}}*/
+char **complete_postpone(char *text, int index)/*{{{*/
+{
+  char **matches;
+  want_postponed_entries = 0;
+  matches = completion_matches(text, generate_a_postpone_completion);
+  return matches;
+}
+/*}}}*/
+char **complete_open(char *text, int index)/*{{{*/
+{
+  char **matches;
+  want_postponed_entries = 1;
+  matches = completion_matches(text, generate_a_postpone_completion);
+  return matches;
 }
 /*}}}*/
 char **complete_done(char *text, int index)/*{{{*/
@@ -298,6 +347,16 @@ char **complete_priority(char *text, int index)/*{{{*/
 {
   return NULL;
 }/*}}}*/
+char **complete_postponed(char *text, int index)/*{{{*/
+{
+  return NULL;
+}
+/*}}}*/
+char **complete_open(char *text, int index)/*{{{*/
+{
+  return NULL;
+}
+/*}}}*/
 char **complete_done(char *text, int index)/*{{{*/
 {
   return NULL;
