@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.4 2001/10/07 22:44:45 richard Exp $
+#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.5 2001/10/14 21:24:24 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -17,14 +17,16 @@
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
 
+CC=gcc
+#CFLAGS=-g -Wall
+CFLAGS=-O2 -Wall
+
 prefix=/usr/local
+
 bindir=$(prefix)/bin
 mandir=$(prefix)/man
 man1dir=$(prefix)/man/man1
 
-CC=gcc
-#CFLAGS=-g -Wall
-CFLAGS=-O2 -Wall
 OBJ = main.o io.o add.o done.o remove.o move.o list.o \
       report.o purge.o util.o impexp.o
 
@@ -50,10 +52,10 @@ install:
 	[ -d $(man1dir) ] || mkdir $(man1dir)
 	cp tdl $(bindir)/tdl
 	chmod 555 $(bindir)/tdl
-	ln -s $(bindir)/tdl $(bindir)/tdla
-	ln -s $(bindir)/tdl $(bindir)/tdll
-	ln -s $(bindir)/tdl $(bindir)/tdld
-	ln -s $(bindir)/tdl $(bindir)/tdlg
+	ln -sf $(bindir)/tdl $(bindir)/tdla
+	ln -sf $(bindir)/tdl $(bindir)/tdll
+	ln -sf $(bindir)/tdl $(bindir)/tdld
+	ln -sf $(bindir)/tdl $(bindir)/tdlg
 	cp tdl.1 $(man1dir)/tdl.1
 	chmod 444 $(man1dir)/tdl.1
 
