@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/inter.c,v 1.4 2002/05/19 22:45:49 richard Exp $
+   $Header: /cvs/src/tdl/inter.c,v 1.5 2002/05/20 22:55:37 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -22,6 +22,7 @@
 /* This file deals with interactive mode */
 
 #include "tdl.h"
+#include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -409,11 +410,19 @@ static void split_line_and_dispatch(char *line)/*{{{*/
   return;
 }
 /*}}}*/
+static int is_line_blank(char *line)/*{{{*/
+{
+  char *p;
+  for (p=line; *p; p++) {
+    if (!isspace(*p)) return 0;
+  }
+  return 1;
+}
+/*}}}*/
 #ifdef USE_READLINE
 static void interactive_readline(void)/*{{{*/
 {
   char *cmd;
-  char *p;
   int had_char;
   
   do {
@@ -424,12 +433,7 @@ static void interactive_readline(void)/*{{{*/
     if (!cmd) return;
     
     /* Check if line is blank */
-    for (p=cmd, had_char=0; *p; p++) {
-      if (!isspace(*p)) {
-        had_char = 1;
-        break;
-      }
-    }
+    had_char = !is_line_blank(cmd);
 
     if (had_char) {
       add_history(cmd);
@@ -442,38 +446,85 @@ static void interactive_readline(void)/*{{{*/
       
 }
 /*}}}*/
+static char *interactive_add_readline(int *is_blank, int *error)/*{{{*/
+{
+  char *line;
+  
+  *error = 0;
+  line = readline("add> ");
+  *is_blank = is_line_blank(line);
+  if (!is_blank) add_history(line);
+  return line;
+}
+/*}}}*/
 #endif
-static void interactive_stdio(void)/*{{{*/
+static char *get_line_stdio(char *prompt, int *at_eof)/*{{{*/
 {
   int n, max = 0;
   char *line = NULL;
   int c;
+  
+  *at_eof = 0;
+  puts(prompt);
+  fflush(stdout);
+  n = 0;
+  do {
+    c = getchar();
+    if (c == EOF) {
+      *at_eof = 1;
+      return NULL;
+    } else {
+      if (n == max) {
+        max += 1024;
+        line = grow_array(char, max, line);
+      }
+      if (c != '\n') {
+        line[n++] = c;
+      } else {
+        line[n++] = 0;
+        return line;
+      }
+    }
+  } while (c != '\n');
+  assert(0);
+}
+/*}}}*/
+static void interactive_stdio(void)/*{{{*/
+{
+  char *line = NULL;
   int at_eof;
   
   do {
-    printf("tdl> ");
-    fflush(stdout);
-    n = 0;
-    at_eof = 0;
-    do {
-      c = getchar();
-      if (c == EOF) {
-        at_eof = 1;
-        break;
-      } else {
-        if (n == max) {
-          max += 1024;
-          line = grow_array(char, max, line);
-        }
-        if (c != '\n') {
-          line[n++] = c;
-        } else {
-          line[n++] = 0;
-          split_line_and_dispatch(line);
-        }
-      }
-    } while (c != '\n');
+    line = get_line_stdio("tdl> ", &at_eof);
+    if (!at_eof) {
+      split_line_and_dispatch(line);
+      free(line);
+    }
   } while (!at_eof);
+}
+/*}}}*/
+static char *interactive_add_stdio(int *is_blank, int *error)/*{{{*/
+{
+  char *line;
+  int at_eof;
+  *error = 0;
+  line = get_line_stdio("add> ", &at_eof);
+  *is_blank = line ? is_line_blank(line) : 0;
+  return line;
+}
+/*}}}*/
+char *interactive_add(int *is_blank, int *error)/*{{{*/
+{
+#ifdef USE_READLINE
+  if (isatty(0)) {
+    return interactive_add_readline(is_blank, error);
+  } else {
+    /* In case someone wants to drive tdl from a script, by redirecting stdin to it. */
+    return interactive_add_stdio(is_blank, error);
+  }
+#else
+  return interactive_add_stdio(is_blank, error);
+#endif
 }
 /*}}}*/
 

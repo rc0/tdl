@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.13 2002/05/19 22:47:11 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.14 2002/05/20 22:55:37 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -155,6 +155,7 @@ void load_database_if_not_loaded(void);
 
 /* In inter.c */
 void interactive(void);
+char *interactive_add(int *is_blank, int *error);
 char **complete_help(char *, int);
 char **complete_list(char *, int);
 char **complete_priority(char *, int);

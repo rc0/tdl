@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/add.c,v 1.8 2002/05/19 22:45:28 richard Exp $
+   $Header: /cvs/src/tdl/add.c,v 1.9 2002/05/20 22:55:36 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -22,15 +22,69 @@
 #include <ctype.h>
 #include "tdl.h"
 
+static int add_new_node(char *parent_path, int set_done, int set_priority, enum Priority new_priority, time_t insert_time, char *child_text)/*{{{*/
+{
+  struct node *parent = NULL;
+  struct node *nn;
+
+  if (parent_path) {
+    parent = lookup_node(parent_path, 0, NULL);
+    if (!parent) return -1;
+  } else {
+    parent = NULL;
+  }
+  
+  nn = new_node();
+  nn->text = new_string(child_text);
+  nn->arrived = (long) insert_time;
+  if (set_done) {
+    nn->done = (long) insert_time;
+  }
+  
+  nn->priority = (parent && !set_priority) ? parent->priority
+                                           : new_priority;
+
+  prepend_child(nn, parent);
+
+  /* Clear done status of parents - they can't be any longer! */
+  if (!set_done) {
+    while (parent) {
+      parent->done = 0;
+      parent = parent->parent;
+    }
+  }
+
+  return 0;
+}
+/*}}}*/
+static int try_add_interactive(int set_done)/*{{{*/
+{
+  char *text;
+  time_t insert_time;
+  int error = 0;
+  int blank;
+  int status;
+
+  do {
+    text = interactive_add(&blank, &error);
+    if (error < 0) return error;
+    if (!blank) {
+      time(&insert_time);
+      status = add_new_node(NULL, set_done, 0, PRI_NORMAL, insert_time, text);
+      free(text);
+      if (status < 0) return status;
+    }
+  } while (!blank);
+  return 0;
+}
+/*}}}*/
 static int process_add_internal(char **x, int set_done)/*{{{*/
 {
   /* Expect 1 argument, the string to add.  Need other options at some point. */
   time_t insert_time;
-  struct node *nn;
   int argc = count_args(x);
   char *text = NULL;
   char *parent_path = NULL;
-  struct node *parent = NULL;
   enum Priority priority = PRI_NORMAL;
   int set_priority = 0;
   char *x0;
@@ -50,6 +104,9 @@ static int process_add_internal(char **x, int set_done)/*{{{*/
   }
   
   switch (argc) {
+    case 0:
+      return try_add_interactive(set_done);
+      break;
     case 1:
       text = x[0];
       break;
@@ -78,33 +135,8 @@ static int process_add_internal(char **x, int set_done)/*{{{*/
       break;
   }
 
-  if (parent_path) {
-    parent = lookup_node(parent_path, 0, NULL);
-    if (!parent) return -1;
-  } else {
-    parent = NULL;
-  }
-  
-  nn = new_node();
-  nn->text = new_string(text);
-  nn->arrived = (long) insert_time;
-  if (set_done) {
-    nn->done = (long) insert_time;
-  }
-  
-  nn->priority = (parent && !set_priority) ? parent->priority
-                                           : priority;
+  return add_new_node(parent_path, set_done, set_priority, priority, insert_time, text);
 
-  prepend_child(nn, parent);
-
-  /* Clear done status of parents - they can't be any longer! */
-  if (!set_done) {
-    while (parent) {
-      parent->done = 0;
-      parent = parent->parent;
-    }
-  }
-  
   return 0;
 }
 /*}}}*/
