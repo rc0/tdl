@@ -807,7 +807,7 @@ tdl> before N.0 <indices> ...
 The @command{list} command is used to display the tasks in the database.  Its argument structure is:
 
 @example
-list [-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>...]
+list [-v] [-a] [-m] [-1..9] [<min-priority>] [<parent_index>|<search_condition>...]
 @end example
 
 When run with no arguments, the list contains all tasks that are
@@ -859,6 +859,32 @@ most useful when the entire sub-tree has a lower than normal priority.
 
 If you use the @samp{-1} ... @samp{-9} options with this option, the depth is
 counted relative to the depth of the indexed node that you specify.
+@item <search_condition>
+Each search condition specifies a case-insensitive substring match that is
+applied to all parent indices further on in the arguments.  (If no parent
+indices are given, all the search conditions are and'ed together and applied to
+filter all the nodes that would be shown according to the depth, priority etc
+arguments).
+
+Each search condition takes one of the following forms
+@example
+/substring
+/substring/1
+@end example
+
+In each case, an entry will match if @samp{substring} is actually a substring
+of the text of that entry.  In the second form (where the number may be 0, 1, 2
+or 3), a match occurs if there are up to that many errors in the substring.  An
+@dfn{error} is a single character inserted, removed or changed.
+
+This option is most useful if you have a large database and can remember you
+have an entry somewhere containing particular word(s), but can't remember where
+it is.
+
+If you need regular expression matching, the best approach would be to run
+@command{tdll} from the shell and pipe the output to @command{grep}.  The
+internal matching does approximate matches with keys up to 31 characters.
+
 @end table
 
 The command is best illustrated by examples.  Suppose the database contains
@@ -917,6 +943,18 @@ tdl> list -1 1.1
 (This lists the 1.1 subtree, showing that there is 1 open child out of a total
 of 2 children.)
 
+@example
+tdl> list /ww
+      1.1.2 wwww
+tdl> list /ww/1
+      1.1.2 wwww
+3 wubble
+tdl>
+@end example
+
+(In the first case the substring @samp{ww} must occur exactly in the entry's
+text.  In the second case, the string @samp{wu} in @samp{wubble} matches
+@samp{ww} with a single error so a match occurs.)
 @c }}}
 @c {{{ log command
 @node log command

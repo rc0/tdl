@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/tdl.h,v 1.15 2002/05/21 22:47:26 richard Exp $
+   $Header: /cvs/src/tdl/tdl.h,v 1.16 2002/07/15 22:50:34 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -53,6 +53,7 @@ struct node {
   long required_by;
   long done;
   char *scratch; /* For functions to attach stuff to nodes */
+  int iscratch;  /* More scratch space */
   char flag;
 };
 

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/list.c,v 1.11 2002/05/09 23:07:05 richard Exp $
+   $Header: /cvs/src/tdl/list.c,v 1.12 2002/07/15 22:50:33 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -21,6 +21,7 @@
 
 #include <time.h>
 #include <string.h>
+#include <assert.h>
 #include <ctype.h>
 #include "tdl.h"
 
@@ -174,7 +175,7 @@ static void print_details(struct node *y, int indent, int summarise_kids, const 
 
 }
 /*}}}*/
-static void list_chain(struct links *x, int indent, int depth, const struct list_options *options, char *index_buffer, enum Priority prio, time_t now)/*{{{*/
+static void list_chain(struct links *x, int indent, int depth, const struct list_options *options, char *index_buffer, enum Priority prio, time_t now, unsigned char *hits)/*{{{*/
 {
   struct node *y;
   int idx, is_done;
@@ -199,14 +200,198 @@ static void list_chain(struct links *x, int indent, int depth, const struct list
 
     if (y->priority >= prio) {
       int summarise_kids = (options->set_depth && (options->depth == depth));
-      print_details(y, indent, summarise_kids, options, new_index_buffer, now);
+      if (hits[y->iscratch]) {
+        print_details(y, indent, summarise_kids, options, new_index_buffer, now);
+      }
     }
 
     /* Maybe list children regardless of priority assigned to parent. */
     if (!options->set_depth || (depth < options->depth)) {
-      list_chain(&y->kids, indent + INDENT_TAB, depth + 1, options, new_index_buffer, prio, now);
+      list_chain(&y->kids, indent + INDENT_TAB, depth + 1, options, new_index_buffer, prio, now, hits);
     }
 
+  }
+  return;
+}
+/*}}}*/
+static void allocate_indices(struct links *x, int *idx)/*{{{*/
+{
+  struct node *y;
+  for (y = x->next;
+       y != (struct node *) x;
+       y = y->chain.next) {
+
+    y->iscratch = *idx;
+    ++*idx;
+    allocate_indices(&y->kids, idx);
+  }
+}
+/*}}}*/
+static void search_node(struct links *x, int max_errors, unsigned long *vecs, unsigned long hitvec, unsigned char *hits)/*{{{*/
+{
+  struct node *y;
+  char *p;
+  char *token;
+  int got_hit;
+  unsigned long r0, r1, r2, r3, nr0, nr1, nr2;
+
+  for (y = x->next;
+       y != (struct node *) x;
+       y = y->chain.next) {
+
+    token = y->text;
+
+    switch (max_errors) {
+      /* optimise common cases for few errors to allow optimizer to keep bitmaps
+       * in registers */
+      case 0:/*{{{*/
+        r0 = ~0;
+        got_hit = 0;
+        for(p=token; *p; p++) {
+          int idx = (unsigned int) *(unsigned char *)p;
+          r0 = (r0<<1) | vecs[idx];
+          if (~(r0 | hitvec)) {
+            got_hit = 1;
+            break;
+          }
+        }
+        break;
+        /*}}}*/
+      case 1:/*{{{*/
+        r0 = ~0;
+        r1 = r0<<1;
+        got_hit = 0;
+        for(p=token; *p; p++) {
+          int idx = (unsigned int) *(unsigned char *)p;
+          nr0 = (r0<<1) | vecs[idx];
+          r1  = ((r1<<1) | vecs[idx]) & ((r0 & nr0) << 1) & r0;
+          r0  = nr0;
+          if (~((r0 & r1) | hitvec)) {
+            got_hit = 1;
+            break;
+          }
+        }
+        break;
+  /*}}}*/
+      case 2:/*{{{*/
+        r0 = ~0;
+        r1 = r0<<1;
+        r2 = r1<<1;
+        got_hit = 0;
+        for(p=token; *p; p++) {
+          int idx = (unsigned int) *(unsigned char *)p;
+          nr0 =  (r0<<1) | vecs[idx];
+          nr1 = ((r1<<1) | vecs[idx]) & ((r0 & nr0) << 1) & r0;
+          r2  = ((r2<<1) | vecs[idx]) & ((r1 & nr1) << 1) & r1;
+          r0  = nr0;
+          r1  = nr1;
+          if (~((r0 & r1& r2) | hitvec)) {
+            got_hit = 1;
+            break;
+          }
+        }
+        break;
+  /*}}}*/
+      case 3:/*{{{*/
+        r0 = ~0;
+        r1 = r0<<1;
+        r2 = r1<<1;
+        r3 = r2<<1;
+        got_hit = 0;
+        for(p=token; *p; p++) {
+          int idx = (unsigned int) *(unsigned char *)p;
+          nr0 =  (r0<<1) | vecs[idx];
+          nr1 = ((r1<<1) | vecs[idx]) & ((r0 & nr0) << 1) & r0;
+          nr2 = ((r2<<1) | vecs[idx]) & ((r1 & nr1) << 1) & r1;
+          r3  = ((r3<<1) | vecs[idx]) & ((r2 & nr2) << 1) & r2;
+          r0  = nr0;
+          r1  = nr1;
+          r2  = nr2;
+          if (~((r0 & r1 & r2 & r3) | hitvec)) {
+            got_hit = 1;
+            break;
+          }
+        }
+        break;
+        /*}}}*/
+      default:
+        assert(0); /* not allowed */
+        break;
+    }
+    if (got_hit) {
+      hits[y->iscratch] = 1;
+    }
+    search_node(&y->kids, max_errors, vecs, hitvec, hits);
+  }
+}
+/*}}}*/
+static void merge_search_condition(unsigned char *hits, int n_nodes, char *cond)/*{{{*/
+{
+  /* See "Fast text searching with errors, Sun Wu and Udi Manber, TR 91-11,
+     University of Arizona.  I have been informed that this algorithm is NOT
+     patented.  This implementation of it is entirely the work of Richard P.
+     Curnow - I haven't looked at any related source (webglimpse, agrep etc) in
+     writing this.
+  */
+
+  int max_errors;
+  char *slash;
+  char *substring;
+  unsigned long a[256];
+  unsigned long hit;
+  int len, i;
+  char *p;
+  unsigned char *hit0;
+
+  slash = strchr(cond, '/');
+  if (!slash) {
+    max_errors = 0;
+    substring = cond;
+  } else {
+    substring = new_string(cond);
+    substring[slash-cond] = '\0';
+    max_errors = atoi(slash+1);
+    if (max_errors > 3) {
+      fprintf(stderr, "Can only match with up to 3 errors, ignoring patterh <%s>\n", cond);
+      goto get_out;
+    }
+  }
+
+  len = strlen(substring);
+  if (len < 1 || len > 31) {
+    fprintf(stderr, "Pattern must be between 1 and 31 characters\n");
+    goto get_out;
+  }
+  
+  /* Set array 'a' to all -1 values */
+  memset(a, 0xff, 256 * sizeof(unsigned long));
+  for (p=substring, i=0; *p; p++, i++) {
+    unsigned char pc;
+    pc = *(unsigned char *) p;
+    a[(unsigned int) pc] &= ~(1UL << i);
+    /* Make search case insensitive */
+    if (isupper(pc)) {
+      a[tolower((unsigned int) pc)] &= ~(1UL << i);
+    }
+    if (islower(pc)) {
+      a[toupper((unsigned int) pc)] &= ~(1UL << i);
+    }
+  }
+  hit = ~(1UL << (len-1));
+
+  hit0 = new_array(unsigned char, n_nodes);
+  memset(hit0, 0, n_nodes);
+  
+  /* Now scan each node against this match criterion */
+  search_node(&top, max_errors, a, hit, hit0);
+  for (i=0; i<n_nodes; i++) {
+    hits[i] &= hit0[i];
+  }
+  free(hit0);
+
+get_out:
+  if (substring != cond) {
+    free(substring);
   }
   return;
 }
@@ -221,6 +406,9 @@ int process_list(char **x)/*{{{*/
   enum Priority prio = PRI_NORMAL, prio_to_use, node_prio;
   int prio_set = 0;
   time_t now = time(NULL);
+  
+  unsigned char *hits;
+  int node_index, n_nodes;
 
   if (getenv("TDL_LIST_MONOCHROME") != 0) {
     options.monochrome = 1;
@@ -230,6 +418,16 @@ int process_list(char **x)/*{{{*/
   options.show_all = 0;
   options.verbose = 0;
   options.set_depth = 0;
+  
+  /* Initialisation to support searching */
+  node_index = 0;
+  allocate_indices(&top, &node_index);
+  n_nodes = node_index;
+
+  hits = new_array(unsigned char, n_nodes);
+
+  /* all nodes match until proven otherwise */
+  memset(hits, 1, n_nodes);
   
   while ((y = *x) != 0) {
     /* An argument starting '1' or '+1' or '+-1' (or '-1' after '--') is
@@ -249,7 +447,9 @@ int process_list(char **x)/*{{{*/
       index_buffer[0] = '\0';
       strcpy(index_buffer, y);
       summarise_kids = (options.set_depth && (options.depth==0));
-      print_details(n, 0, summarise_kids, &options, index_buffer, now);
+      if (hits[n->iscratch]) {
+        print_details(n, 0, summarise_kids, &options, index_buffer, now);
+      }
       if (!options.set_depth || (options.depth > 0)) {
         node_prio = n->priority;
 
@@ -257,7 +457,7 @@ int process_list(char **x)/*{{{*/
          * Otherwise, use the priority from the specified node, _except_ when
          * that is higher than normal, in which case use normal. */
         prio_to_use = (prio_set) ? prio : ((node_prio > prio) ? prio : node_prio);
-        list_chain(&n->kids, INDENT_TAB, 0, &options, index_buffer, prio_to_use, now);
+        list_chain(&n->kids, INDENT_TAB, 0, &options, index_buffer, prio_to_use, now, hits);
       }
     } else if ((y[0] == '-') && (y[1] == '-')) {
       options_done = 1;
@@ -284,6 +484,10 @@ int process_list(char **x)/*{{{*/
             break;
         }
       }
+    } else if (y[0] == '/') {
+      /* search expression */
+      merge_search_condition(hits, n_nodes, y+1);
+       
     } else {
       int error;
       prio = parse_priority(y, &error);
@@ -296,7 +500,7 @@ int process_list(char **x)/*{{{*/
   
   if (!any_paths) {
     index_buffer[0] = 0;
-    list_chain(&top, 0, 0, &options, index_buffer, prio, now);
+    list_chain(&top, 0, 0, &options, index_buffer, prio, now, hits);
   }
 
   return 0;
