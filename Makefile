@@ -1,4 +1,4 @@
-#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.9 2002/05/09 23:05:08 richard Exp $
+#  $Header: /cvs/src/tdl/Attic/Makefile,v 1.10 2002/05/19 22:44:57 richard Exp $
 #  
 #  tdl - A console program for managing to-do lists
 #  Copyright (C) 2001  Richard P. Curnow
@@ -73,7 +73,11 @@ inter.o : inter.c
 	$(CC) $(CFLAGS) -S $<
 
 clean:
-	rm -f tdl *.o core
+	rm -f tdl *.o core \
+	tdl.vr tdl.tp tdl.pg tdl.ky tdl.fn tdl.cp \
+	tdl.toc tdl.log tdl.dvi tdl.aux \
+	tdl.txt tdl.html tdl.info* tdl.pdf tdl.ps
+	
 
 install:
 	[ -d $(pprefix) ] || mkdir -p $(pprefix)
@@ -85,4 +89,26 @@ install:
 	(cd $(bindir); ln -sf tdl tdla; ln -sf tdl tdll; ln -sf tdl tdld; ln -sf tdl tdlg)
 	cp tdl.1 $(man1dir)/tdl.1
 	chmod 444 $(man1dir)/tdl.1
+
+docs : tdl.info tdl.txt tdl.html tdl.dvi tdl.pdf
+
+tdl.info : tdl.texi
+	makeinfo tdl.texi
+
+tdl.txt : tdl.texi
+	makeinfo --no-split --number-sections --no-headers tdl.texi > tdl.txt
+
+tdl.html : tdl.texi
+	makeinfo --no-split --number-sections --html tdl.texi > tdl.html
+
+tdl.dvi : tdl.texi
+	tex tdl.texi
+	tex tdl.texi
+
+tdl.ps : tdl.dvi
+	dvips tdl.dvi -o
+
+tdl.pdf : tdl.texi
+	pdftex tdl.texi
+	pdftex tdl.texi
 
