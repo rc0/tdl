@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.35 2003/04/17 21:56:03 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.36 2003/05/11 22:28:53 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001-2003  Richard P. Curnow
@@ -195,18 +195,36 @@ void load_database_if_not_loaded(void)/*{{{*/
   }
 }
 /*}}}*/
+static mode_t get_mode(const char *path)/*{{{*/
+{
+  mode_t result;
+  struct stat sb;
+  if (stat(path, &sb) < 0) {
+    result = 0644; /* default */
+  } else {
+    result = sb.st_mode;
+  }
+  return result;
+}
+/*}}}*/
 static void save_database(char *path)/*{{{*/
 {
   FILE *out;
+  mode_t database_mode;
   if (is_loaded && currently_dirty) {
     /* The next line only used to happen if the command wasn't 'create'.
      * However, it should quietly fail for create, where the existing database
      * doesn't exist */
+    database_mode = get_mode(path);
     rename_database(path);
     out = fopen(path, "wb");
     if (!out) {
       fprintf(stderr, "Cannot open database %s for writing\n", path);
       exit(1);
+    }
+    if (fchmod(fileno(out), database_mode) < 0) {
+      perror("Warning : can't modify permissions of database :");
+      /* Just treat this as a warning and continue. */
     }
     write_database(out, &top);
     fclose(out);
