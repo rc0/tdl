@@ -44,6 +44,20 @@ CONTACT
 
     rc@rc0.org.uk
     richard@rrbcurnow.freeuk.com
+
+ACKNOWLEDGEMENTS
+
+David Rhodes
+    Concept for current builtin-help system
+
+Juergen Daubert
+    Manpage
+
+Laurent Papier
+    Fixing the RPM spec file
+
+taviso
+    Bug fixes
    
-$Header: /cvs/src/tdl/README,v 1.5 2002/07/14 22:44:39 richard Exp $
+$Header: /cvs/src/tdl/README,v 1.6 2003/04/04 21:40:53 richard Exp $
 
