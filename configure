@@ -1,7 +1,7 @@
 #!/bin/sh
 #########################################################################
 #
-# $Id: configure,v 1.3 2003/05/05 22:08:05 richard Exp $
+# $Id: configure,v 1.4 2003/05/08 22:37:27 richard Exp $
 #
 # =======================================================================
 #
@@ -113,9 +113,8 @@ EOF
       READLINE_DEFINE="-DBARE_READLINE_H=0"
     else
       printf "FAILED\n"
-      printf "Can't include readline.h, giving up"
-      cleanup
-      exit 1
+      printf "Can't include readline.h, giving up on readline"
+      use_readline="no"
     fi
   fi
 
@@ -143,9 +142,10 @@ int main (int argc, char **argv) {
 EOF
   ${MYCC} ${MYCFLAGS} ${readline_inc_arg} ${READLINE_DEFINE} -c -o docheck.o docheck.c 1>&5 2>&5
   if [ $? -ne 0 ]; then
-    printf "unexpected compile failure\n"
+    printf "unexpected compile failure, giving up on readline\n"
+    use_readline="no"
     cleanup
-    exit 1
+    return
   fi
 
   # Now try to link it
@@ -174,9 +174,9 @@ EOF
   fi
 
   printf "can't link a readline program\n"
-  exit 1
+  use_readline="no"
+  return
 
-  cleanup
 }
 #}}}
 #{{{ test_completion_matches
