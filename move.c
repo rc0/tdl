@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/move.c,v 1.5 2002/05/09 23:07:05 richard Exp $
+   $Header: /cvs/src/tdl/move.c,v 1.6 2002/05/19 22:46:50 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -35,7 +35,7 @@ static int is_ancestor(struct node *anc, struct node *dec)/*{{{*/
 }
 /*}}}*/
 
-int process_move(char **x, int below_not_above, int into_parent)/*{{{*/
+static int process_move_internal(char **x, int below_not_above, int into_parent)/*{{{*/
 {
   /* x is the argument list
    * below_not_above is true to insert below x[0], false to insert above
@@ -107,5 +107,20 @@ int process_move(char **x, int below_not_above, int into_parent)/*{{{*/
   }
 
   return 0;
+}
+/*}}}*/
+int process_above(char **x)/*{{{*/
+{
+  return process_move_internal(x, 0, 0);
+}
+/*}}}*/
+int process_below(char **x)/*{{{*/
+{
+  return process_move_internal(x, 1, 0);
+}
+/*}}}*/
+int process_into(char **x)/*{{{*/
+{
+  return process_move_internal(x, 0, 1);
 }
 /*}}}*/
