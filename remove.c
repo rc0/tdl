@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/remove.c,v 1.4 2002/05/09 23:07:05 richard Exp $
+   $Header: /cvs/src/tdl/remove.c,v 1.5 2002/07/17 23:03:10 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -44,6 +44,8 @@ static void delete_from_bottom_up(struct links *x)/*{{{*/
         prev = y->chain.prev;
         prev->chain.next = next;
         next->chain.prev = prev;
+        free(y->text);
+        free(y);
       }
     }
   }
