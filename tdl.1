@@ -424,11 +424,15 @@ take arguments defining dates (with add and done it is optional).  Dates may be 
 .TS
 tab(&);
 l l.
--1h & relative : exactly 1 hour ago
--2d & relative : exactly 2 days ago
-+1w & relative : exactly 1 week in the future
-+1m & relative : exactly 1 month (30 days) in the future
-+2y & relative : exactly 2 years in the future
+-1h & exactly 1 hour ago
+-2d & exactly 2 days ago
++1w & exactly 1 week in the future
++1m & exactly 1 month (30 days) in the future
++2y & exactly 2 years in the future
+-1d-0815 & 08:15am yesterday
++1d-08 & 8am tomorrow
++1w-08 & 8am on the same day as today next week
++6h-08 & 8am on the day containing the time 6 hours ahead of now
 20011020 & absolute : 12 noon on 20th October 2001
 011020 & absolute : 12 noon on 20th October 2001 (current century)
 1020 & absolute : 12 noon on 20th October 2001 (current century and year)
@@ -455,6 +459,12 @@ and seconds are taken as zero and missing hours as 12.  If the weekday is the
 same as today, the offset is always 7 days in the required direction.  If the
 weekday is not the same as today, the offset will always be less than 7 days in
 the required direction.
+.PP
+In the 'relative' format, when a time is included as well, the procedure is as
+follows.  First the time is determined which is the given number of hours, days
+etc away from the current time.  Then the specified time on that day is used.
+The main use for this is to specify times like '8am yesterday'.  Obviously some
+of the more uses of this mode are rather far-fetched.
 .PP
 For the weekday and relative formats, the sign is actually optional.  The
 default sign (implying past (-) or future (+)) will then be assumed depending on

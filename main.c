@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.12 2001/10/20 22:06:20 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.13 2001/10/28 22:57:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -236,7 +236,7 @@ static void usage(void)/*{{{*/
           "   Display filename of database being used\n\n"
           "<index>    : 1, 1.1 etc (see output of 'tdl list')\n"
           "<priority> : urgent|high|normal|low|verylow\n"
-          "<datespec> : [-|+][0-9]+[shdwmy]  OR\n"
+          "<datespec> : [-|+][0-9]+[shdwmy][-hh[mm[ss]]]  OR\n"
           "             [-|+](sun|mon|tue|wed|thu|fri|sat)[-hh[mm[ss]]] OR\n"
           "             [[[cc]yy]mm]dd[-hh[mm[ss]]]\n"
           "<text>     : Any text (you'll need to quote it if >1 word)\n"

@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/dates.c,v 1.2 2001/10/20 21:20:08 richard Exp $
+   $Header: /cvs/src/tdl/dates.c,v 1.3 2001/10/28 22:57:04 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -82,6 +82,14 @@ static void parse_time(char *d, int *hour, int *min, int *sec)/*{{{*/
 time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
 {
   int len;
+  char *hyphenpos;
+  char *d0;
+  time_t result;
+  
+  d0 = (*d == '-') ? d+1 : d;
+  hyphenpos = strchr(d0, '-');
+
+  if (hyphenpos) *hyphenpos = 0;
   
   len = strlen(d);
 
@@ -93,16 +101,6 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
     int posneg, diff;
     char *dd = d;
     struct tm stm;
-    int hour, min, sec;
-    char *hyphenpos;
-    time_t result;
-
-    /* Don't treat leading hyphen as the date/time field separator */
-    hyphenpos = strchr(d+1, '-');
-    
-    if (hyphenpos) {
-      *hyphenpos = 0;
-    }
 
     if      (*dd == '+') posneg = 1, dd++;
     else if (*dd == '-') posneg = 0, dd++;
@@ -141,22 +139,11 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
     }
 
     stm = *localtime(&result);
-      
-    if (hyphenpos) {
-      /* Replace current time on the specified day by the specified time */
-      char *hp1 = hyphenpos + 1;
-      parse_time(hp1, &hour, &min, &sec);
-    } else {
-      hour = 12;
-      min = sec = 0;
-    }
     
-    stm.tm_hour = hour;
-    stm.tm_min = min;
-    stm.tm_sec = sec;
+    stm.tm_hour = 12;
+    stm.tm_min = 0;
+    stm.tm_sec = 0;
     result = tm_to_time_t(&stm);
-
-    return result;
     
   } else if ((len > 1) && isalpha(d[len-1])) {
     /* Relative time */
@@ -186,21 +173,14 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
         exit(1);
     }
     if (!posneg) interval = -interval;
-    return (ref + interval);
+  
+    result = ref + interval;
 
   } else {
     int year, month, day, n;
     struct tm stm;
-    char *hyphenpos;
 
     stm = *localtime(&ref);
-
-    hyphenpos = strchr(d, '-');
-    
-    if (hyphenpos) {
-      *hyphenpos = 0;
-      len = strlen(d);
-    }
 
     /* Try to parse absolute date.
      * Formats allowed : dd, mmdd, yymmdd, yyyymmdd.
@@ -252,23 +232,26 @@ time_t parse_date(char *d, time_t ref, int default_positive)/*{{{*/
     stm.tm_year = year;
     stm.tm_mon = month - 1;
     stm.tm_mday = day;
-
-    if (hyphenpos) {
-      int hour=0, min=0, sec=0;
-      char *hp1 = hyphenpos + 1;
-      parse_time(hp1, &hour, &min, &sec);
-      stm.tm_hour = hour;
-      stm.tm_min = min;
-      stm.tm_sec = sec;
-      
-    } else {
-      stm.tm_hour = 12;
-      stm.tm_min = 0;
-      stm.tm_sec = 0;
-    }
-    
-    return tm_to_time_t(&stm);
+    stm.tm_hour = 12;
+    stm.tm_min = 0;
+    stm.tm_sec = 0;
+    result = tm_to_time_t(&stm);
   }
+
+  if (hyphenpos) {
+    int hour, min, sec;
+    struct tm stm;
+    
+    parse_time(hyphenpos+1, &hour, &min, &sec);
+    stm = *localtime(&result);
+    stm.tm_hour = hour;
+    stm.tm_min = min;
+    stm.tm_sec = sec;
+    result = tm_to_time_t(&stm);
+  }
+
+  return result;
+  
 }/*}}}*/
 
 /*{{{  Test code*/
