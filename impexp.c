@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/impexp.c,v 1.2 2002/05/09 23:07:05 richard Exp $
+   $Header: /cvs/src/tdl/impexp.c,v 1.3 2002/07/17 23:35:39 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001  Richard P. Curnow
@@ -79,6 +79,7 @@ int process_export(char **x)/*{{{*/
   write_database(out, &data);
     
   fclose(out);
+  free_database(&data);
   return 0;
 
 }
@@ -118,5 +119,45 @@ int process_import(char **x)/*{{{*/
 
   return result;
 
+}
+/*}}}*/
+static int internal_copy_clone(struct links *l, char **x)/*{{{*/
+{
+  int argc, i;
+
+  argc = count_args(x);
+  if (argc < 1) {
+    fprintf(stderr, "Need at least one index to copy/clone\n");
+    return -2;
+  }
+
+  for (i=0; i<argc; i++) {
+    struct node *n, *nn;
+    n = lookup_node(x[i], 0, NULL);
+    if (!n) return -1;
+    nn = clone_node(n, NULL);
+    prepend_node(nn, l);
+  }
+
+  return 0;
+}
+/*}}}*/
+int process_clone(char **x)/*{{{*/
+{
+  return internal_copy_clone(&top, x);
+}
+/*}}}*/
+int process_copyto(char **x)/*{{{*/
+{
+  struct node *parent;
+  if (count_args(x) < 1) {
+    fprintf(stderr, "Need a parent index to copy into\n");
+    return -2;
+  }
+  parent = lookup_node(x[0], 0, NULL);
+  if (!parent) {
+    return -1;
+  }
+  return internal_copy_clone(&parent->kids, x + 1);
 }
 /*}}}*/

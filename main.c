@@ -1,5 +1,5 @@
 /*
-   $Header: /cvs/src/tdl/main.c,v 1.23 2002/05/23 22:46:09 richard Exp $
+   $Header: /cvs/src/tdl/main.c,v 1.24 2002/07/17 23:35:39 richard Exp $
   
    tdl - A console program for managing to-do lists
    Copyright (C) 2001,2002  Richard P. Curnow
@@ -215,7 +215,19 @@ static void save_database(char *path)/*{{{*/
   return;
 }
 /*}}}*/
-  
+void free_database(struct links *x)/*{{{*/
+{
+  struct node *y;
+  struct node *next;
+  for (y=x->next; y != (struct node *) x; y = next) {
+    free_database(&y->kids);
+    free(y->text);
+    next = y->chain.next;
+    free(y);
+  }
+  x->next = x->prev = (struct node *) &x;
+}
+/*}}}*/
 static char *get_version(void)/*{{{*/
 {
   static char buffer[256];
@@ -302,12 +314,14 @@ static int process_version(char **x)/*{{{*/
 static int process_exit(char **x)/*{{{*/
 {
   save_database(current_database_path);
+  free_database(&top);
   exit(0);
 }
 /*}}}*/
 static int process_quit(char **x)/*{{{*/
 {
   /* Just get out quick, don't write the database back */
+  free_database(&top);
   exit(0);
 }
 /*}}}*/
@@ -318,6 +332,8 @@ static char desc_add[] = "Add a new entry to the database";
 static char desc_after[] = "Move entries after (below) another entry";
 static char desc_before[] = "Move entries before (above) another entry";
 static char desc_below[] = "Move entries below (after) another entry";
+static char desc_clone[] = "Make deep copy of one or more entries";
+static char desc_copyto[] = "Insert deep copy of one or more entries under another entry";
 static char desc_create[] = "Create a new database in the current directory";
 static char desc_done[] = "Mark 1 or more entries as done";
 static char desc_edit[] = "Change the text and/or start time of an entry";
@@ -345,6 +361,8 @@ static char synop_add[] = "[@<datespec>] [<parent_index>] [<priority>] <entry_te
 static char synop_after[] = "<index_to_insert_below> <index_to_move> ...";
 static char synop_before[] = "<index_to_insert_above> <index_to_move> ...";
 static char synop_below[] = "<index_to_insert_below> <index_to_move> ...";
+static char synop_clone[] = "<index_to_clone> ...";
+static char synop_copyto[] = "<parent_index> <index_to_clone> ...";
 static char synop_create[] = "";
 static char synop_done[] = "[@<datespec>] <entry_index>[...] ...";
 static char synop_edit[] = "[@<datespec>] <entry_index>[...] [<new_text>]";
@@ -383,7 +401,9 @@ struct command cmds[] = {/*{{{*/
   {"after",    NULL,   process_below,    desc_after,   synop_after,   NULL,              1, 1, 2, 1, 1},
   {"before",   NULL,   process_above,    desc_before,  synop_before,  NULL,              1, 1, 3, 1, 1},
   {"below",    NULL,   process_below,    desc_below,   synop_below,   NULL,              1, 1, 3, 1, 1},
-  {"create",   NULL,   process_create,   desc_create,  synop_create,  NULL,              1, 0, 1, 0, 1},
+  {"clone",    NULL,   process_clone,    desc_clone,   synop_clone,   NULL,              1, 1, 2, 1, 1}, 
+  {"copyto",   NULL,   process_copyto,   desc_copyto,  synop_copyto,  NULL,              1, 1, 2, 1, 1}, 
+  {"create",   NULL,   process_create,   desc_create,  synop_create,  NULL,              1, 0, 2, 0, 1},
   {"done",     "tdld", process_done,     desc_done,    synop_done,    complete_done,     1, 1, 1, 1, 1},
   {"edit",     NULL,   process_edit,     desc_edit,    synop_edit,    NULL,              1, 1, 2, 1, 1},
   {"exit",     NULL,   process_exit,     desc_exit,    synop_exit,    NULL,              0, 0, 3, 1, 0},
@@ -636,6 +656,7 @@ int main (int argc, char **argv)
   dispatch(argv);
 
   save_database(current_database_path);
+  free_database(&top);
   return 0;
 }
 /*}}}*/
