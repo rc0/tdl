@@ -1,0 +1,5 @@
+Makefile
+*.o
+tdl
+version.h
+config.log
