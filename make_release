@@ -1,0 +1,68 @@
+#!/usr/bin/env perl
+#  
+#  tdl - A console program for managing to-do lists
+#  Copyright (C) 2001-2004  Richard P. Curnow
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+
+$tool = "tdl";
+
+$version = shift || die "Usage : $0 <version>\n";
+$subdir = "${tool}-${version}";
+
+unless (-d ".git") {
+  die "No .git subdirectory?"
+}
+
+unless (-d "RELEASES") {
+  mkdir "RELEASES", 0755;
+}
+
+system ("git-tag -s $version");
+die "git-tag failed" if ($? != 0);
+if (-d "RELEASES/$subdir") {
+  system ("rm -rf RELEASES/$subdir");
+}
+
+system ("git-tar-tree $version RELEASES/${subdir} | tar xf -");
+die "git-tar-tree failed" if ($? != 0);
+
+chdir "RELEASES";
+$here = qx/pwd/;
+chomp $here;
+chdir $subdir;
+
+open (OUT, ">version.txt");
+print OUT $version."\n";
+close OUT;
+
+open (IN, "<${tool}.spec.sample");
+open (OUT, ">${tool}.spec");
+while (<IN>) {
+  s/\@\@VERSION\@\@/$version/;
+  print OUT;
+}
+close (IN);
+close (OUT);
+
+unlink "make_release";
+unlink "${tool}.spec.sample";
+unlink ".gitignore";
+
+chdir $here;
+system ("tar cvf - $subdir | gzip -9 > ${subdir}.tar.gz");
+system ("gpg -b -a -o ${subdir}-tar-gz-asc.txt ${subdir}.tar.gz");
+
+
