@@ -46,7 +46,7 @@ fi
 cleanup () {
   if [ -f docheck.c ]; then rm -f docheck.c ; fi
   if [ -f docheck.o ]; then rm -f docheck.o ; fi
-  if [ -f docheck   ]; then rm -f docheck   ; fi
+  if [ -f docheck${BINEXT}   ]; then rm -f docheck${BINEXT} ; fi
   rm -rf docheck.c docheck.o docheck
 }
 #}}}
@@ -61,7 +61,8 @@ int main (int argc, char **argv)
   return 0;
 }
 EOF
-  ${MYCC} ${MYCFLAGS} -o docheck docheck.c 1>&5 2>&5
+
+  ${MYCC} ${MYCFLAGS} -o docheck${BINEXT} docheck.c 1>&5 2>&5
   if [ $? -eq 0 ]
   then
     printf "it works\n"
@@ -69,7 +70,7 @@ EOF
     printf "it doesn't work\n"
     printf "Failed program was\n" 1>&5
     cat docheck.c 1>&5
-    rm -f docheck.c docheck
+    rm -f docheck.c docheck${BINEXT}
     exit 1
   fi
   cleanup
@@ -93,6 +94,7 @@ int main (int argc, char **argv) {
   return 0;
 }
 EOF
+
   ${MYCC} ${MYCFLAGS} ${readline_inc_arg} -c -o docheck.o docheck.c 1>&5 2>&5
   if [ $? -eq 0 ]; then
     printf "<readline.h>\n"
@@ -149,7 +151,7 @@ EOF
   fi
 
   # Now try to link it
-  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline 1>&5 2>&5
+  ${MYCC} ${MYCFLAGS} -o docheck${BINEXT} docheck.o ${readline_lib_arg} -lreadline 1>&5 2>&5
   if [ $? -eq 0 ]; then
     extra_readline_libs=""
     printf "(none)\n"
@@ -157,7 +159,7 @@ EOF
     return
   fi
 
-  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline -ltermcap 1>&5 2>&5
+  ${MYCC} ${MYCFLAGS} -o docheck${BINEXT} docheck.o ${readline_lib_arg} -lreadline -ltermcap 1>&5 2>&5
   if [ $? -eq 0 ]; then
     extra_readline_libs="-ltermcap"
     printf -- "-ltermcap\n"
@@ -165,7 +167,7 @@ EOF
     return
   fi
 
-  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline -lncurses 1>&5 2>&5
+  ${MYCC} ${MYCFLAGS} -o docheck${BINEXT} docheck.o ${readline_lib_arg} -lreadline -lncurses 1>&5 2>&5
   if [ $? -eq 0 ]; then
     extra_readline_libs="-lncurses"
     printf -- "-lncurses\n"
@@ -206,7 +208,7 @@ EOF
     return
   fi
 
-  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline ${extra_readline_libs} 1>&5 2>&5
+  ${MYCC} ${MYCFLAGS} -o docheck${BINEXT} docheck.o ${readline_lib_arg} -lreadline ${extra_readline_libs} 1>&5 2>&5
   if [ $? -eq 0 ]; then
     printf "yes\n"
     has_completion_matches=yes
@@ -244,7 +246,7 @@ EOF
     return
   fi
 
-  ${MYCC} ${MYCFLAGS} -o docheck docheck.o ${readline_lib_arg} -lreadline ${extra_readline_libs} 1>&5 2>&5
+  ${MYCC} ${MYCFLAGS} -o docheck${BINEXT} docheck.o ${readline_lib_arg} -lreadline ${extra_readline_libs} 1>&5 2>&5
   if [ $? -eq 0 ]; then
     printf "yes\n"
     has_rl_completion_matches=yes
@@ -253,6 +255,12 @@ EOF
     has_rl_completion_matches=no
   fi
   cleanup
+}
+#}}}
+
+#{{{ get_binext
+get_binext() {
+  test "$OSTYPE" = "cygwin" && BINEXT=.exe
 }
 #}}}
 
@@ -305,6 +313,7 @@ EOF
 
 # Defaults for variables
 PREFIX=/usr/local
+BINEXT=""
 
 use_readline=yes
 bad_options=no
@@ -382,6 +391,7 @@ if [ "$use_readline" = "yes" ]; then
 fi
 #}}}
 
+get_binext
 test_cc
 if [ "${use_readline}" = "yes" ]; then test_readline_include      ; fi
 if [ "${use_readline}" = "yes" ]; then test_readline_lib          ; fi
@@ -434,6 +444,7 @@ sed -e "s%@cc@%${MYCC}%; \
         s%@bindir@%${BINDIR}%; \
         s%@mandir@%${MANDIR}%; \
         s%@infodir@%${INFODIR}%; \
+        s%@binext@%${BINEXT}%; \
         s%@readline_define@%${READLINE_DEFINE}%; \
         s%@defines@%${DEFINES}%; \
         s%@inc_readline@%${readline_inc_arg}%; \
